@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 // Local Imports
 import { useSidebarContext } from "@/app/contexts/sidebar/context";
 import { Avatar, Button } from "@/components/ui";
-import { settings } from "@/app/navigation/segments/settings";
+import { settings } from "@/app/navigation/settings";
 import { navigationIcons } from "@/app/navigation/icons";
 
 // ----------------------------------------------------------------------

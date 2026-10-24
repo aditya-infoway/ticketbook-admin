@@ -1,0 +1,76 @@
+import { NavigationTree } from "@/@types/navigation";
+
+export const settings: NavigationTree = {
+  id: "settings",
+  type: "item",
+  path: "/settings",
+  title: "Settings",
+  // transKey: "nav.settings.settings",
+  icon: "settings",
+  childs: [
+    {
+      id: "general",
+      type: "item",
+      path: "/settings/general",
+      title: "General",
+      // transKey: "nav.settings.general",
+      icon: "settings.general",
+    },
+    // {
+    //   id: "prefix",
+    //   type: "item",
+    //   path: "/settings/prefix",
+    //   title: "Prefix",
+    //   icon: "settings.prefix",
+    // },
+    {
+      id: "appearance",
+      type: "item",
+      path: "/settings/appearance",
+      title: "Appearance",
+      // transKey: "nav.settings.appearance",
+      icon: "settings.appearance",
+    },
+    // {
+    //   id: "location",
+    //   type: "item",
+    //   path: "/settings/location",
+    //   title: "Location",
+    //   // transKey: "nav.settings.appearance",
+    //   icon: "settings.appearance",
+    // },
+    // {
+    //   id: "itemCategory",
+    //   type: "item",
+    //   path: "/settings/itemcategory",
+    //   title: "item Category",
+    //   // transKey: "nav.settings.appearance",
+    //   icon: "settings.appearance",
+    // },
+    //      {
+    //   id: "productionSettings",
+    //   type: "collapse",
+    //   path: "/settings/production",
+    //   title: "Production Settings",
+    //   transKey: "Production Settings",
+    //   icon: "settings.appearance",
+    //   childs: [
+    //     {
+    //       id: "productionSettings.main-process",
+    //       type: "item",
+    //       path: "/settings/production/main-process",
+    //       title: "Process",
+    //       transKey: "Process",
+    //     },
+    //     {
+    //       id: "productionSettings.sub-process",
+    //       type: "item",
+    //       path: "/settings/production/sub-process",
+    //       title: "Sub Process",
+    //       transKey: "Sub Process",
+    //     },
+    //   ],
+    // },
+    
+  ],
+};

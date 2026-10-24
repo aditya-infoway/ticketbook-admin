@@ -11,7 +11,7 @@ import { Item } from "./Menu/item";
 import { Profile } from "../../Profile";
 import { useThemeContext } from "@/app/contexts/theme/context";
 import { useSidebarContext } from "@/app/contexts/sidebar/context"; // ✅ add kiya
-import { settings } from "@/app/navigation/segments/settings";
+import { settings } from "@/app/navigation/settings";
 import { NavigationTree } from "@/@types/navigation";
 import { SegmentPath } from "..";
 

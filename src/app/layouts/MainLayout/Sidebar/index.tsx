@@ -5,7 +5,7 @@ import { useLocation } from "react-router";
 import { useBreakpointsContext } from "@/app/contexts/breakpoint/context";
 import { useSidebarContext } from "@/app/contexts/sidebar/context";
 import { navigation } from "@/app/navigation";
-import { settings } from "@/app/navigation/segments/settings";
+import { settings } from "@/app/navigation/settings";
 import { useDidUpdate } from "@/hooks";
 import { isRouteActive } from "@/utils/isRouteActive";
 import { MainPanel } from "./MainPanel";
