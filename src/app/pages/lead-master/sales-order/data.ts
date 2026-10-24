@@ -1,0 +1,26 @@
+import type { SalesOrder } from "../shared/types";
+
+export const emptySalesOrder = (): SalesOrder => ({
+  id: "",
+  soNo: "",
+  quotationId: "",
+  leadId: "",
+  customerName: "",
+  mobile: "",
+  email: "",
+  address: "",
+  city: "",
+  model: "",
+  remark: "",
+  qty: 1,
+  unitPrice: 0,
+  totalAmount: 0,
+  expectedDate: "",
+  mode: "asIs",
+  aadharNumber: "",
+  aadharImage: "",
+  panNumber: "",
+  panImage: "",
+  gstNumber: "",
+  gstImage: "",
+});

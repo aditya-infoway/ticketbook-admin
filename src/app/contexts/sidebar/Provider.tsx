@@ -1,0 +1,75 @@
+import { ReactNode, useLayoutEffect } from "react";
+
+import { useDisclosure, useDidUpdate } from "@/hooks";
+import { useBreakpointsContext } from "../breakpoint/context";
+import { SidebarContext, SidebarContextValue } from "./context";
+
+const initialState: SidebarContextValue = {
+  isExpanded: true,
+  toggle: () => {},
+  open: () => {},
+  close: () => {},
+};
+
+const SIDEBAR_STORAGE_KEY = "sidebarExpanded";
+
+function getStoredExpanded(defaultVal: boolean): boolean {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (saved === null) return defaultVal;
+    return JSON.parse(saved);
+  } catch {
+    return defaultVal;
+  }
+}
+
+export function SidebarProvider({ children }: { children: ReactNode }) {
+  const { xlAndUp, lgAndDown, name } = useBreakpointsContext();
+
+  const [isExpanded, { open, close, toggle }] = useDisclosure(
+    getStoredExpanded(initialState.isExpanded && xlAndUp),
+  );
+
+  // ✅ jab bhi isExpanded change ho, localStorage me save karo
+  useLayoutEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(isExpanded));
+    } catch {
+      // ignore storage errors
+    }
+  }, [isExpanded]);
+
+  useDidUpdate(() => {
+    if (lgAndDown) {
+      close();
+    }
+  }, [name]);
+
+  useLayoutEffect(() => {
+    const documentBody = document?.body;
+    if (documentBody) {
+      if (isExpanded) {
+        documentBody.classList.add("is-sidebar-open");
+      } else {
+        documentBody.classList.remove("is-sidebar-open");
+      }
+    }
+  }, [isExpanded]);
+
+  if (!children) {
+    return null;
+  }
+
+  return (
+    <SidebarContext
+      value={{
+        isExpanded,
+        toggle,
+        open,
+        close,
+      }}
+    >
+      {children}
+    </SidebarContext>
+  );
+}

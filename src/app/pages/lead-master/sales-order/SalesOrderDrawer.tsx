@@ -1,0 +1,787 @@
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
+import { XMarkIcon, PlusIcon } from "@heroicons/react/24/solid";
+
+import { Button, Input } from "@/components/ui";
+import { Combobox } from "@/components/shared/form/StyledCombobox";
+import { DatePicker } from "@/components/shared/form/Datepicker";
+import { Get, Post, Put, toasterrormsg, toastsuccessmsg } from "@/ApiHelper";
+import type { SalesOrder } from "../shared/types";
+import { CreateAccountDrawer } from "./CreateAccountDrawer"; // 👈 path apne folder ke hisaab se
+
+interface SalesOrderDrawerProps {
+  isOpen: boolean;
+  close: () => void;
+  salesOrder: SalesOrder | null;
+  onSave: (salesOrder: SalesOrder) => void;
+  readOnly?: boolean;
+}
+
+interface QuotationOption {
+  id: number;
+  qNo: string;
+  leadId: number;
+  leadCode?: string;
+  customerName: string;
+  mobile: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  model?: string;
+  remark?: string;
+  finalPrice?: number;
+  label: string;
+}
+
+// ---------------- Select Party — only Sundry Debtors / Customer group accounts ----------------
+const PARTY_GROUP_NAMES = ["sundry debtors", "customer"];
+
+interface PartyOption {
+  id: string;
+  label: string;
+  accountName: string;
+  mobileNo?: string;
+  email?: string;
+  addressLine1?: string;
+  cityName?: string;
+}
+
+// Converts any ISO / date string to "YYYY-MM-DD" for <input type="date" />
+const toDateInput = (value: any): string => {
+  if (!value) return "";
+  const str = String(value);
+  // ISO string like 2026-10-20T00:00:00.000Z -> 2026-10-20
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return "";
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+// Converts a Date (from DatePicker) to "YYYY-MM-DD" for the API
+const formatDateForApi = (date: Date): string => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+export function SalesOrderDrawer({
+  isOpen,
+  close,
+  salesOrder,
+  onSave,
+  readOnly = false,
+}: SalesOrderDrawerProps) {
+  const isEditing = Boolean(salesOrder?.id);
+
+  const [soNo, setSoNo] = useState("");
+  const [quotationOptions, setQuotationOptions] = useState<QuotationOption[]>(
+    [],
+  );
+  const [usedQuotationIds, setUsedQuotationIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedQuotation, setSelectedQuotation] = useState<QuotationOption[]>(
+    [],
+  );
+
+  // ---- Select Party ----
+  const [partyOptions, setPartyOptions] = useState<PartyOption[]>([]);
+  const [selectedParty, setSelectedParty] = useState<PartyOption[]>([]);
+
+  // ---- Create Account drawer (Party ke side wale + button se khulta hai) ----
+  const [accountDrawerOpen, setAccountDrawerOpen] = useState(false);
+
+  // ---- Expected Date (sits in the same row as Select Party) ----
+  const [expectedDate, setExpectedDate] = useState("");
+
+  // ---- TOP BLOCK: read-only snapshot of the selected quotation ----
+  const [leadCode, setLeadCode] = useState("");
+  const [city, setCity] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [model, setModel] = useState("");
+  const [remark, setRemark] = useState("");
+
+  // ---- BOTTOM BLOCK: editable details, actually submitted ----
+  const [detailCustomerName, setDetailCustomerName] = useState("");
+  const [detailMobile, setDetailMobile] = useState("");
+  const [detailEmail, setDetailEmail] = useState("");
+  const [detailAddress, setDetailAddress] = useState("");
+  const [detailCity, setDetailCity] = useState("");
+  const [modelOptions, setModelOptions] = useState<ModelOption[]>([]);
+  const [qty, setQty] = useState("1");
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [quotationAmount, setQuotationAmount] = useState(0);
+
+  const totalAmount = useMemo(() => {
+    const quantity = Number(qty) || 0;
+
+    return quotationAmount * quantity;
+  }, [qty, quotationAmount]);
+
+  interface ModelOption {
+    id: string;
+    label: string;
+  }
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await Get(
+          "master/itemmaster/finished-goods/list",
+          {},
+          false,
+        );
+
+        if (response?.data?.success || response?.data?.status === 200) {
+          const models = response.data.data || [];
+
+          setModelOptions(
+            models.map((item: any) => ({
+              id: String(item.itemId),
+              label: item.itemName,
+            })),
+          );
+        }
+      } catch (error) {
+        console.error("Model list error:", error);
+      }
+    };
+
+    fetchModels();
+  }, []);
+
+  const modelLabel = useMemo(() => {
+    return (
+      modelOptions.find((item) => item.id === model)?.label || model || "-"
+    );
+  }, [modelOptions, model]);
+
+  // Fetch quotations to populate "Select Quotation"
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchQuotations = async () => {
+      try {
+        const financialYearId = localStorage.getItem("financialYearId");
+        const response = await Get(
+          "quotation/list",
+          financialYearId ? { financialYearId } : {},
+          false,
+        );
+
+        if (response?.data?.success || response?.data?.status === 200) {
+          const list = response.data.data || [];
+
+          setQuotationOptions(
+            list.map((q: any) => ({
+              id: Number(q.id ?? q.quotationId),
+              qNo: q.qNo,
+              leadId: Number(q.leadId),
+              leadCode: q.leadCode || "",
+              customerName: q.customerName,
+              mobile: q.mobile,
+              email: q.email || "",
+              address: q.address || "",
+              city: q.city || "",
+              model: q.model || "",
+              remark: q.remark || "",
+              finalPrice: Number(q.finalPrice) || 0,
+              label: `${q.qNo} - ${q.customerName}`,
+            })),
+          );
+        }
+      } catch (error) {
+        console.error("Quotation list error:", error);
+        toasterrormsg("Unable to load quotations.");
+      }
+    };
+
+    fetchQuotations();
+  }, [isOpen]);
+
+  // ✅ Parties fetch — useCallback me taaki account create hone ke baad dobara call kar sakein
+  const fetchParties = useCallback(async (): Promise<PartyOption[]> => {
+    try {
+      const response = await Get("master/account/list", {}, false);
+
+      if (response?.data?.success || response?.data?.status === 200) {
+        const list = response.data.data || response.data || [];
+
+        const filtered = list.filter((acc: any) => {
+          const groupName = (
+            acc.groupName ||
+            acc.group?.groupName ||
+            acc.Group?.groupName ||
+            ""
+          )
+            .toString()
+            .toLowerCase();
+
+          return PARTY_GROUP_NAMES.some((g) => groupName.includes(g));
+        });
+
+        const mapped: PartyOption[] = filtered.map((acc: any) => ({
+          id: String(acc.id ?? acc.accountId),
+          label: acc.accountName,
+          accountName: acc.accountName,
+          mobileNo: acc.mobileNo || acc.mobile || "",
+          email: acc.email || "",
+          addressLine1: acc.addressLine1 || acc.address || "",
+          cityName: acc.cityName || acc.city || "",
+        }));
+
+        setPartyOptions(mapped);
+        return mapped;
+      }
+    } catch (error) {
+      console.error("Party list error:", error);
+      toasterrormsg("Unable to load parties.");
+    }
+    return [];
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    fetchParties();
+  }, [isOpen, fetchParties]);
+
+  // ✅ Naya account ban gaya -> list refresh + usi ko Select Party me select kar do
+  const handleAccountCreated = useCallback(
+    async (created: any) => {
+      const list = await fetchParties();
+      const newId = String(created?.id ?? created?.accountId ?? "");
+
+      const match =
+        (newId && list.find((p) => p.id === newId)) ||
+        list.find((p) => p.accountName === created?.accountName);
+
+      if (match) setSelectedParty([match]);
+    },
+    [fetchParties],
+  );
+
+  // Fetch sales orders to know which quotations are already used
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchUsedQuotations = async () => {
+      try {
+        const financialYearId = localStorage.getItem("financialYearId");
+
+        const response = await Get(
+          "salesorder/list",
+          financialYearId ? { financialYearId } : {},
+          false,
+        );
+
+        if (response?.data?.success || response?.data?.status === 200) {
+          const orders = response.data.data || [];
+
+          setUsedQuotationIds(
+            new Set(
+              orders
+                .filter(
+                  (o: any) => String(o.id) !== String(salesOrder?.id || ""),
+                )
+                .map((o: any) => String(o.quotationId)),
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Sales order list error (quotation filter):", error);
+      }
+    };
+
+    fetchUsedQuotations();
+  }, [isOpen, salesOrder?.id]);
+
+  const availableQuotationOptions = useMemo(() => {
+    if (isEditing) {
+      return selectedQuotation[0] ? [selectedQuotation[0]] : [];
+    }
+
+    return quotationOptions.filter((q) => !usedQuotationIds.has(String(q.id)));
+  }, [quotationOptions, usedQuotationIds, selectedQuotation, isEditing]);
+
+  // Auto-fill Lead ID / City / Model / Remark / Price whenever a quotation is picked.
+  // TOP block always mirrors the quotation, regardless of Party selection.
+useEffect(() => {
+  const q = selectedQuotation?.[0];
+
+  queueMicrotask(() => {
+    if (!q) {
+      setLeadCode("");
+      setCity("");
+      setCustomerName("");
+      setMobile("");
+      setEmail("");
+      setAddress("");
+      setModel("");
+      setRemark("");
+      if (!isEditing) setQty("1");   // ← changed
+      setQuotationAmount(0);
+      return;
+    }
+
+    setLeadCode(q.leadCode || "");
+    setCity(q.city || "");
+    setCustomerName(q.customerName || "");
+    setMobile(q.mobile || "");
+    setEmail(q.email || "");
+    setAddress(q.address || "");
+    setModel(q.model || "");
+    setRemark(q.remark || "");
+
+    if (!isEditing) setQty("1");     // ← changed
+    setQuotationAmount(Number(q.finalPrice) || 0);
+  });
+}, [selectedQuotation, isEditing]);
+
+  // Auto-fill the BOTTOM (editable) block whenever a Party is selected.
+  useEffect(() => {
+    const p = selectedParty?.[0];
+
+    if (!p) return;
+
+    queueMicrotask(() => {
+      setDetailCustomerName(p.accountName || "");
+      setDetailMobile(p.mobileNo || "");
+      setDetailEmail(p.email || "");
+      setDetailAddress(p.addressLine1 || "");
+      setDetailCity(p.cityName || "");
+    });
+  }, [selectedParty]);
+
+  // Prefill on edit / reset on add
+  useEffect(() => {
+    if (!isOpen) return;
+
+    queueMicrotask(() => {
+      if (salesOrder && salesOrder.id) {
+        setSoNo((salesOrder as any).soNo || "");
+        const q = quotationOptions.find(
+          (item) => String(item.id) === String((salesOrder as any).quotationId),
+        );
+        setSelectedQuotation(q ? [q] : []);
+
+        const p = partyOptions.find(
+          (item) => String(item.id) === String((salesOrder as any).accountId),
+        );
+        setSelectedParty(p ? [p] : []);
+
+        setExpectedDate(toDateInput((salesOrder as any).expectedDate));
+
+        setLeadCode(q?.leadCode || (salesOrder as any).leadCode || "");
+        setCity(q?.city || (salesOrder as any).city || "");
+        setCustomerName(
+          q?.customerName || (salesOrder as any).customerName || "",
+        );
+        setMobile(q?.mobile || (salesOrder as any).mobile || "");
+        setEmail(q?.email || (salesOrder as any).email || "");
+        setAddress(q?.address || (salesOrder as any).address || "");
+        setModel(q?.model || (salesOrder as any).model || "");
+        setRemark(q?.remark || (salesOrder as any).remark || "");
+
+        setDetailCustomerName((salesOrder as any).customerName || "");
+        setDetailMobile((salesOrder as any).mobile || "");
+        setDetailEmail((salesOrder as any).email || "");
+        setDetailAddress((salesOrder as any).address || "");
+        setDetailCity((salesOrder as any).city || "");
+
+        setQty(String((salesOrder as any).qty ?? "1"));
+      }
+
+      setErrors({});
+    });
+  }, [salesOrder, quotationOptions, partyOptions]);
+
+  // Reset form for "Add" mode — runs once per drawer open
+  useEffect(() => {
+    if (!isOpen) return;
+    if (salesOrder && salesOrder.id) return;
+
+    queueMicrotask(() => {
+      setSoNo("");
+      setSelectedQuotation([]);
+      setSelectedParty([]);
+      setExpectedDate("");
+      setQty("1");
+      setErrors({});
+    });
+  }, [isOpen]);
+
+  // Generate next SO number
+  useEffect(() => {
+    if (!isOpen || isEditing) return;
+
+    const fetchNextSoNo = async () => {
+      try {
+        const financialYearId = localStorage.getItem("financialYearId");
+        if (!financialYearId) return;
+
+        const response = await Get(
+          "salesorder/next-number",
+          { financialYearId },
+          false,
+        );
+        if (response?.data?.success || response?.data?.status === 200) {
+          setSoNo(response.data.data.soNo);
+        } else {
+          console.error("Unexpected next-number response:", response?.data);
+          toasterrormsg(
+            response?.data?.message ||
+              "Failed to generate SO number. Please retry.",
+          );
+        }
+      } catch (error) {
+        console.error("SO number generation error:", error);
+        toasterrormsg("Failed to generate SO number. Please retry.");
+      }
+    };
+
+    fetchNextSoNo();
+  }, [isOpen, isEditing]);
+
+  const validate = () => {
+    const nextErrors: Record<string, string> = {};
+
+    if (!selectedQuotation?.[0]) nextErrors.quotation = "Select a Quotation";
+
+    // Uncomment if Expected Date should be mandatory:
+    // if (!expectedDate) nextErrors.expectedDate = "Select Expected Date";
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+
+    const q = selectedQuotation?.[0];
+    const p = selectedParty?.[0];
+    const financialYearId = localStorage.getItem("financialYearId");
+
+    if (!financialYearId) {
+      toasterrormsg("Financial Year not found. Please select a company year.");
+      return;
+    }
+
+    const payload = {
+      financialYearId: Number(financialYearId),
+      quotationId: q?.id ?? "",
+      leadId: q?.leadId ?? "",
+      accountId: p?.id ? Number(p.id) : null,
+      expectedDate: expectedDate || null,
+      model: model || "",
+      remark: remark || "",
+      qty,
+      unitPrice: quotationAmount,
+      totalAmount,
+    };
+
+    try {
+      const response =
+        isEditing && salesOrder?.id
+          ? await Put(`salesorder/${salesOrder.id}`, payload, false)
+          : await Post("salesorder/create", payload, false);
+
+      const responseData = response?.data;
+
+      if (responseData?.success || responseData?.status === 200) {
+        toastsuccessmsg(
+          responseData?.message ||
+            (isEditing ? "Sales Order updated" : "Sales Order saved"),
+        );
+        onSave({
+          ...(salesOrder || {}),
+          id: String(responseData?.data?.salesOrderId || salesOrder?.id),
+          soNo: responseData?.data?.soNo || soNo,
+        } as SalesOrder);
+        close();
+      } else {
+        toasterrormsg(responseData?.message || "Failed to save sales order.");
+      }
+    } catch (error: any) {
+      console.error("Sales Order save error:", error);
+      toasterrormsg(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong while saving sales order.",
+      );
+    }
+  };
+
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-100" onClose={close}>
+        <TransitionChild
+          as="div"
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+          className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40"
+        />
+
+        <TransitionChild
+          as={DialogPanel}
+          enter="ease-out transform-gpu transition-transform duration-200"
+          enterFrom="translate-x-full"
+          enterTo="translate-x-0"
+          leave="ease-in transform-gpu transition-transform duration-200"
+          leaveFrom="translate-x-0"
+          leaveTo="translate-x-full"
+          className="dark:bg-dark-700 fixed top-0 right-0 flex h-full w-full max-w-4xl transform-gpu flex-col bg-white transition-transform duration-200"
+        >
+          <div className="dark:border-dark-500 bg-primary-600 flex items-center justify-between border-b border-gray-200 px-4 py-4 sm:px-5">
+            <h3 className="text-lg font-semibold text-white">
+              {readOnly
+                ? "View Sales Order"
+                : isEditing
+                  ? "Edit Sales Order"
+                  : "Add Sales Order"}
+            </h3>
+            <Button
+              onClick={close}
+              variant="flat"
+              isIcon
+              className="size-6 rounded-full text-white"
+            >
+              <XMarkIcon className="size-4.5" />
+            </Button>
+          </div>
+
+          <div className="flex grow flex-col overflow-hidden">
+            <div className="hide-scrollbar grow space-y-5 overflow-y-auto px-4 py-4 sm:px-6">
+              {/* Select Quotation + SO No */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Combobox
+                    data={availableQuotationOptions}
+                    displayField="label"
+                    value={selectedQuotation[0] ?? null}
+                    onChange={(val: any) =>
+                      setSelectedQuotation(
+                        val ? (Array.isArray(val) ? val : [val]) : [],
+                      )
+                    }
+                    placeholder="Select Quotation"
+                    label="Select Quotation"
+                    searchFields={["qNo", "customerName"]}
+                    disabled={readOnly || isEditing}
+                  />
+                  {errors.quotation && (
+                    <p className="text-error mt-1 text-xs">
+                      {errors.quotation}
+                    </p>
+                  )}
+                </div>
+                <Input
+                  label="Sales Order No"
+                  value={soNo || "Generating..."}
+                  disabled
+                  onChange={() => {}}
+                />
+              </div>
+
+              {/* TOP BLOCK — read-only snapshot of the selected quotation. */}
+              <div className="dark:border-dark-500 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="grid grid-cols-1 sm:grid-cols-2">
+                  <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 dark:border-gray-700">
+                    <span className="min-w-28 text-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                      Lead ID
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {leadCode || "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 sm:border-l dark:border-gray-700">
+                    <span className="min-w-28 text-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                      City
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {city || "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 dark:border-gray-700">
+                    <span className="min-w-28 text-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                      Client Name
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {customerName || "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 sm:border-l dark:border-gray-700">
+                    <span className="min-w-28 text-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                      Address
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {address || "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 dark:border-gray-700">
+                    <span className="min-w-28 text-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                      Client Number
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {mobile || "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 sm:border-l dark:border-gray-700">
+                    <span className="min-w-28 text-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                      Model
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {modelLabel}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 px-4 py-2.5">
+                    <span className="min-w-28 text-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                      Email ID
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {email || "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 px-4 py-2.5 sm:border-l dark:border-gray-700">
+                    <span className="min-w-28 text-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+                      Remark
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {remark || "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Select Party (+ button) + Expected Date (same row). */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Combobox
+                      data={partyOptions}
+                      displayField="label"
+                      value={selectedParty[0] ?? null}
+                      onChange={(val: any) =>
+                        setSelectedParty(
+                          val ? (Array.isArray(val) ? val : [val]) : [],
+                        )
+                      }
+                      placeholder="Select Party"
+                      label="Select Party"
+                      searchFields={["label", "accountName"]}
+                      disabled={readOnly}
+                    />
+                  </div>
+
+                  {/* ➕ Create Account — readOnly me hide */}
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => setAccountDrawerOpen(true)}
+                      className="bg-primary-600 hover:bg-primary-700 flex h-[38px] w-[38px] flex-shrink-0 cursor-pointer items-center justify-center rounded-lg text-white shadow-sm transition-colors"
+                      title="Create new account"
+                    >
+                      <PlusIcon className="size-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div>
+                  <DatePicker
+                    label="Expected Date"
+                    value={expectedDate}
+                    disabled={readOnly}
+                    onChange={(dates: Date[]) => {
+                      const picked = dates?.[0];
+                      setExpectedDate(picked ? formatDateForApi(picked) : "");
+                      if (errors.expectedDate) {
+                        setErrors((prev) => ({ ...prev, expectedDate: "" }));
+                      }
+                    }}
+                    placeholder="Choose date..."
+                    error={errors.expectedDate}
+                  />
+                </div>
+              </div>
+
+              <div className="dark:border-dark-500 border-t border-dashed border-gray-300 pt-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <Input
+                    label="Model"
+                    value={modelLabel === "-" ? "" : modelLabel}
+                    disabled
+                    onChange={() => {}}
+                  />
+
+                  <Input
+                    type="number"
+                    label="Qty"
+                    value={qty}
+                    min={1}
+                    disabled={readOnly || isEditing}
+                    onChange={(e) => {
+                      setQty(e.target.value);
+                    }}
+                  />
+
+                  <Input
+                    label="Total Amount"
+                    value={`₹ ${totalAmount.toLocaleString("en-IN")}`}
+                    disabled
+                    onChange={() => {}}
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Note: Amount is inclusive of GST 18%
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="dark:border-dark-500 flex justify-end gap-3 border-t border-gray-200 px-4 py-4 sm:px-6">
+              {readOnly ? (
+                <Button type="button" onClick={close}>
+                  Close
+                </Button>
+              ) : (
+                <>
+                  <Button type="button" onClick={close}>
+                    Cancel
+                  </Button>
+                  <Button type="button" color="primary" onClick={handleSubmit}>
+                    {isEditing ? "Update" : "Submit"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </TransitionChild>
+
+        {/* Create Account drawer — Sundry Debtors / Customer groups only */}
+        <CreateAccountDrawer
+          open={accountDrawerOpen}
+          onClose={() => setAccountDrawerOpen(false)}
+          onCreated={handleAccountCreated}
+        />
+      </Dialog>
+    </Transition>
+  );
+}
