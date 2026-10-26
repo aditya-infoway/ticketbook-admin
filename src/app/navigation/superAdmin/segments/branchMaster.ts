@@ -13,17 +13,25 @@ export const branchMaster: NavigationTree = {
     },
     {
       id: "branchMaster.region",
-      type: "item",
-      path: "/branch-master/regions",
-      title: "Regions",
+      type: "collapse",                   
+      path: "/branch-master/region",
+      title: "Region",
+      transKey: "Region",
       icon: "branchMaster.region",
-    },
-    {
-      id: "branchMaster.hierarchy",
-      type: "item",
-      path: "/branch-master/hierarchy",
-      title: "Hierarchy",
-      icon: "branchMaster.hierarchy",
+      childs: [
+        {
+          id: "branchMaster.region.list",
+          type: "item",
+          path: "/branch-master/area-master",
+          title: "Area Master ",
+        },
+        {
+          id: "branchMaster.region.create",
+          type: "item",
+          path: "/branch-master/region-type",
+          title: " Area Type Master",
+        },
+      ],
     },
   ],
 };
