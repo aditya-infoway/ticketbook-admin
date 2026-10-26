@@ -208,6 +208,7 @@ export function RegionTypeDataDrawer({
                 <Input
                   value={
                     editRegionType?.regionTypeNo || nextNo || "Generating..."
+                    
                   }
                   readOnly
                   disabled
