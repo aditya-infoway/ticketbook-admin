@@ -22,7 +22,10 @@ import {
   toasterrormsg,
 } from "@/ApiHelper";
 // NOTE: adjust to where your shared master files live
-import { exportToExcel, exportToPdf } from "@/app/pages/dashboards/home/crm-analytics/shared/export";
+import {
+  exportToExcel,
+  exportToPdf,
+} from "@/app/pages/dashboards/home/crm-analytics/shared/export";
 import { MasterTable } from "@/app/pages/dashboards/home/crm-analytics/shared/MasterTable";
 import { MasterToolbar } from "@/app/pages/dashboards/home/crm-analytics/shared/MasterToolbar";
 import { DepartmentDrawer } from "./DepartmentDrawer";
@@ -46,7 +49,9 @@ export default function DepartmentPage() {
   const [data, setData] = useState<Department[]>([]);
   const [types, setTypes] = useState<Option[]>([]);
   const [loading, setLoading] = useState(true);
-const [drawerMode, setDrawerMode] = useState<"create" | "edit" | "view">("create");
+  const [drawerMode, setDrawerMode] = useState<"create" | "edit" | "view">(
+    "create",
+  );
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -56,45 +61,45 @@ const [drawerMode, setDrawerMode] = useState<"create" | "edit" | "view">("create
   const [filterName, setFilterName] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-const API = {
-  list: "superadmin/department/list",
-  create: "superadmin/department/create",
-  update: "superadmin/department/update",
-  delete: "superadmin/department/delete",
-};
+  const API = {
+    list: "superadmin/department/list",
+    create: "superadmin/department/create",
+    update: "superadmin/department/update",
+    delete: "superadmin/department/delete",
+  };
   // ---- Fetch departments + department types ----
   // TODO: confirm endpoint names / response fields with your backend.
- const fetchAll = async () => {
-  setLoading(true);
-  try {
-    const [deptRes, typeRes] = await Promise.all([
-      Get(API.list, {}, false).catch(() => null),
-  Get("superadmin/department-type/list", {}, false).catch(() => null),
-    ]);
+  const fetchAll = async () => {
+    setLoading(true);
+    try {
+      const [deptRes, typeRes] = await Promise.all([
+        Get(API.list, {}, false).catch(() => null),
+        Get("superadmin/department-type/list", {}, false).catch(() => null),
+      ]);
 
-    if (typeRes?.data?.success) {
-      setTypes(
-        (typeRes.data.data || []).map((t: any) => ({
-          id: String(t.departmentTypeId ?? t.id),
-          label: t.typeCode
-            ? `${t.typeName} (${t.typeCode})`
-            : (t.typeName ?? ""),
-          status: t.status,
-        })),
-      );
-    }
+      if (typeRes?.data?.success) {
+        setTypes(
+          (typeRes.data.data || []).map((t: any) => ({
+            id: String(t.departmentTypeId ?? t.id),
+            label: t.typeCode
+              ? `${t.typeName} (${t.typeCode})`
+              : (t.typeName ?? ""),
+            status: t.status,
+          })),
+        );
+      }
 
-    if (deptRes?.data?.success) {
-      setData((deptRes.data.data || []).map(mapApiDepartmentToDepartment));
-    } else {
-      toasterrormsg(deptRes?.data?.message || "Failed to fetch departments.");
+      if (deptRes?.data?.success) {
+        setData((deptRes.data.data || []).map(mapApiDepartmentToDepartment));
+      } else {
+        toasterrormsg(deptRes?.data?.message || "Failed to fetch departments.");
+      }
+    } catch (error) {
+      toasterrormsg("Something went wrong while fetching department data.");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    toasterrormsg("Something went wrong while fetching department data.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     fetchAll();
@@ -126,93 +131,101 @@ const API = {
   }));
 
   // ---- Save (create or update) via API ----
-const handleSave = async (item: Department) => {
-  const financialYearId = localStorage.getItem("financialYearId");
-  const companyId = localStorage.getItem("companyId"); // key ka naam apne localStorage me check kar lena
+  const handleSave = async (item: Department) => {
+    const financialYearId = localStorage.getItem("financialYearId");
+    const companyId = localStorage.getItem("companyId"); // key ka naam apne localStorage me check kar lena
 
-  if (!financialYearId) {
-    toasterrormsg("Financial Year not found. Please select a company year.");
-    return;
-  }
+    if (!financialYearId) {
+      toasterrormsg("Financial Year not found. Please select a company year.");
+      return;
+    }
 
-  const payload: any = {
-    financialYearId: Number(financialYearId),
-    ...(companyId ? { companyId: Number(companyId) } : {}),
-    departmentCode: item.code,
-    departmentName: item.name,
-    description: item.description,
-    departmentTypeId: item.typeId ? Number(item.typeId) : null,
-    parentDepartmentId: item.parentId ? Number(item.parentId) : null,
-    scope: item.scope,
-    status: item.status,
-    displayOrder: item.displayOrder ? Number(item.displayOrder) : null,
+    const payload: any = {
+      financialYearId: Number(financialYearId),
+      ...(companyId ? { companyId: Number(companyId) } : {}),
+      departmentCode: item.code,
+      departmentName: item.name,
+      description: item.description,
+      departmentTypeId: item.typeId ? Number(item.typeId) : null,
+      parentDepartmentId: item.parentId ? Number(item.parentId) : null,
+      scope: item.scope,
+      status: item.status,
+      displayOrder: item.displayOrder ? Number(item.displayOrder) : null,
+        createdBy: companyId ? Number(companyId) : undefined,
+  createdType: "Super Admin",
+    };
+
+    try {
+      if (item.id) {
+        const response = await Put(
+          API.update,
+          { departmentId: item.id, ...payload },
+          false,
+        );
+        if (response.data?.success) {
+          toastsuccessmsg(
+            response.data?.message || "Department updated successfully.",
+          );
+          fetchAll();
+        } else {
+          toasterrormsg(
+            response.data?.message || "Failed to update department.",
+          );
+        }
+      } else {
+        const response = await Post(API.create, payload, false);
+        if (response.data?.success) {
+          toastsuccessmsg(
+            response.data?.message || "Department created successfully.",
+          );
+          fetchAll();
+        } else {
+          toasterrormsg(
+            response.data?.message || "Failed to create department.",
+          );
+        }
+      }
+    } catch (error) {
+      toasterrormsg("Something went wrong while saving the department.");
+    }
   };
-
-  try {
-    if (item.id) {
+  const handleToggleStatus = async (row: Department) => {
+    const nextStatus = row.status === "Active" ? "Inactive" : "Active";
+    try {
       const response = await Put(
-        API.update,
-        { departmentId: item.id, ...payload },
+        "master/department/update",
+        {
+          departmentId: row.id,
+          departmentCode: row.code,
+          departmentName: row.name,
+          description: row.description,
+          departmentTypeId: row.typeId ? Number(row.typeId) : null,
+          parentDepartmentId: row.parentId ? Number(row.parentId) : null,
+          scope: row.scope,
+          status: nextStatus,
+          displayOrder: row.displayOrder ? Number(row.displayOrder) : null,
+           createdBy: Number(localStorage.getItem("companyId")) || undefined,
+  createdType: "Super Admin",
+        },
         false,
       );
       if (response.data?.success) {
         toastsuccessmsg(
-          response.data?.message || "Department updated successfully.",
+          response.data?.message ||
+            `Department ${nextStatus === "Active" ? "activated" : "deactivated"} successfully.`,
         );
-        fetchAll();
-      } else {
-        toasterrormsg(response.data?.message || "Failed to update department.");
-      }
-    } else {
-      const response = await Post(API.create, payload, false);
-      if (response.data?.success) {
-        toastsuccessmsg(
-          response.data?.message || "Department created successfully.",
+        setData((prev) =>
+          prev.map((item) =>
+            item.id === row.id ? { ...item, status: nextStatus } : item,
+          ),
         );
-        fetchAll();
       } else {
-        toasterrormsg(response.data?.message || "Failed to create department.");
+        toasterrormsg(response.data?.message || "Failed to update status.");
       }
+    } catch (error) {
+      toasterrormsg("Something went wrong while updating the status.");
     }
-  } catch (error) {
-    toasterrormsg("Something went wrong while saving the department.");
-  }
-};
-const handleToggleStatus = async (row: Department) => {
-  const nextStatus = row.status === "Active" ? "Inactive" : "Active";
-  try {
-    const response = await Put(
-      "master/department/update",
-      {
-        departmentId: row.id,
-        departmentCode: row.code,
-        departmentName: row.name,
-        description: row.description,
-        departmentTypeId: row.typeId ? Number(row.typeId) : null,
-        parentDepartmentId: row.parentId ? Number(row.parentId) : null,
-        scope: row.scope,
-        status: nextStatus,
-        displayOrder: row.displayOrder ? Number(row.displayOrder) : null,
-      },
-      false,
-    );
-    if (response.data?.success) {
-      toastsuccessmsg(
-        response.data?.message ||
-          `Department ${nextStatus === "Active" ? "activated" : "deactivated"} successfully.`,
-      );
-      setData((prev) =>
-        prev.map((item) =>
-          item.id === row.id ? { ...item, status: nextStatus } : item,
-        ),
-      );
-    } else {
-      toasterrormsg(response.data?.message || "Failed to update status.");
-    }
-  } catch (error) {
-    toasterrormsg("Something went wrong while updating the status.");
-  }
-};
+  };
   const handleDeleteOne = async (row: Department) => {
     try {
       const response = await Delete(
@@ -259,21 +272,21 @@ const handleToggleStatus = async (row: Department) => {
     state: { globalFilter, sorting, rowSelection },
     enableRowSelection: true,
     getRowId: (row) => row.id,
-  meta: {
-  openViewDrawer: (row: Department) => {
-    setDrawerMode("view");
-    setEditing(row);
-    setDrawerOpen(true);
-  },
-  openEditDrawer: (row: Department) => {
-    setDrawerMode("edit");
-    setEditing(row);
-    setDrawerOpen(true);
-  },
-  deleteRow: (row: any) => handleDeleteOne(row.original),
-  deleteRows: (rows: any) => handleDeleteMany(rows),
-  toggleStatus: (row: Department) => handleToggleStatus(row),
-} as any,
+    meta: {
+      openViewDrawer: (row: Department) => {
+        setDrawerMode("view");
+        setEditing(row);
+        setDrawerOpen(true);
+      },
+      openEditDrawer: (row: Department) => {
+        setDrawerMode("edit");
+        setEditing(row);
+        setDrawerOpen(true);
+      },
+      deleteRow: (row: any) => handleDeleteOne(row.original),
+      deleteRows: (rows: any) => handleDeleteMany(rows),
+      toggleStatus: (row: Department) => handleToggleStatus(row),
+    } as any,
     filterFns: { fuzzy: fuzzyFilter },
     globalFilterFn: fuzzyFilter,
     onGlobalFilterChange: setGlobalFilter,
@@ -295,11 +308,11 @@ const handleToggleStatus = async (row: Department) => {
           table={table}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters((v) => !v)}
-        onCreate={() => {
-  setDrawerMode("create");
-  setEditing(emptyDepartment());
-  setDrawerOpen(true);
-}}
+          onCreate={() => {
+            setDrawerMode("create");
+            setEditing(emptyDepartment());
+            setDrawerOpen(true);
+          }}
           onExportExcel={() =>
             exportToExcel(exportRows, exportColumns, "departments")
           }
@@ -353,15 +366,15 @@ const handleToggleStatus = async (row: Department) => {
           }
         />
       </div>
-<DepartmentDrawer
-  isOpen={drawerOpen}
-  close={() => setDrawerOpen(false)}
-  mode={drawerMode}
-  department={editing}
-  departments={data}
-  types={types}
-  onSave={handleSave}
-/>
+      <DepartmentDrawer
+        isOpen={drawerOpen}
+        close={() => setDrawerOpen(false)}
+        mode={drawerMode}
+        department={editing}
+        departments={data}
+        types={types}
+        onSave={handleSave}
+      />
     </Page>
   );
 }

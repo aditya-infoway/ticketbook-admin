@@ -3,6 +3,8 @@ import { Navigate, RouteObject } from "react-router";
 import AuthGuard from "@/middleware/AuthGuard";
 import { DynamicLayout } from "../layouts/DynamicLayout";
 import DashboardByRole from "./DashboardByRole";
+import RoleGuard from "./RoleGuard";
+import SettingsIndexRedirect from "./SettingsIndexRedirect";
 import { roleRoutes } from "./roleRoutes";
 
 /**
@@ -46,7 +48,10 @@ const protectedRoutes: RouteObject = {
         ...roleRoutes,
 
         // ============================================================
-        // SETTINGS
+        // SETTINGS (role based)
+        //   general, appearance   -> every role
+        //   everything else       -> superAdmin only
+        // Keep navigation/roleSettings.ts in sync with this.
         // ============================================================
         {
           path: "settings",
@@ -56,9 +61,10 @@ const protectedRoutes: RouteObject = {
           children: [
             {
               index: true,
-              element: <Navigate to="/settings/general" replace />,
+              element: <SettingsIndexRedirect />,
             },
 
+            // ---- every role ----
             {
               path: "general",
               lazy: async () => ({
@@ -67,7 +73,6 @@ const protectedRoutes: RouteObject = {
                 ).default,
               }),
             },
-
             {
               path: "appearance",
               lazy: async () => ({
@@ -77,54 +82,63 @@ const protectedRoutes: RouteObject = {
               }),
             },
 
+            // ---- superAdmin only ----
             {
-              path: "prefix",
-              lazy: async () => ({
-                Component: (
-                  await import("@/app/pages/settings/sections/Prefix")
-                ).default,
-              }),
-            },
-            {
-              path: "location",
-              lazy: async () => ({
-                Component: (
-                  await import("@/app/pages/settings/sections/location")
-                ).default,
-              }),
-            },
-            {
-              path: "itemcategory",
-              lazy: async () => ({
-                Component: (
-                  await import("@/app/pages/settings/sections/itemcategory")
-                ).default,
-              }),
-            },
-            {
-              path: "production",
+              element: <RoleGuard allow="superAdmin" />,
               children: [
                 {
-                  index: true,
-                  element: (
-                    <Navigate to="/settings/production/main-process" replace />
-                  ),
-                },
-                {
-                  path: "main-process",
+                  path: "prefix",
                   lazy: async () => ({
                     Component: (
-                      await import("@/app/pages/settings/sections/prodcutionsettings")
+                      await import("@/app/pages/settings/sections/Prefix")
                     ).default,
                   }),
                 },
                 {
-                  path: "sub-process",
+                  path: "location",
                   lazy: async () => ({
                     Component: (
-                      await import("@/app/pages/settings/sections/prodcutionsettings/sub-process")
+                      await import("@/app/pages/settings/sections/location")
                     ).default,
                   }),
+                },
+                {
+                  path: "itemcategory",
+                  lazy: async () => ({
+                    Component: (
+                      await import("@/app/pages/settings/sections/itemcategory")
+                    ).default,
+                  }),
+                },
+                {
+                  path: "production",
+                  children: [
+                    {
+                      index: true,
+                      element: (
+                        <Navigate
+                          to="/settings/production/main-process"
+                          replace
+                        />
+                      ),
+                    },
+                    {
+                      path: "main-process",
+                      lazy: async () => ({
+                        Component: (
+                          await import("@/app/pages/settings/sections/prodcutionsettings")
+                        ).default,
+                      }),
+                    },
+                    {
+                      path: "sub-process",
+                      lazy: async () => ({
+                        Component: (
+                          await import("@/app/pages/settings/sections/prodcutionsettings/sub-process")
+                        ).default,
+                      }),
+                    },
+                  ],
                 },
               ],
             },

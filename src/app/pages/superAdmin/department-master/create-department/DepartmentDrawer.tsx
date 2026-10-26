@@ -313,7 +313,7 @@ export function DepartmentDrawer({
                 )}
               />
               {/* 10-12 system fields: read only, only when editing */}
-              {isEditing && (
+              {/* {isEditing && (
                 <div className="dark:bg-dark-600 space-y-1 rounded-lg bg-gray-50 p-3 text-xs">
                   <p>
                     <span className="font-medium">Created:</span>{" "}
@@ -326,7 +326,7 @@ export function DepartmentDrawer({
                     {formatDateTime(department?.updatedAt || "")}
                   </p>
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className="dark:border-dark-500 flex justify-end gap-3 border-t border-gray-200 px-4 py-4 sm:px-5">
