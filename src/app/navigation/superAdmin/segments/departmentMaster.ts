@@ -5,11 +5,18 @@ export const departmentMaster: NavigationTree = {
   ...baseNavigationObj.departmentMaster,
   childs: [
     {
-      id: "departmentMaster.list",
+      id: "departmentMaster.createDepartment",
       type: "item",
-      path: "/department-master/list",
-      title: "Department Master",
-      icon: "departmentMaster.list",
+      path: "/department-master/create-department",
+      title: "Create Department",
+      icon: "departmentMaster.createDepartment",
+    },
+    {
+      id: "departmentMaster.createType",
+      type: "item",
+      path: "/department-master/create-type",
+      title: "Create Type",
+      icon: "departmentMaster.createType",
     },
   ],
 };

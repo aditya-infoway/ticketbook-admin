@@ -22,26 +22,8 @@ interface PrefixFormValues {
 // 👇 Naye prefix types yahan add karte jao, backend me kuch change nahi karna
 // StyledListbox ko "id" field chahiye value match karne ke liye, "label" displayField ke liye
 const prefixForOptions = [
-  { id: "PURCHASE", label: "PURCHASE" },
-  { id: "PURCHASE ORDER", label: "PURCHASE ORDER" },
-  { id: "CASH RECEIPT", label: "CASH RECEIPT" },
-  { id: "BANK RECEIPT", label: "BANK RECEIPT" },
-  { id: "CASH PAYMENT", label: "CASH PAYMENT" },
-  { id: "BANK PAYMENT", label: "BANK PAYMENT" },
-  { id: "CONTRA", label: "CONTRA" },
-  { id: "LEAD", label: "LEAD" },
-  { id: "QUOTATION", label: "QUOTATION" },
-  { id: "SALES ORDER", label: "SALES ORDER" },
-  { id: "WORK ORDER", label: "WORK ORDER" },
-  { id: "INDENT", label: "INDENT" },
-  { id: "GRR", label: "GRR" },
-  { id: "QC", label: "QC" },
-  { id: "Debit Note", label: "Debit Note" },
-   { id: "SALES INVOICE", label: "SALES INVOICE" },
-     { id: "ITEM ORDER", label: "ITEM ORDER" },
-  { id: "ITEM RETURN", label: "ITEM RETURN" },
-  { id: "STORE ISSUE", label: "STORE ISSUE" },
-    { id: "STORE RETURN", label: "STORE RETURN" },
+  { id: "DEPARTMENT", label: "DEPARTMENT" },
+
 ];
 
 const schema = yup.object({

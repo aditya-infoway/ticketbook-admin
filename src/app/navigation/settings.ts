@@ -16,13 +16,13 @@ export const settings: NavigationTree = {
       // transKey: "nav.settings.general",
       icon: "settings.general",
     },
-    // {
-    //   id: "prefix",
-    //   type: "item",
-    //   path: "/settings/prefix",
-    //   title: "Prefix",
-    //   icon: "settings.prefix",
-    // },
+    {
+      id: "prefix",
+      type: "item",
+      path: "/settings/prefix",
+      title: "Prefix",
+      icon: "settings.prefix",
+    },
     {
       id: "appearance",
       type: "item",
