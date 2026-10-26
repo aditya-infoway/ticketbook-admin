@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState,useEffect } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Button, Input } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
+import { Get,Post,Put } from "@/ApiHelper";
 import type { Region } from "./shared/types";
 
 interface RegionDrawerProps {
@@ -27,12 +28,7 @@ interface Opt {
 }
 
 // Mock Region Type Options (Replace with API fetch later)
-const MOCK_REGION_TYPES = [
-  { id: "rt1", label: "North Region" },
-  { id: "rt2", label: "South Region" },
-  { id: "rt3", label: "East Region" },
-  { id: "rt4", label: "West Region" },
-];
+
 
 const STATUS_OPTIONS = [
   { id: "Active", label: "Active" },
@@ -118,10 +114,11 @@ export function RegionDataDrawer({
   onSaved,
   editRegion,
 }: RegionDrawerProps) {
-  const [form, setForm] = useState(() => getInitialForm(editRegion));
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-
+const [form, setForm] = useState(() => getInitialForm(editRegion));
+const [errors, setErrors] = useState<Record<string, string>>({});
+const [submitting, setSubmitting] = useState(false);
+const [nextNo, setNextNo] = useState("");
+const [regionTypes, setRegionTypes] = useState<Opt[]>([]);
   const sf = (k: keyof typeof form, v: any) => {
     setForm((f) => ({ ...f, [k]: v }));
     if (errors[k as string]) setErrors((prev) => ({ ...prev, [k]: "" }));
@@ -136,6 +133,59 @@ export function RegionDataDrawer({
     [],
   );
 
+
+useEffect(() => {
+  if (!isOpen || editRegion) return; // sirf create mode me
+  const financialYearId = localStorage.getItem("financialYearId");
+  if (!financialYearId) return;
+
+  (async () => {
+    try {
+      const res = await Get(
+        "superadmin/region/next-number",
+        { financialYearId },
+        false,
+      );
+      if (res?.data?.success) {
+        setNextNo(res.data.data.regionNo); // 👈 backend jo field de
+      }
+    } catch (error) {
+      console.error("Region number error:", error);
+    }
+  })();
+}, [isOpen, editRegion]);
+useEffect(() => {
+  if (!isOpen) return;
+
+  (async () => {
+    try {
+      const res = await Get(
+        "superadmin/region-type/list",
+        {},
+        false,
+      );
+
+  
+
+      if (res?.data?.success) {
+        const list = res.data.data || [];
+
+        setRegionTypes(
+          list.map((item: any) => ({
+            id: String(item.regionTypeId),
+            label: item.typeName,
+          })),
+        );
+      } else {
+        setRegionTypes([]);
+      }
+    } catch (error) {
+      console.error("Region type list error:", error);
+      setRegionTypes([]);
+      toast.error("Failed to load region types");
+    }
+  })();
+}, [isOpen]);
   const stateOptions = useMemo(
     () =>
       form.country
@@ -172,33 +222,86 @@ export function RegionDataDrawer({
     return Object.keys(next).length === 0;
   };
 
-  const onSubmit = async () => {
-    if (!validate()) return;
+const onSubmit = async () => {
+  if (!validate()) return;
 
-    try {
-      setSubmitting(true);
-      // TODO: Replace with actual API call
-      console.log("Saving Region:", {
-        ...form,
-        country: form.country?.label,
-        state: form.state?.label,
-        city: form.city?.label,
-      });
+  const financialYearId = localStorage.getItem("financialYearId");
+  const companyId = localStorage.getItem("companyId");
 
+  if (!financialYearId) {
+    toast.error("Financial Year not found. Please select a company year.");
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+
+    // ✅ Create ke waqt Region ID = nextNo (API se aaya)
+    // ✅ Edit ke waqt Region ID = form.id (existing record)
+    const regionId = editRegion ? form.id : nextNo;
+
+    const payload: any = {
+      financialYearId: Number(financialYearId),
+
+      ...(companyId ? { companyId: Number(companyId) } : {}),
+
+      regionCode: form.regionCode,
+      regionName: form.regionName,
+      description: form.description,
+
+      regionTypeId: form.regionTypeId ? Number(form.regionTypeId) : null,
+
+      country: form.country?.label || "",
+      state: form.state?.label || "",
+      city: form.city?.label || "",
+
+      displayOrder: form.displayOrder ? Number(form.displayOrder) : null,
+
+      status: form.status,
+
+      createdBy: companyId ? Number(companyId) : undefined,
+      createdType: "Super Admin",
+    };
+
+    console.log("Region Payload:", payload, "regionId:", regionId);
+
+    let response;
+
+    if (editRegion) {
+      // ✅ Update — regionId body me
+      response = await Put(
+        "superadmin/region/update",
+        { regionId, ...payload },
+        false,
+      );
+    } else {
+      // ✅ Create — regionId body me
+      response = await Post(
+        "superadmin/region/create",
+        { regionId, ...payload },
+        false,
+      );
+    }
+
+    if (response.data?.success) {
       toast.success(
-        editRegion
-          ? "Region updated successfully"
-          : "Region added successfully"
+        response.data?.message ||
+          (editRegion
+            ? "Region updated successfully"
+            : "Region added successfully"),
       );
       onSaved();
       handleClose();
-    } catch {
-      toast.error("Something went wrong while saving.");
-    } finally {
-      setSubmitting(false);
+    } else {
+      toast.error(response.data?.message || "Failed to save region.");
     }
-  };
-
+  } catch (error) {
+    console.error("Region save error:", error);
+    toast.error("Something went wrong while saving.");
+  } finally {
+    setSubmitting(false);
+  }
+};
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-[110]" onClose={handleClose}>
@@ -245,11 +348,11 @@ export function RegionDataDrawer({
               <div>
                 <FieldLabel>Region ID (Auto)</FieldLabel>
                 <Input
-                  value={form.id}
-                  readOnly
-                  disabled
-                  className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
-                />
+    value={editRegion ? form.id : nextNo || "Generating..."}
+    readOnly
+    disabled
+    className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
+  />
               </div>
 
               {/* Region Code */}
@@ -281,17 +384,27 @@ export function RegionDataDrawer({
               {/* Region Type */}
               <div>
                 <FieldLabel required>Region / Area Type</FieldLabel>
-                <Combobox
-                  data={MOCK_REGION_TYPES}
-                  displayField="label"
-                  value={MOCK_REGION_TYPES.find((t) => t.id === form.regionTypeId) || null}
-                  onChange={(v: any) => {
-                    sf("regionTypeId", v?.id || "");
-                    if (errors.regionTypeId) setErrors((p) => ({ ...p, regionTypeId: "" }));
-                  }}
-                  placeholder="Select region type"
-                  searchFields={["label"]}
-                />
+             <Combobox
+  data={regionTypes}
+  displayField="label"
+  value={
+    regionTypes.find(
+      (t) => t.id === form.regionTypeId,
+    ) || null
+  }
+  onChange={(v: any) => {
+    sf("regionTypeId", v?.id || "");
+
+    if (errors.regionTypeId) {
+      setErrors((p) => ({
+        ...p,
+        regionTypeId: "",
+      }));
+    }
+  }}
+  placeholder="Select region type"
+  searchFields={["label"]}
+/>
                 {errors.regionTypeId && (
                   <p className="mt-1 text-xs text-red-500">{errors.regionTypeId}</p>
                 )}

@@ -151,8 +151,8 @@ export default function DepartmentPage() {
       scope: item.scope,
       status: item.status,
       displayOrder: item.displayOrder ? Number(item.displayOrder) : null,
-        createdBy: companyId ? Number(companyId) : undefined,
-  createdType: "Super Admin",
+      createdBy: companyId ? Number(companyId) : undefined,
+      createdType: "Super Admin",
     };
 
     try {
@@ -204,8 +204,8 @@ export default function DepartmentPage() {
           scope: row.scope,
           status: nextStatus,
           displayOrder: row.displayOrder ? Number(row.displayOrder) : null,
-           createdBy: Number(localStorage.getItem("companyId")) || undefined,
-  createdType: "Super Admin",
+          createdBy: Number(localStorage.getItem("companyId")) || undefined,
+          createdType: "Super Admin",
         },
         false,
       );
