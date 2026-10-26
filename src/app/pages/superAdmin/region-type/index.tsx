@@ -46,11 +46,12 @@ export default function RegionTypePage() {
     setLoading(true);
     try {
       // TODO: API fetch
-      const res: any = await Get("/superadmin/region-type/list");
+      const res: any = await Get("superadmin/region-type/list", {}, false);
       const rows: any[] = res?.data?.data ?? [];
       setData(
         rows.map((r) => ({
           id: String(r.regionTypeId),
+          regionTypeNo: r.regionTypeNo ?? "",
           typeCode: r.typeCode,
           typeName: r.typeName,
           description: r.description ?? "",
@@ -97,14 +98,12 @@ export default function RegionTypePage() {
       openEditDrawer: (regionType: RegionType) => openDrawer(regionType),
       deleteRow: async (row: any) => {
         const regionType = row.original;
-        if (
-          window.confirm(
-            `Are you sure you want to delete ${regionType.typeName}?`,
-          )
-        ) {
+        {
           try {
             await Delete(
-              `/superadmin/region-type/delete?regionTypeId=${regionType.id}`,
+              "superadmin/region-type/delete",
+              { regionTypeId: regionType.id },
+              false,
             );
             toast.success("Region type deleted successfully");
             fetchAll();
@@ -118,14 +117,18 @@ export default function RegionTypePage() {
           regionType.status === "Active" ? "Inactive" : "Active";
         try {
           // update validator needs the full payload, not just status
-          await Put("/superadmin/region-type/update", {
-            regionTypeId: regionType.id,
-            typeCode: regionType.typeCode,
-            typeName: regionType.typeName,
-            description: regionType.description,
-            displayOrder: regionType.displayOrder,
-            status: newStatus,
-          });
+          await Put(
+            "superadmin/region-type/update",
+            {
+              regionTypeId: regionType.id,
+              typeCode: regionType.typeCode,
+              typeName: regionType.typeName,
+              description: regionType.description,
+              displayOrder: regionType.displayOrder,
+              status: newStatus,
+            },
+            false,
+          );
           toast.success(`Region type marked as ${newStatus}`);
           fetchAll();
         } catch (err: any) {

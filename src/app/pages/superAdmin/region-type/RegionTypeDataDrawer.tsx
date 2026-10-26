@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -7,7 +7,7 @@ import {
 } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { toast } from "sonner";
-import { Post, Put } from "../../../../ApiHelper";
+import { Get, Post, Put } from "../../../../ApiHelper";
 import { Button, Input } from "@/components/ui";
 import { Listbox } from "@/components/shared/form/StyledListbox";
 import type { RegionType } from "./shared/types";
@@ -44,6 +44,7 @@ function getInitialForm(editRegionType: RegionType | null) {
   if (editRegionType) {
     return {
       id: editRegionType.id,
+      regionTypeNo: editRegionType.regionTypeNo ?? "",
       typeCode: editRegionType.typeCode,
       typeName: editRegionType.typeName,
       description: editRegionType.description,
@@ -54,8 +55,9 @@ function getInitialForm(editRegionType: RegionType | null) {
 
   // New region type -> generate IDs only once
   return {
-    id: `RT-ID-${Math.floor(100 + Math.random() * 900)}`,
-    typeCode: `RT-${Math.floor(100 + Math.random() * 900)}`,
+    id: "",
+    regionTypeNo: "",
+    typeCode: "",
     typeName: "",
     description: "",
     displayOrder: 1,
@@ -72,6 +74,27 @@ export function RegionTypeDataDrawer({
   const [form, setForm] = useState(() => getInitialForm(editRegionType));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const [nextNo, setNextNo] = useState("");
+
+  useEffect(() => {
+    if (!isOpen || editRegionType) return;
+    const financialYearId = localStorage.getItem("financialYearId");
+    if (!financialYearId) return;
+
+    (async () => {
+      try {
+        const res: any = await Get(
+          "superadmin/region-type/next-number",
+          { financialYearId },
+          false,
+        );
+        if (res?.data?.success) setNextNo(res.data.data.regionTypeNo);
+      } catch (error) {
+        console.error("Region type number error:", error);
+      }
+    })();
+  }, [isOpen, editRegionType]);
 
   const sf = (k: keyof typeof form, v: any) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -106,12 +129,20 @@ export function RegionTypeDataDrawer({
       };
 
       if (editRegionType) {
-        await Put("/superadmin/region-type/update", {
-          ...payload,
-          regionTypeId: editRegionType.id,
-        });
+        await Put(
+          "superadmin/region-type/update",
+          { ...payload, regionTypeId: editRegionType.id },
+          false,
+        );
       } else {
-        await Post("/superadmin/region-type/create", payload);
+        await Post(
+          "superadmin/region-type/create",
+          {
+            ...payload,
+            financialYearId: localStorage.getItem("financialYearId"),
+          },
+          false,
+        );
       }
 
       toast.success(
@@ -173,9 +204,11 @@ export function RegionTypeDataDrawer({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Type ID */}
               <div>
-                <FieldLabel>Type ID (Auto)</FieldLabel>
+                <FieldLabel>Type ID</FieldLabel>
                 <Input
-                  value={form.id}
+                  value={
+                    editRegionType?.regionTypeNo || nextNo || "Generating..."
+                  }
                   readOnly
                   disabled
                   className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
