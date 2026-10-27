@@ -54,9 +54,21 @@ export const columns: ColumnDef<Employee>[] = [
     cell: TextCell,
   },
   {
+    id: "employeeNo",
+    accessorKey: "employeeNo",
+    header: "Employee ID",
+    cell: TextCell,
+  },
+  {
     id: "employeeTypeName",
     accessorKey: "employeeTypeName",
     header: "Type",
+    cell: TextCell,
+  },
+  {
+    id: "roleName",
+    accessorKey: "roleName",
+    header: "Role",
     cell: TextCell,
   },
   {
@@ -123,8 +135,10 @@ export const columns: ColumnDef<Employee>[] = [
 ];
 
 export const exportColumns: ExportColumn<Employee>[] = [
+  { key: "employeeNo", header: "Employee ID" },
   { key: "employeeCode", header: "Employee Code" },
   { key: "employeeName", header: "Employee Name" },
+   { key: "roleName", header: "Role" },
   { key: "designationName", header: "Designation" },
   { key: "employeeTypeName", header: "Employee Type" },
   { key: "officialEmail", header: "Email" },

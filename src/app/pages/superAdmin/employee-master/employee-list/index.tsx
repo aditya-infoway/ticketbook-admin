@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-
+import { Delete, Get, Put } from "@/ApiHelper";
 import { Page } from "@/components/shared/Page";
 import { Input } from "@/components/ui";
 import { exportToExcel, exportToPdf } from "../shared/export";
@@ -19,35 +19,40 @@ import { EmployeeDataDrawer } from "./EmployeeDataDrawer";
 import { columns, exportColumns } from "./columns";
 import type { Employee } from "../shared/types";
 
-const seedEmployees: Employee[] = [
-  {
-    id: "emp1",
-    employeeCode: "EMP-001",
-    employeeName: "John Doe",
-    profilePhoto: "",
-    officialEmail: "john@company.com",
-    mobileNumber: "9876543210",
-    mobileCountryCode: "91",
-    alternateContact: "",
-    alternateCountryCode: "91",
-    employeeTypeId: "et1",
-    employeeTypeName: "Full Time",
-    designationId: "d1",
-    designationName: "Software Engineer",
-    dateOfJoining: "2023-01-15",
-    employmentStatus: "Active",
-    employmentEndDate: "",
-    remarks: "",
-    additionalDepartments: [],
-    roleDataScope: "",
+function mapApiEmployee(item: any): Employee {
+  return {
+    id: String(item.employeeId),
+    employeeNo: item.employeeNo ?? "",
+    employeeCode: item.employeeCode ?? "",
+    employeeName: item.employeeName ?? "",
+    profilePhoto: item.profilePhoto ?? "",
+    officialEmail: item.officialEmail ?? "",
+    mobileCountryCode: item.mobileCountryCode ?? "",
+    mobileNumber: item.mobileNumber ?? "",
+    alternateCountryCode: item.alternateCountryCode ?? "",
+    alternateContact: item.alternateContact ?? "",
+    employeeTypeId: item.employeeTypeId ? String(item.employeeTypeId) : "",
+    employeeTypeName: item.employeeTypeName ?? "",
+    designationId: item.designationId ? String(item.designationId) : "",
+    designationName: item.designationName ?? "",
+    dateOfJoining: item.dateOfJoining ?? "",
+    employmentStatus: item.employmentStatus ?? "Active",
+    employmentEndDate: item.employmentEndDate ?? "",
+    remarks: item.remarks ?? "",
+    roleCategoryId: item.roleCategoryId ? String(item.roleCategoryId) : "",
+    roleCategoryName: item.roleCategoryName ?? "",
+    roleId: item.roleId ? String(item.roleId) : "",
+    roleName: item.roleName ?? "",
+    roleDataScope: item.roleDataScope ?? "",
+    additionalDepartments: (item.additionalDepartments ?? []).map(String),
     passwordResetRequired: false,
-    createdBy: "System",
-    createdAt: "2023-01-15",
-  },
-];
+    createdBy: item.createdBy ?? "",
+    createdAt: item.created ?? "",
+  } as Employee;
+}
 
 export default function EmployeePage() {
-  const [data, setData] = useState<Employee[]>(seedEmployees);
+  const [data, setData] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -58,10 +63,22 @@ export default function EmployeePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterStatus, setFilterStatus] = useState("");
 
+  // bump on every open so the drawer remounts and re-reads editEmployee
+  const [drawerKey, setDrawerKey] = useState(0);
+  const openDrawer = (row: Employee | null) => {
+    setEditEmployee(row);
+    setDrawerKey((k) => k + 1);
+    setDrawerOpen(true);
+  };
+
   const fetchAll = async () => {
     setLoading(true);
     try {
-      // TODO: API fetch
+      const res: any = await Get("superadmin/employee/list", {}, false);
+      const rows: any[] = res?.data?.data ?? [];
+      setData(rows.map(mapApiEmployee));
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to load employees");
     } finally {
       setLoading(false);
     }
@@ -92,30 +109,64 @@ export default function EmployeePage() {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     meta: {
-      openEditDrawer: (employee: Employee) => {
-        setEditEmployee(employee);
-        setDrawerOpen(true);
-      },
-      deleteRow: (row: any) => {
+      openEditDrawer: (employee: Employee) => openDrawer(employee),
+      deleteRow: async (row: any) => {
         const employee = row.original;
-        if (
-          window.confirm(
-            `Are you sure you want to delete ${employee.employeeName}?`,
-          )
-        ) {
-          setData((prev) => prev.filter((b) => b.id !== employee.id));
-          toast.success("Employee deleted successfully");
+        {
+          try {
+            await Delete(
+              "superadmin/employee/delete",
+              { employeeId: employee.id },
+              false,
+            );
+            toast.success("Employee deleted successfully");
+            fetchAll();
+          } catch (err: any) {
+            toast.error(err?.response?.data?.message || "Delete failed");
+          }
         }
       },
-      toggleStatus: (employee: Employee) => {
+      toggleStatus: async (employee: Employee) => {
         const newStatus =
           employee.employmentStatus === "Active" ? "Inactive" : "Active";
-        setData((prev) =>
-          prev.map((b) =>
-            b.id === employee.id ? { ...b, employmentStatus: newStatus } : b,
-          ),
-        );
-        toast.success(`Employee marked as ${newStatus}`);
+        try {
+          // update replaces departments + designation, so send them back unchanged
+          await Put(
+            "superadmin/employee/update",
+            {
+              employeeId: employee.id,
+              employeeCode: employee.employeeCode,
+              employeeName: employee.employeeName,
+              officialEmail: employee.officialEmail,
+              mobileCountryCode: employee.mobileCountryCode,
+              mobileNumber: employee.mobileNumber,
+              alternateCountryCode: employee.alternateCountryCode,
+              alternateContact: employee.alternateContact,
+              employeeTypeId: employee.employeeTypeId
+                ? Number(employee.employeeTypeId)
+                : null,
+              designationId: employee.designationId
+                ? Number(employee.designationId)
+                : null,
+              dateOfJoining: employee.dateOfJoining,
+              employmentStatus: newStatus,
+              employmentEndDate: employee.employmentEndDate,
+              remarks: employee.remarks,
+              roleCategoryId: employee.roleCategoryId
+                ? Number(employee.roleCategoryId)
+                : null,
+              roleId: employee.roleId ? Number(employee.roleId) : null,
+              additionalDepartments: (employee.additionalDepartments || []).map(
+                Number,
+              ),
+            },
+            false,
+          );
+          toast.success(`Employee marked as ${newStatus}`);
+          fetchAll();
+        } catch (err: any) {
+          toast.error(err?.response?.data?.message || "Status update failed");
+        }
       },
     },
   });
@@ -131,8 +182,7 @@ export default function EmployeePage() {
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters((v) => !v)}
           onCreate={() => {
-            setEditEmployee(null);
-            setDrawerOpen(true);
+            openDrawer(null);
           }}
           onExportExcel={() =>
             exportToExcel(filteredData, exportColumns, "employees")
@@ -169,6 +219,7 @@ export default function EmployeePage() {
       </div>
 
       <EmployeeDataDrawer
+        key={drawerKey}
         isOpen={drawerOpen}
         close={() => setDrawerOpen(false)}
         onSaved={fetchAll}

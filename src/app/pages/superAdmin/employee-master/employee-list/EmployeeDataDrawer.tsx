@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -13,7 +13,7 @@ import {
   LockClosedIcon,
 } from "@heroicons/react/24/solid";
 import { toast } from "sonner";
-
+import { Get, Post, Put } from "@/ApiHelper";
 import { Button, Input } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
@@ -28,12 +28,15 @@ interface EmployeeDrawerProps {
   editEmployee: Employee | null;
 }
 
-// Mock Dropdown Data
-const EMPLOYEE_TYPES = [
-  { id: "et1", label: "Full Time" },
-  { id: "et2", label: "Part Time" },
-  { id: "et3", label: "Contractor" },
-];
+interface Opt {
+  id: string;
+  label: string;
+  categoryId?: string; // roles only: which role category they belong to
+}
+
+// Active records, plus whatever this employee already has selected
+const keepActive = (status: string, id: string, selected: string[]) =>
+  status === "Active" || selected.includes(id);
 
 const DESIGNATIONS = [
   { id: "d1", label: "Software Engineer" },
@@ -41,27 +44,9 @@ const DESIGNATIONS = [
   { id: "d3", label: "HR Manager" },
 ];
 
-const DEPARTMENTS = [
-  { id: "dep1", label: "Engineering" },
-  { id: "dep2", label: "Sales" },
-  { id: "dep3", label: "Human Resources" },
-];
-
 const EMPLOYMENT_STATUSES = [
   { id: "Active", label: "Active" },
   { id: "Inactive", label: "Inactive" },
-];
-
-const ROLE_CATEGORIES = [
-  { id: "rc1", label: "Management" },
-  { id: "rc2", label: "Staff" },
-  { id: "rc3", label: "Field Worker" },
-];
-
-const ROLES = [
-  { id: "r1", label: "Admin" },
-  { id: "r2", label: "Manager" },
-  { id: "r3", label: "Executive" },
 ];
 
 const dialCodeOptions = Country.getAllCountries()
@@ -106,17 +91,19 @@ function getInitialForm(editEmployee: Employee | null) {
       employmentStatus: editEmployee.employmentStatus,
       employmentEndDate: editEmployee.employmentEndDate,
       remarks: editEmployee.remarks,
-      additionalDepartments: editEmployee.additionalDepartments || [],
-      roleCategoryId: "",
-      roleId: "",
+      additionalDepartments: (editEmployee.additionalDepartments || []).map(
+        String,
+      ) as string[],
+      roleCategoryId: editEmployee.roleCategoryId || "",
+      roleId: editEmployee.roleId || "",
       password: "",
       confirmPassword: "",
     };
   }
 
   return {
-    id: `EMP-ID-${Math.floor(1000 + Math.random() * 9000)}`,
-    employeeCode: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+    id: "",
+    employeeCode: "",
     employeeName: "",
     profilePhoto: "",
     officialEmail: "",
@@ -130,7 +117,7 @@ function getInitialForm(editEmployee: Employee | null) {
     employmentStatus: "Active",
     employmentEndDate: "",
     remarks: "",
-    additionalDepartments: [],
+    additionalDepartments: [] as string[],
     roleCategoryId: "",
     roleId: "",
     password: "",
@@ -152,6 +139,106 @@ export function EmployeeDataDrawer({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [nextNo, setNextNo] = useState("");
+  const [employeeTypes, setEmployeeTypes] = useState<Opt[]>([]);
+  const [roleCategories, setRoleCategories] = useState<Opt[]>([]);
+  const [roles, setRoles] = useState<Opt[]>([]);
+  const [departments, setDepartments] = useState<Opt[]>([]);
+
+  // Dropdown data from the DB
+  useEffect(() => {
+    if (!isOpen) return;
+
+    (async () => {
+      try {
+        const [typeRes, catRes, roleRes, deptRes]: any[] = await Promise.all([
+          Get("superadmin/employee-type/list", {}, false),
+          Get("superadmin/role-category/list", {}, false),
+          Get("superadmin/role/list", {}, false),
+          Get("superadmin/department/list", {}, false),
+        ]);
+
+        const rows = (res: any): any[] => res?.data?.data ?? [];
+
+        setEmployeeTypes(
+          rows(typeRes)
+            .filter((r) =>
+              keepActive(r.status, String(r.employeeTypeId), [
+                form.employeeTypeId,
+              ]),
+            )
+            .map((r) => ({ id: String(r.employeeTypeId), label: r.typeName })),
+        );
+        setRoleCategories(
+          rows(catRes)
+            .filter((r) =>
+              keepActive(r.status, String(r.roleCategoryId), [
+                form.roleCategoryId,
+              ]),
+            )
+            .map((r) => ({
+              id: String(r.roleCategoryId),
+              label: r.roleCategoryName,
+            })),
+        );
+        setRoles(
+          rows(roleRes)
+            .filter((r) =>
+              keepActive(r.status, String(r.roleId), [form.roleId]),
+            )
+            .map((r) => ({
+              id: String(r.roleId),
+              label: r.roleName,
+              categoryId: String(r.roleCategoryId),
+            })),
+        );
+        setDepartments(
+          rows(deptRes)
+            .filter((r) =>
+              keepActive(
+                r.status,
+                String(r.departmentId),
+                form.additionalDepartments,
+              ),
+            )
+            .map((r) => ({
+              id: String(r.departmentId),
+              label: r.departmentName,
+            })),
+        );
+      } catch (error) {
+        console.error("Employee dropdown error:", error);
+        toast.error("Failed to load dropdown data");
+      }
+    })();
+  }, [isOpen]);
+
+  // Employee ID preview (prefix + FY), new employees only
+  useEffect(() => {
+    if (!isOpen || editEmployee) return;
+    const financialYearId = localStorage.getItem("financialYearId");
+    if (!financialYearId) return;
+
+    (async () => {
+      try {
+        const res: any = await Get(
+          "superadmin/employee/next-number",
+          { financialYearId },
+          false,
+        );
+        if (res?.data?.success) setNextNo(res.data.data.employeeNo);
+      } catch (error) {
+        console.error("Employee number error:", error);
+      }
+    })();
+  }, [isOpen, editEmployee]);
+
+  // Roles shown depend on the selected category
+  const roleOptions = useMemo(
+    () => roles.filter((r) => r.categoryId === form.roleCategoryId),
+    [roles, form.roleCategoryId],
+  );
+
   const sf = (k: keyof typeof form, v: any) => {
     setForm((f) => ({ ...f, [k]: v }));
     if (errors[k as string]) setErrors((prev) => ({ ...prev, [k]: "" }));
@@ -167,8 +254,32 @@ export function EmployeeDataDrawer({
       next.employeeName = "Employee name is required";
     if (!form.employmentStatus) next.employmentStatus = "Status is required";
 
-    if (form.password && form.password !== form.confirmPassword) {
-      next.confirmPassword = "Passwords do not match";
+    const email = form.officialEmail.trim();
+    if (email && !/^\S+@\S+\.\S+$/.test(email))
+      next.officialEmail = "Enter a valid email";
+
+    if (form.mobileNumber && !/^[0-9]{6,15}$/.test(form.mobileNumber.trim()))
+      next.mobileNumber = "Enter 6-15 digits";
+    if (
+      form.alternateContact &&
+      !/^[0-9]{6,15}$/.test(form.alternateContact.trim())
+    )
+      next.alternateContact = "Enter 6-15 digits";
+
+    if (
+      form.dateOfJoining &&
+      form.employmentEndDate &&
+      form.employmentEndDate < form.dateOfJoining
+    )
+      next.employmentEndDate = "End date cannot be before the joining date";
+    // password is optional; when typed it needs an email (login id) and a match
+    if (form.password) {
+      if (!email)
+        next.officialEmail = "Official email is required to set a password";
+      if (form.password.length < 6)
+        next.password = "Password must be at least 6 characters";
+      if (form.password !== form.confirmPassword)
+        next.confirmPassword = "Passwords do not match";
     }
 
     setErrors(next);
@@ -180,7 +291,51 @@ export function EmployeeDataDrawer({
 
     try {
       setSubmitting(true);
-      console.log("Saving Employee:", form);
+      // only fields the backend validator allows (no `id`, no photo yet)
+      const payload = {
+        employeeCode: form.employeeCode.trim(),
+        employeeName: form.employeeName.trim(),
+        officialEmail: form.officialEmail.trim(),
+        mobileCountryCode: form.mobileCountryCode,
+        mobileNumber: form.mobileNumber.trim(),
+        alternateCountryCode: form.alternateCountryCode,
+        alternateContact: form.alternateContact.trim(),
+        employeeTypeId: form.employeeTypeId
+          ? Number(form.employeeTypeId)
+          : null,
+        // Designation has no backend yet: keep whatever was saved, never clear it
+        designationId: editEmployee?.designationId
+          ? Number(editEmployee.designationId)
+          : null,
+        dateOfJoining: form.dateOfJoining,
+        employmentStatus: form.employmentStatus,
+        employmentEndDate: form.employmentEndDate,
+        remarks: form.remarks.trim(),
+        roleCategoryId: form.roleCategoryId
+          ? Number(form.roleCategoryId)
+          : null,
+        roleId: form.roleId ? Number(form.roleId) : null,
+        additionalDepartments: form.additionalDepartments.map(Number),
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+      };
+
+      if (editEmployee) {
+        await Put(
+          "superadmin/employee/update",
+          { ...payload, employeeId: editEmployee.id },
+          false,
+        );
+      } else {
+        await Post(
+          "superadmin/employee/create",
+          {
+            ...payload,
+            financialYearId: localStorage.getItem("financialYearId"),
+          },
+          false,
+        );
+      }
       toast.success(
         editEmployee
           ? "Employee updated successfully"
@@ -188,8 +343,10 @@ export function EmployeeDataDrawer({
       );
       onSaved();
       handleClose();
-    } catch {
-      toast.error("Something went wrong while saving.");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || "Something went wrong while saving.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -270,9 +427,11 @@ export function EmployeeDataDrawer({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {/* Employee ID */}
                   <div>
-                    <FieldLabel>Employee ID (Auto)</FieldLabel>
+                    <FieldLabel>Employee ID</FieldLabel>
                     <Input
-                      value={form.id}
+                      value={
+                        editEmployee?.employeeNo || nextNo || "Generating..."
+                      }
                       readOnly
                       disabled
                       className="bg-gray-50 text-gray-500"
@@ -320,6 +479,11 @@ export function EmployeeDataDrawer({
                       value={form.officialEmail}
                       onChange={(e: any) => sf("officialEmail", e.target.value)}
                     />
+                    {errors.officialEmail && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.officialEmail}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -354,6 +518,11 @@ export function EmployeeDataDrawer({
                         className="flex-1"
                       />
                     </div>
+                    {errors.mobileNumber && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.mobileNumber}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -385,6 +554,11 @@ export function EmployeeDataDrawer({
                         className="flex-1"
                       />
                     </div>
+                    {errors.alternateContact && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.alternateContact}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -399,10 +573,10 @@ export function EmployeeDataDrawer({
                   <div>
                     <FieldLabel>Employee Type</FieldLabel>
                     <Combobox
-                      data={EMPLOYEE_TYPES}
+                      data={employeeTypes}
                       displayField="label"
                       value={
-                        EMPLOYEE_TYPES.find(
+                        employeeTypes.find(
                           (t) => t.id === form.employeeTypeId,
                         ) || null
                       }
@@ -497,14 +671,20 @@ export function EmployeeDataDrawer({
                   <div>
                     <FieldLabel>Role Category</FieldLabel>
                     <Combobox
-                      data={ROLE_CATEGORIES}
+                      data={roleCategories}
                       displayField="label"
                       value={
-                        ROLE_CATEGORIES.find(
+                        roleCategories.find(
                           (t) => t.id === form.roleCategoryId,
                         ) || null
                       }
-                      onChange={(v: any) => sf("roleCategoryId", v?.id || "")}
+                      onChange={(v: any) =>
+                        setForm((f) => ({
+                          ...f,
+                          roleCategoryId: v?.id || "",
+                          roleId: "",
+                        }))
+                      }
                       placeholder="Select Category"
                       searchFields={["label"]}
                     />
@@ -514,11 +694,17 @@ export function EmployeeDataDrawer({
                   <div>
                     <FieldLabel>Role</FieldLabel>
                     <Combobox
-                      data={ROLES}
+                      data={roleOptions}
                       displayField="label"
-                      value={ROLES.find((t) => t.id === form.roleId) || null}
+                      value={
+                        roleOptions.find((t) => t.id === form.roleId) || null
+                      }
                       onChange={(v: any) => sf("roleId", v?.id || "")}
-                      placeholder="Select Role"
+                      placeholder={
+                        form.roleCategoryId
+                          ? "Select Role"
+                          : "Select a role category first"
+                      }
                       searchFields={["label"]}
                     />
                   </div>
@@ -530,7 +716,12 @@ export function EmployeeDataDrawer({
                     <FieldLabel>Password</FieldLabel>
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter password"
+                      autoComplete="new-password"
+                      placeholder={
+                        editEmployee
+                          ? "Leave blank to keep current"
+                          : "Enter password"
+                      }
                       value={form.password}
                       onChange={(e: any) => sf("password", e.target.value)}
                       prefix={
@@ -557,7 +748,12 @@ export function EmployeeDataDrawer({
                     <FieldLabel>Confirm Password</FieldLabel>
                     <Input
                       type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm password"
+                      autoComplete="new-password"
+                      placeholder={
+                        editEmployee
+                          ? "Leave blank to keep current"
+                          : "Enter password"
+                      }
                       value={form.confirmPassword}
                       onChange={(e: any) =>
                         sf("confirmPassword", e.target.value)
@@ -613,9 +809,13 @@ export function EmployeeDataDrawer({
                   <div>
                     <FieldLabel>Additional Departments</FieldLabel>
                     <Combobox
-                      data={DEPARTMENTS}
+                      data={departments}
                       displayField="label"
-                      value={null}
+                      value={
+                        departments.find((d) =>
+                          form.additionalDepartments.includes(d.id),
+                        ) || null
+                      }
                       onChange={(v: any) =>
                         sf("additionalDepartments", v ? [v.id] : [])
                       }

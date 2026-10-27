@@ -12,6 +12,11 @@ export interface EmployeeType {
 
 export interface Employee {
   id: string;
+  employeeNo?: string;
+  roleCategoryId?: string;
+  roleCategoryName?: string;
+  roleId?: string;
+  roleName?: string;
   employeeCode: string;
   employeeName: string;
   profilePhoto: string;
