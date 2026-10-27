@@ -6,7 +6,7 @@ import {
 import { createRowActions } from "../shared/createRowActions";
 import { TextCell } from "../shared/tableCells";
 import { ExportColumn } from "../shared/export";
-import type { Branch } from "./shared/types";
+import type { Branch } from "../shared/types";
 
 const RowActions = createRowActions<Branch>("branch");
 
@@ -16,6 +16,12 @@ export const columns: ColumnDef<Branch>[] = [
     header: SelectHeader,
     cell: SelectCell,
     enableSorting: false,
+  },
+    {
+   id: "branchNo",
+    accessorKey: "branchNo",
+    header: "Branch ID",
+    cell: TextCell,
   },
   { 
     id: "branchCode", 
@@ -129,6 +135,7 @@ export const columns: ColumnDef<Branch>[] = [
 ];
 
 export const exportColumns: ExportColumn<Branch>[] = [
+  { key: "branchNo", header: "Branch ID" },
   { key: "branchCode", header: "Branch Code" },
   { key: "branchName", header: "Branch Name" },
   { key: "region", header: "Region" },

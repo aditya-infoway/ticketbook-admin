@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -8,7 +8,7 @@ import {
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { Country, State, City } from "country-state-city";
 import { toast } from "sonner";
-
+import { Get, Post, Put } from "@/ApiHelper";
 import { Button, Input } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
@@ -27,20 +27,18 @@ interface Opt {
   label: string;
 }
 
-const regionOptions = [
-  { id: "North", label: "North" },
-  { id: "South", label: "South" },
-  { id: "East", label: "East" },
-  { id: "West", label: "West" },
-  { id: "Central", label: "Central" },
-];
-
 const employeeOptions = [
   { id: "emp-1", label: "John Doe" },
   { id: "emp-2", label: "Jane Smith" },
   { id: "emp-3", label: "Mike Johnson" },
   { id: "emp-4", label: "Sarah Williams" },
 ];
+
+// stopgap until managers come from the employee table
+const employeeNameOf = (id: string) =>
+  employeeOptions.find((e) => e.id === id)?.label ?? "";
+const employeeIdOf = (name: string) =>
+  employeeOptions.find((e) => e.label === name)?.id ?? "";
 
 const workingHoursOptions = [
   { id: "9-6", label: "9:00 AM - 6:00 PM" },
@@ -103,29 +101,31 @@ function getInitialForm(editBranch: Branch | null) {
       branchId: editBranch.id,
       branchCode: editBranch.branchCode,
       branchName: editBranch.branchName,
-      region: editBranch.region,
+      regionId: editBranch.regionId ? String(editBranch.regionId) : "",
       country,
       state,
       city,
       fullAddress: editBranch.fullAddress,
       pinCode: editBranch.pinCode,
-      contactNumber: editBranch.contactNumber,
-      phoneNumber: editBranch.phoneNumber || "",
+      contactNumber: String(editBranch.contactNumber || ""),
+      phoneNumber: String(editBranch.phoneNumber || ""),
       branchEmail: editBranch.branchEmail,
-      branchManager: editBranch.branchManager,
-      areaManager: editBranch.areaManager,
+      branchManager: employeeIdOf(editBranch.branchManager),
+      areaManager: employeeIdOf(editBranch.areaManager),
       openingDate: editBranch.openingDate,
       workingHours: editBranch.workingHours,
       status: editBranch.status,
+      password: "",
+      confirmPassword: "",
     };
   }
 
-  // New branch → generate IDs only once (on mount)
+  // New branch (Branch ID preview comes from the backend)
   return {
-    branchId: `BR-ID-${Math.floor(100 + Math.random() * 900)}`,
-    branchCode: `BR-${Math.floor(100 + Math.random() * 900)}`,
+    branchId: "",
+    branchCode: "",
     branchName: "",
-    region: "",
+    regionId: "",
     country: { id: "IN", label: "India" } as Opt,
     state: null as Opt | null,
     city: null as Opt | null,
@@ -139,6 +139,8 @@ function getInitialForm(editBranch: Branch | null) {
     openingDate: "",
     workingHours: "",
     status: "Active",
+    password: "",
+    confirmPassword: "",
   };
 }
 
@@ -151,6 +153,50 @@ export function BranchDataDrawer({
   const [form, setForm] = useState(() => getInitialForm(editBranch));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const [regionOptions, setRegionOptions] = useState<Opt[]>([]);
+  const [nextNo, setNextNo] = useState("");
+
+  // Region / Area dropdown from DB
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      try {
+        const res: any = await Get("superadmin/region/list", {}, false);
+        const rows: any[] = res?.data?.data ?? [];
+        setRegionOptions(
+          rows
+            .filter(
+              (r) =>
+                r.status === "Active" || String(r.regionId) === form.regionId,
+            )
+            .map((r) => ({ id: String(r.regionId), label: r.regionName })),
+        );
+      } catch (error) {
+        console.error("Region list error:", error);
+      }
+    })();
+  }, [isOpen]);
+
+  // Branch ID preview (prefix + FY), new branches only
+  useEffect(() => {
+    if (!isOpen || editBranch) return;
+    const financialYearId = localStorage.getItem("financialYearId");
+    if (!financialYearId) return;
+
+    (async () => {
+      try {
+        const res: any = await Get(
+          "superadmin/branch/next-number",
+          { financialYearId },
+          false,
+        );
+        if (res?.data?.success) setNextNo(res.data.data.branchNo);
+      } catch (error) {
+        console.error("Branch number error:", error);
+      }
+    })();
+  }, [isOpen, editBranch]);
 
   const sf = (k: keyof typeof form, v: any) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -202,6 +248,19 @@ export function BranchDataDrawer({
 
     if (!branchCode) next.branchCode = "Branch code is required";
     if (!branchName) next.branchName = "Branch name is required";
+    const email = String(form.branchEmail ?? "").trim();
+    if (!email) next.branchEmail = "Branch email is required (used to log in)";
+    else if (!/^\S+@\S+\.\S+$/.test(email))
+      next.branchEmail = "Enter a valid email";
+
+    // password required on create; on edit only if a new one is typed
+    if (!editBranch || form.password) {
+      if (!form.password) next.password = "Password is required";
+      else if (form.password.length < 6)
+        next.password = "Password must be at least 6 characters";
+      if (form.password !== form.confirmPassword)
+        next.confirmPassword = "Passwords do not match";
+    }
     if (!form.country) next.country = "Country is required";
     if (!form.state) next.state = "State is required";
     if (!form.city) next.city = "City is required";
@@ -219,15 +278,44 @@ export function BranchDataDrawer({
 
     try {
       setSubmitting(true);
-      // TODO: Replace with actual API call
-      console.log("Saving Branch:", {
-        ...form,
-        country: form.country?.label,
-        state: form.state?.label,
-        city: form.city?.label,
-      });
+      // only the fields the backend validator allows (no branchId in create)
+      const payload = {
+        branchCode: form.branchCode.trim(),
+        branchName: form.branchName.trim(),
+        regionId: form.regionId ? Number(form.regionId) : null,
+        country: form.country?.label || "",
+        state: form.state?.label || "",
+        city: form.city?.label || "",
+        fullAddress: String(form.fullAddress).trim(),
+        pinCode: String(form.pinCode || "").trim(),
+        contactNumber: String(form.contactNumber).trim(),
+        phoneNumber: String(form.phoneNumber || "").trim(),
+        branchEmail: form.branchEmail.trim(),
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        branchManager: employeeNameOf(form.branchManager),
+        areaManager: employeeNameOf(form.areaManager),
+        openingDate: form.openingDate || "",
+        workingHours: form.workingHours || "",
+        status: form.status,
+      };
+      if (editBranch) {
+        await Put(
+          "superadmin/branch/update",
+          { ...payload, branchId: editBranch.id },
+          false,
+        );
+      } else {
+        await Post(
+          "superadmin/branch/create",
+          {
+            ...payload,
+            financialYearId: localStorage.getItem("financialYearId"),
+          },
+          false,
+        );
+      }
 
-      // 👈 Improved toast messages
       toast.success(
         editBranch
           ? "Branch updated successfully"
@@ -235,8 +323,11 @@ export function BranchDataDrawer({
       );
       onSaved();
       handleClose();
-    } catch {
-      toast.error("Something went wrong while saving the branch.");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message ||
+          "Something went wrong while saving the branch.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -285,9 +376,9 @@ export function BranchDataDrawer({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Branch ID */}
               <div>
-                <FieldLabel>Branch ID (Auto)</FieldLabel>
+                <FieldLabel>Branch ID</FieldLabel>
                 <Input
-                  value={form.branchId}
+                  value={editBranch?.branchNo || nextNo || "Generating..."}
                   readOnly
                   disabled
                   className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
@@ -330,9 +421,9 @@ export function BranchDataDrawer({
                 <Listbox
                   data={regionOptions}
                   value={
-                    regionOptions.find((r) => r.id === form.region) || null
+                    regionOptions.find((r) => r.id === form.regionId) || null
                   }
-                  onChange={(r: any) => sf("region", r?.id || "")}
+                  onChange={(r: any) => sf("regionId", r?.id || "")}
                   displayField="label"
                   placeholder="Select region"
                 />
@@ -452,13 +543,54 @@ export function BranchDataDrawer({
 
               {/* Email */}
               <div>
-                <FieldLabel>Branch Email</FieldLabel>
+                <FieldLabel required>Branch Email </FieldLabel>
                 <Input
                   placeholder="Enter email"
                   type="email"
                   value={form.branchEmail}
                   onChange={(e: any) => sf("branchEmail", e.target.value)}
                 />
+                {errors.branchEmail && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.branchEmail}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <FieldLabel required={!editBranch}>Password</FieldLabel>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={
+                    editBranch
+                      ? "Leave blank to keep current"
+                      : "Enter password"
+                  }
+                  value={form.password}
+                  onChange={(e: any) => sf("password", e.target.value)}
+                />
+                {errors.password && (
+                  <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <FieldLabel required={!editBranch}>Confirm Password</FieldLabel>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Re-enter password"
+                  value={form.confirmPassword}
+                  onChange={(e: any) => sf("confirmPassword", e.target.value)}
+                />
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               {/* Branch Manager */}

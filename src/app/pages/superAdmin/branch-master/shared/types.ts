@@ -1,5 +1,7 @@
 export interface Branch {
   id: string;
+  branchNo?: string;
+  regionId?: number | string | null;
   branchCode: string;
   branchName: string;
   region: string;

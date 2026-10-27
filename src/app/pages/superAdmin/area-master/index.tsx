@@ -34,6 +34,7 @@ import type { Region } from "./shared/types";
 function mapApiRegionToRegion(item: any): Region {
   return {
     id: String(item.regionId ?? item.id),
+     regionNo: item.regionNo ?? "",
     regionCode: item.regionCode ?? "",
     regionName: item.regionName ?? "",
     regionTypeId: item.regionTypeId ? String(item.regionTypeId) : "",
@@ -72,6 +73,14 @@ export default function RegionPage() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editRegion, setEditRegion] = useState<Region | null>(null);
+
+  // bump on every open so the drawer remounts and re-reads editRegion
+  const [drawerKey, setDrawerKey] = useState(0);
+  const openDrawer = (row: Region | null) => {
+    setEditRegion(row);
+    setDrawerKey((k) => k + 1);
+    setDrawerOpen(true);
+  };
 
   const [showFilters, setShowFilters] = useState(false);
   const [filterStatus, setFilterStatus] = useState("");
@@ -128,11 +137,7 @@ export default function RegionPage() {
   // ---- Delete one ----
   const handleDeleteOne = async (region: Region) => {
     try {
-      const response = await Delete(
-        API.delete,
-        { regionId: region.id },
-        false,
-      );
+      const response = await Delete(API.delete, { regionId: region.id }, false);
       if (response.data?.success) {
         toastsuccessmsg(
           response.data?.message || "Region deleted successfully.",
@@ -150,9 +155,7 @@ export default function RegionPage() {
   const handleDeleteMany = async (rows: { original: Region }[]) => {
     try {
       await Promise.all(
-        rows.map((r) =>
-          Delete(API.delete, { regionId: r.original.id }, false),
-        ),
+        rows.map((r) => Delete(API.delete, { regionId: r.original.id }, false)),
       );
       const ids = new Set(rows.map((r) => r.original.id));
       setData((prev) => prev.filter((item) => !ids.has(item.id)));
@@ -229,10 +232,7 @@ export default function RegionPage() {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     meta: {
-      openEditDrawer: (region: Region) => {
-        setEditRegion(region);
-        setDrawerOpen(true);
-      },
+      openEditDrawer: (region: Region) => openDrawer(region),
       deleteRow: (row: any) => handleDeleteOne(row.original),
       deleteRows: (rows: any) => handleDeleteMany(rows),
       toggleStatus: (region: Region) => handleToggleStatus(region),
@@ -243,15 +243,14 @@ export default function RegionPage() {
     <Page title="Region / Area Master">
       <div className="transition-content w-full pb-5">
         <MasterToolbar
-          title="Region / Area Master"
+          title=" Area Master"
           createLabel="Add Region"
           searchPlaceholder="Search regions..."
           table={table}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters((v) => !v)}
           onCreate={() => {
-            setEditRegion(null);
-            setDrawerOpen(true);
+            openDrawer(null);
           }}
           onExportExcel={() =>
             exportToExcel(filteredData, exportColumns, "regions")
@@ -264,9 +263,8 @@ export default function RegionPage() {
               <Listbox
                 data={[ALL, ...STATUS_OPTIONS]}
                 value={
-                  [ALL, ...STATUS_OPTIONS].find(
-                    (i) => i.id === filterStatus,
-                  ) || ALL
+                  [ALL, ...STATUS_OPTIONS].find((i) => i.id === filterStatus) ||
+                  ALL
                 }
                 onChange={(item) => setFilterStatus(item.id)}
                 label="Status"
@@ -289,6 +287,7 @@ export default function RegionPage() {
       </div>
 
       <RegionDataDrawer
+        key={drawerKey}
         isOpen={drawerOpen}
         close={() => setDrawerOpen(false)}
         onSaved={fetchAll}

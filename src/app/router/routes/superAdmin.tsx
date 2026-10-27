@@ -97,8 +97,18 @@ export const superAdminRoutes: RouteObject[] = [
     element: <PlaceholderPage title="Department Master" />,
   },
   {
-    path: "/employee-master/list",
-    element: <PlaceholderPage title="Employee List" />,
+    path: "/employee-master/employee-type", // or /employee-type-master
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/employee-master/employee-type")
+      ).default,
+    }),
+  },
+    {
+    path: "/employee-master/employee-list",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/superAdmin/employee-master/employee-list")).default,
+    }),
   },
   {
     path: "/employee-master/onboarding",

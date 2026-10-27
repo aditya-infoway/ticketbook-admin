@@ -23,6 +23,10 @@ interface PrefixFormValues {
 // Combobox ko "id" field chahiye value match karne ke liye, "label" displayField ke liye
 const prefixForOptions = [
   { id: "DEPARTMENT", label: "DEPARTMENT" },
+  { id: "REGION_TYPE", label: "REGION/AREA TYPE MASTER" },
+  { id: "REGION", label: "REGION/AREA MASTER" },
+  { id: "BRANCH", label: "BRANCH" },
+  { id: "EMPLOYEE_TYPE", label: "Employee Type Master" },
 ];
 
 const schema = yup.object({
