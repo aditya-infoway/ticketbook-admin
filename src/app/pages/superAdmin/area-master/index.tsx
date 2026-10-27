@@ -127,10 +127,6 @@ export default function RegionPage() {
 
   // ---- Delete one ----
   const handleDeleteOne = async (region: Region) => {
-    if (
-      !window.confirm(`Are you sure you want to delete ${region.regionName}?`)
-    )
-      return;
     try {
       const response = await Delete(
         API.delete,
@@ -145,7 +141,7 @@ export default function RegionPage() {
       } else {
         toasterrormsg(response.data?.message || "Failed to delete region.");
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while deleting the region.");
     }
   };
@@ -162,7 +158,7 @@ export default function RegionPage() {
       setData((prev) => prev.filter((item) => !ids.has(item.id)));
       setRowSelection({});
       toastsuccessmsg("Selected regions deleted successfully.");
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while deleting regions.");
     }
   };
@@ -212,7 +208,7 @@ export default function RegionPage() {
       } else {
         toasterrormsg(response.data?.message || "Failed to update status.");
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while updating the status.");
     }
   };

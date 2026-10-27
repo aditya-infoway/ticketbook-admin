@@ -95,8 +95,8 @@ function getInitialForm(editRegion: Region | null) {
 
   // New region -> generate IDs only once
   return {
-    id: `REG-ID-${Math.floor(100 + Math.random() * 900)}`,
-    regionCode: `REG-${Math.floor(100 + Math.random() * 900)}`,
+    id:"",
+    regionCode: "",
     regionName: "",
     regionTypeId: "",
     description: "",
@@ -304,7 +304,7 @@ const onSubmit = async () => {
 };
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[110]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-110" onClose={handleClose}>
         <TransitionChild
           as="div"
           enter="ease-out duration-300"
@@ -327,7 +327,7 @@ const onSubmit = async () => {
           className="dark:bg-dark-700 fixed top-0 right-0 flex h-full w-full transform-gpu flex-col bg-white transition-transform duration-200 lg:max-w-[50%]"
         >
           {/* Header */}
-          <div className="bg-primary-600 flex flex-shrink-0 items-center justify-between px-5 py-4 text-white">
+          <div className="bg-primary-600 flex shrink-0 items-center justify-between px-5 py-4 text-white">
             <h3 className="text-base font-bold">
               {editRegion ? "Edit Region / Area" : "Add Region / Area"}
             </h3>
@@ -499,7 +499,7 @@ const onSubmit = async () => {
           </div>
 
           {/* Footer */}
-          <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
             <Button
               variant="outlined"
               color="secondary"

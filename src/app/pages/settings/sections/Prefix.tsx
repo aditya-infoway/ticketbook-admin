@@ -5,7 +5,7 @@ import * as yup from "yup";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 
 import { Button, Input } from "@/components/ui";
-import { Listbox } from "@/components/shared/form/StyledListbox";
+import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Get, Post, toastsuccessmsg, toasterrormsg } from "@/ApiHelper";
 
 interface PrefixItem {
@@ -20,10 +20,9 @@ interface PrefixFormValues {
 }
 
 // 👇 Naye prefix types yahan add karte jao, backend me kuch change nahi karna
-// StyledListbox ko "id" field chahiye value match karne ke liye, "label" displayField ke liye
+// Combobox ko "id" field chahiye value match karne ke liye, "label" displayField ke liye
 const prefixForOptions = [
   { id: "DEPARTMENT", label: "DEPARTMENT" },
-
 ];
 
 const schema = yup.object({
@@ -134,7 +133,7 @@ export default function Prefix() {
             name="prefixFor"
             control={control}
             render={({ field }) => (
-              <Listbox
+              <Combobox
                 label="Prefix For"
                 error={errors.prefixFor?.message}
                 data={prefixForOptions}
@@ -145,6 +144,7 @@ export default function Prefix() {
                 onChange={(item: any) => field.onChange(item?.id || "")}
                 placeholder="Select Prefix For"
                 displayField="label"
+                searchFields={["label"]}
               />
             )}
           />

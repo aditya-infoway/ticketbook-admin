@@ -1,0 +1,105 @@
+import { ColumnDef } from "@tanstack/react-table";
+
+import {
+  SelectCell,
+  SelectHeader,
+} from "@/components/shared/table/SelectCheckbox";
+// NOTE: shared folder ka path apne project ke hisaab se adjust kar lena
+import { createRowActions } from "@/app/pages/dashboards/home/crm-analytics/shared/createRowActions";
+import { TextCell } from "@/app/pages/dashboards/home/crm-analytics/shared/tableCells";
+import { Role, formatDate } from "./data";
+import { getRestrictionLabel, getScopeLabel } from "./Options";
+
+const RowActions = createRowActions<Role>("role");
+
+const departmentsText = (row: Role) =>
+  row.departmentRestriction === "all"
+    ? "All Departments"
+    : row.departmentNames.join(", ") || "—";
+
+export const columns: ColumnDef<Role>[] = [
+  {
+    id: "select",
+    header: SelectHeader,
+    cell: SelectCell,
+    enableSorting: false,
+  },
+  { id: "roleCode", accessorKey: "roleCode", header: "Role Code", cell: TextCell },
+  { id: "roleName", accessorKey: "roleName", header: "Role Name", cell: TextCell },
+  {
+    id: "category",
+    accessorFn: (row) => row.roleCategoryName || "—",
+    header: "Category",
+    cell: TextCell,
+  },
+  {
+    id: "dataScope",
+    accessorFn: (row) => getScopeLabel(row.defaultDataScope),
+    header: "Data Scope",
+    cell: TextCell,
+  },
+  {
+    id: "restriction",
+    accessorFn: (row) => getRestrictionLabel(row.departmentRestriction),
+    header: "Dept Restriction",
+    cell: TextCell,
+  },
+  {
+    id: "departments",
+    accessorFn: (row) => departmentsText(row),
+    header: "Department(s)",
+    cell: TextCell,
+  },
+  {
+    id: "status",
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row, table }) => {
+      const item = row.original;
+      const isActive = item.status === "Active";
+      const meta = table.options.meta as any;
+
+      const handleToggle = () => meta?.toggleStatus?.(item);
+
+      return (
+        <button
+          type="button"
+          onClick={handleToggle}
+          className={`focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+            isActive ? "bg-primary-500" : "dark:bg-dark-600 bg-gray-300"
+          }`}
+          title={`Mark as ${isActive ? "Inactive" : "Active"}`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              isActive ? "translate-x-2" : "-translate-x-2"
+            }`}
+          />
+        </button>
+      );
+    },
+  },
+  {
+    id: "createdAt",
+    accessorFn: (row) => formatDate(row.createdAt),
+    header: "Created Date",
+    cell: TextCell,
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: RowActions,
+    enableSorting: false,
+  },
+];
+
+export const exportColumns = [
+  { key: "roleCode" as const, header: "Role Code" },
+  { key: "roleName" as const, header: "Role Name" },
+  { key: "roleCategoryName" as const, header: "Category" },
+  { key: "scopeName" as const, header: "Data Scope" },
+  { key: "restrictionName" as const, header: "Dept Restriction" },
+  { key: "departmentsText" as const, header: "Department(s)" },
+  { key: "status" as const, header: "Status" },
+  { key: "createdAtText" as const, header: "Created Date" },
+];

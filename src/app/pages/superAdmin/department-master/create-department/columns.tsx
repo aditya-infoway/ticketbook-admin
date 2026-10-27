@@ -4,8 +4,6 @@ import {
   SelectCell,
   SelectHeader,
 } from "@/components/shared/table/SelectCheckbox";
-import { Switch } from "@headlessui/react";
-import clsx from "clsx";
 // NOTE: adjust to where your shared master files live
 import { createRowActions } from "../shared/createRowActions";
 import { TextCell } from "@/app/pages/dashboards/home/crm-analytics/shared/tableCells";
@@ -48,36 +46,35 @@ export const columns: ColumnDef<Department>[] = [
     header: "Display Order",
     cell: TextCell,
   },
- {
-  id: "status",
-  accessorKey: "status",
-  header: "Status",
-  cell: ({ row, table }) => {
-    const item = row.original;
-    const active = item.status === "Active";
-    const meta = table.options.meta as any;
-    return (
-      <div className="flex items-center gap-2">
-        <Switch
-          checked={active}
-          onChange={() => meta?.toggleStatus?.(item)}
-          className={clsx(
-            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full outline-hidden transition-colors",
-            active ? "bg-green-500" : "dark:bg-dark-500 bg-gray-300",
-          )}
+  {
+    id: "status",
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row, table }) => {
+      const item = row.original;
+      const isActive = item.status === "Active";
+      const meta = table.options.meta as any;
+
+      const handleToggle = () => meta?.toggleStatus?.(item);
+
+      return (
+        <button
+          type="button"
+          onClick={handleToggle}
+          className={`focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+            isActive ? "bg-primary-500" : "dark:bg-dark-600 bg-gray-300"
+          }`}
+          title={`Mark as ${isActive ? "Inactive" : "Active"}`}
         >
           <span
-            className={clsx(
-              "inline-block size-4 rounded-full bg-white transition-transform",
-              active ? "translate-x-[1.125rem]" : "translate-x-0.5",
-            )}
+            className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              isActive ? "translate-x-2" : "-translate-x-2"
+            }`}
           />
-        </Switch>
-        {/* <span className="text-xs">{active ? "Active" : "Inactive"}</span> */}
-      </div>
-    );
+        </button>
+      );
+    },
   },
-},
   {
     id: "createdBy",
     accessorFn: (row) => row.createdBy || "—",

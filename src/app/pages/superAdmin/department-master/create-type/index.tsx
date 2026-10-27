@@ -84,7 +84,7 @@ export default function DepartmentTypePage() {
           response.data?.message || "Failed to fetch department types.",
         );
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while fetching department types.");
     } finally {
       setLoading(false);
@@ -93,7 +93,7 @@ export default function DepartmentTypePage() {
 
   useEffect(() => {
     fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, []);
 
   const statusFilterOptions = [ALL, ...typeStatusOptions];
@@ -168,7 +168,7 @@ export default function DepartmentTypePage() {
           );
         }
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while saving the department type.");
     }
   };
@@ -198,60 +198,60 @@ export default function DepartmentTypePage() {
       } else {
         toasterrormsg(response.data?.message || "Failed to update status.");
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while updating the status.");
     }
   };
-// ---- Delete ----
-const handleDelete = async (row: DepartmentType) => {
-  try {
-    const response = await Delete(
-      API.delete,
-      { departmentTypeId: row.id },
-      false,
-    );
-    if (response.data?.success) {
-      toastsuccessmsg(
-        response.data?.message || "Department type deleted successfully.",
+
+  // ---- Delete ----
+  const handleDelete = async (row: DepartmentType) => {
+    try {
+      const response = await Delete(
+        API.delete,
+        { departmentTypeId: row.id },
+        false,
       );
-      setData((prev) => prev.filter((item) => item.id !== row.id));
-    } else {
-      toasterrormsg(
-        response.data?.message || "Failed to delete department type.",
-      );
+      if (response.data?.success) {
+        toastsuccessmsg(
+          response.data?.message || "Department type deleted successfully.",
+        );
+        setData((prev) => prev.filter((item) => item.id !== row.id));
+      } else {
+        toasterrormsg(
+          response.data?.message || "Failed to delete department type.",
+        );
+      }
+    } catch {
+      toasterrormsg("Something went wrong while deleting the department type.");
     }
-  } catch (error) {
-    toasterrormsg("Something went wrong while deleting the department type.");
-  }
-};
+  };
+
   const openDrawer = (mode: DrawerMode, row: DepartmentType | null) => {
     setDrawerMode(mode);
     setEditing(row);
     setDrawerOpen(true);
   };
 
- 
-
-const table = useReactTable({
-  data: filteredData,
-  columns,
-  state: { globalFilter, sorting },
-  getRowId: (row) => row.id,
-  meta: {
+  const table = useReactTable({
+    data: filteredData,
+    columns,
+    state: { globalFilter, sorting },
+    getRowId: (row) => row.id,
+    meta: {
       openViewDrawer: (row: DepartmentType) => openDrawer("view", row),
-    openEditDrawer: (row: DepartmentType) => openDrawer("edit", row),
-    deleteRow: (row: any) => handleDelete(row.original),
-    toggleStatus: (row: DepartmentType) => handleToggleStatus(row),
-  } as any,
-  filterFns: { fuzzy: fuzzyFilter },
-  globalFilterFn: fuzzyFilter,
-  onGlobalFilterChange: setGlobalFilter,
-  onSortingChange: setSorting,
-  getCoreRowModel: getCoreRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
-});
+      openEditDrawer: (row: DepartmentType) => openDrawer("edit", row),
+      deleteRow: (row: any) => handleDelete(row.original),
+      toggleStatus: (row: DepartmentType) => handleToggleStatus(row),
+    } as any,
+    filterFns: { fuzzy: fuzzyFilter },
+    globalFilterFn: fuzzyFilter,
+    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
 
   return (
     <Page title="Create Type">
