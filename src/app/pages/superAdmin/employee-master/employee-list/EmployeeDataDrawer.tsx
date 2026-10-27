@@ -7,14 +7,17 @@ import {
 } from "@headlessui/react";
 import {
   XMarkIcon,
-  PhotoIcon,
+  // PhotoIcon,
   EyeIcon,
   EyeSlashIcon,
   LockClosedIcon,
 } from "@heroicons/react/24/solid";
+import { HiPencil } from "react-icons/hi";
+import { PreviewImg } from "@/components/shared/PreviewImg";
+
 import { toast } from "sonner";
 import { Get, Post, Put } from "@/ApiHelper";
-import { Button, Input } from "@/components/ui";
+import { Button, Input, Upload, Avatar } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
 import { DatePicker } from "@/components/shared/form/Datepicker";
@@ -134,7 +137,7 @@ export function EmployeeDataDrawer({
   const [form, setForm] = useState(() => getInitialForm(editEmployee));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-
+  const [photo, setPhoto] = useState<File | null>(null);
   // Password visibility states
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -286,71 +289,69 @@ export function EmployeeDataDrawer({
     return Object.keys(next).length === 0;
   };
 
-  const onSubmit = async () => {
-    if (!validate()) return;
+ const onSubmit = async () => {
+  if (!validate()) return;
 
-    try {
-      setSubmitting(true);
-      // only fields the backend validator allows (no `id`, no photo yet)
-      const payload = {
-        employeeCode: form.employeeCode.trim(),
-        employeeName: form.employeeName.trim(),
-        officialEmail: form.officialEmail.trim(),
-        mobileCountryCode: form.mobileCountryCode,
-        mobileNumber: form.mobileNumber.trim(),
-        alternateCountryCode: form.alternateCountryCode,
-        alternateContact: form.alternateContact.trim(),
-        employeeTypeId: form.employeeTypeId
-          ? Number(form.employeeTypeId)
-          : null,
-        // Designation has no backend yet: keep whatever was saved, never clear it
-        designationId: editEmployee?.designationId
-          ? Number(editEmployee.designationId)
-          : null,
-        dateOfJoining: form.dateOfJoining,
-        employmentStatus: form.employmentStatus,
-        employmentEndDate: form.employmentEndDate,
-        remarks: form.remarks.trim(),
-        roleCategoryId: form.roleCategoryId
-          ? Number(form.roleCategoryId)
-          : null,
-        roleId: form.roleId ? Number(form.roleId) : null,
-        additionalDepartments: form.additionalDepartments.map(Number),
-        password: form.password,
-        confirmPassword: form.confirmPassword,
-      };
+  try {
+    setSubmitting(true);
+    const payload = {
+      employeeCode: form.employeeCode.trim(),
+      employeeName: form.employeeName.trim(),
+      officialEmail: form.officialEmail.trim(),
+      mobileCountryCode: form.mobileCountryCode,
+      mobileNumber: form.mobileNumber.trim(),
+      alternateCountryCode: form.alternateCountryCode,
+      alternateContact: form.alternateContact.trim(),
+      employeeTypeId: form.employeeTypeId ? Number(form.employeeTypeId) : null,
+      // Designation has no backend yet: keep whatever was saved, never clear it
+      designationId: editEmployee?.designationId
+        ? Number(editEmployee.designationId)
+        : null,
+      dateOfJoining: form.dateOfJoining,
+      employmentStatus: form.employmentStatus,
+      employmentEndDate: form.employmentEndDate,
+      remarks: form.remarks.trim(),
+      roleCategoryId: form.roleCategoryId ? Number(form.roleCategoryId) : null,
+      roleId: form.roleId ? Number(form.roleId) : null,
+      additionalDepartments: form.additionalDepartments.map(Number),
+      password: form.password,
+      confirmPassword: form.confirmPassword,
+    };
 
-      if (editEmployee) {
-        await Put(
-          "superadmin/employee/update",
-          { ...payload, employeeId: editEmployee.id },
-          false,
-        );
-      } else {
-        await Post(
-          "superadmin/employee/create",
-          {
-            ...payload,
-            financialYearId: localStorage.getItem("financialYearId"),
-          },
-          false,
-        );
-      }
-      toast.success(
-        editEmployee
-          ? "Employee updated successfully"
-          : "Employee added successfully",
+    // multipart: sab fields FormData me, photo alag se
+    const fd = new FormData();
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v === null || v === undefined) return;
+      fd.append(k, Array.isArray(v) ? JSON.stringify(v) : String(v));
+    });
+    if (photo) fd.append("profilePhoto", photo);
+
+    if (editEmployee) {
+      fd.append("employeeId", String(editEmployee.id));
+      await Put("superadmin/employee/update", fd, true);
+    } else {
+      fd.append(
+        "financialYearId",
+        localStorage.getItem("financialYearId") || "",
       );
-      onSaved();
-      handleClose();
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message || "Something went wrong while saving.",
-      );
-    } finally {
-      setSubmitting(false);
+      await Post("superadmin/employee/create", fd, true);
     }
-  };
+
+    toast.success(
+      editEmployee
+        ? "Employee updated successfully"
+        : "Employee added successfully",
+    );
+    onSaved();
+    handleClose();
+  } catch (err: any) {
+    toast.error(
+      err?.response?.data?.message || "Something went wrong while saving.",
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -394,30 +395,54 @@ export function EmployeeDataDrawer({
           <div className="flex-1 overflow-y-auto p-5">
             <div className="space-y-6">
               {/* Profile Photo (Normal Top Layout) */}
-              <div className="mb-6 flex items-center gap-4">
-                <div className="dark:border-dark-600 dark:bg-dark-800 flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-                  {form.profilePhoto ? (
-                    <img
-                      src={form.profilePhoto}
-                      alt="Profile"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs text-gray-400">No Photo</span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Profile Photo
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="dark:text-dark-200 dark:file:bg-dark-600 cursor-pointer text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100 dark:file:text-white"
-                  />
-                </div>
+              <div className="mb-6 flex flex-col space-y-1.5">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Profile Photo
+                </span>
+                <Avatar
+                  size={20}
+                  imgComponent={PreviewImg}
+                  imgProps={{ file: photo } as any}
+                  src={
+                    form.profilePhoto || "/images/logos/company-placeholder.svg"
+                  }
+                  classNames={{
+                    root: "ring-primary-600 dark:ring-primary-500 dark:ring-offset-dark-700 rounded-xl ring-offset-[3px] ring-offset-white transition-all hover:ring-3",
+                    display: "rounded-xl",
+                  }}
+                  indicator={
+                    <div className="dark:bg-dark-700 absolute right-0 bottom-0 -m-1 flex items-center justify-center rounded-full bg-white">
+                      {photo ? (
+                        <Button
+                          type="button"
+                          onClick={() => setPhoto(null)}
+                          isIcon
+                          className="size-6 rounded-full"
+                        >
+                          <XMarkIcon className="size-4" />
+                        </Button>
+                      ) : (
+                        <Upload
+                          name="profilePhoto"
+                          onChange={(files) => setPhoto(files[0])}
+                          accept="image/*"
+                        >
+                          {({ ...props }) => (
+                            <Button
+                              type="button"
+                              isIcon
+                              className="size-6 rounded-full"
+                              {...props}
+                            >
+                              <HiPencil className="size-3.5" />
+                            </Button>
+                          )}
+                        </Upload>
+                      )}
+                    </div>
+                  }
+                />
               </div>
-
               {/* A. Basic Details */}
               <div className="space-y-4">
                 <h4 className="text-primary-600 dark:text-primary-400 dark:border-dark-600 border-b border-gray-200 pb-1 text-sm font-semibold">
@@ -469,7 +494,8 @@ export function EmployeeDataDrawer({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Email, Mobile, Alternate: ek row me 3 */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {/* Official Email */}
                   <div>
                     <FieldLabel>Official Email</FieldLabel>
@@ -485,14 +511,12 @@ export function EmployeeDataDrawer({
                       </p>
                     )}
                   </div>
-                </div>
 
-                {/* Phone Numbers */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {/* Mobile Number */}
                   <div>
                     <FieldLabel>Mobile Number</FieldLabel>
                     <div className="flex gap-2">
-                      <div className="w-32 shrink-0">
+                      <div className="w-28 shrink-0">
                         <Combobox
                           data={dialCodeOptions}
                           displayField="label"
@@ -525,10 +549,11 @@ export function EmployeeDataDrawer({
                     )}
                   </div>
 
+                  {/* Alternate Contact */}
                   <div>
                     <FieldLabel>Alternate Contact</FieldLabel>
                     <div className="flex gap-2">
-                      <div className="w-32 shrink-0">
+                      <div className="w-28 shrink-0">
                         <Combobox
                           data={dialCodeOptions}
                           displayField="label"
@@ -569,7 +594,9 @@ export function EmployeeDataDrawer({
                   B. Employment Details
                 </h4>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Saare fields: ek row me 3 */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  {/* Row 1 */}
                   <div>
                     <FieldLabel>Employee Type</FieldLabel>
                     <Combobox
@@ -622,6 +649,7 @@ export function EmployeeDataDrawer({
                     />
                   </div>
 
+                  {/* Row 2 */}
                   <div>
                     <FieldLabel required>Employment Status</FieldLabel>
                     <Listbox
@@ -665,6 +693,11 @@ export function EmployeeDataDrawer({
                         sf("employmentEndDate", `${yyyy}-${mm}-${dd}`);
                       }}
                     />
+                    {errors.employmentEndDate && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.employmentEndDate}
+                      </p>
+                    )}
                   </div>
 
                   {/* Role Category */}
@@ -690,6 +723,7 @@ export function EmployeeDataDrawer({
                     />
                   </div>
 
+                  {/* Row 3 */}
                   {/* Role */}
                   <div>
                     <FieldLabel>Role</FieldLabel>
@@ -708,9 +742,7 @@ export function EmployeeDataDrawer({
                       searchFields={["label"]}
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {/* Password */}
                   <div>
                     <FieldLabel>Password</FieldLabel>
@@ -741,6 +773,11 @@ export function EmployeeDataDrawer({
                         </button>
                       }
                     />
+                    {errors.password && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
 
                   {/* Confirm Password */}
@@ -785,6 +822,7 @@ export function EmployeeDataDrawer({
                   </div>
                 </div>
 
+                {/* Remarks: poori width */}
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <FieldLabel>Remarks</FieldLabel>
