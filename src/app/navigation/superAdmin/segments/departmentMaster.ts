@@ -12,6 +12,13 @@ export const departmentMaster: NavigationTree = {
       icon: "departmentMaster.createDepartment",
     },
     {
+      id: "departmentMaster.resolverTeam",
+      type: "item",
+      path: "/department-master/resolver-team",
+      title: "Resolver Team Master",
+      icon: "departmentMaster.createDepartment",
+    },
+    {
       id: "departmentMaster.createType",
       type: "item",
       path: "/department-master/create-type",
@@ -44,3 +51,4 @@ export const departmentMaster: NavigationTree = {
     },
   ],
 };
+ 

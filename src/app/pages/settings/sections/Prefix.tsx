@@ -28,6 +28,7 @@ const prefixForOptions = [
   { id: "BRANCH", label: "BRANCH" },
   { id: "EMPLOYEE_TYPE", label: "Employee Type Master" },
   { id: "EMPLOYEE", label: "Employee List" },
+  { id: "RESOLVER_TEAM", label: "RESOLVER TEAM MASTER" },
 ];
 
 const schema = yup.object({

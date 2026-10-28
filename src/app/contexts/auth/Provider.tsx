@@ -177,14 +177,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const expiresAt = Number(window.localStorage.getItem(EXPIRES_AT_KEY));
       const msLeft = expiresAt - Date.now();
 
-      if (msLeft <= 0) {
+      if (msLeft <= 0) {                             
         logout();
         toasterrormsg("Session expired due to inactivity.");
         return;
       }
       timer = setTimeout(scheduleCheck, msLeft);
     };
-
+ 
     const handleActivity = () => {
       resetExpiry();
     };
