@@ -1,70 +1,156 @@
-
 import { useEffect, useState } from "react";
 import { Get } from "@/ApiHelper";
 
 // ----------------------------------------------------------------------
-// Small shared store for the logged in EMPLOYEE's name + profile photo.
-// Used by the profile popover (avatar) so it shows the same photo as the
-// General settings page, and refreshes when the photo is changed.
+// Shared store for the logged-in EMPLOYEE / BRANCH name + profile photo.
+// Used by the profile popover (avatar) so it shows the same profile data
+// as the General settings page.
+//
+// Employee login  -> /employee/profile
+// Branch login    -> /branch/profile
 // ----------------------------------------------------------------------
 
-interface EmployeeProfileSummary {
-  token: string; // session this data belongs to
-  employeeName: string;
+interface UserProfileSummary {
+  token: string;
+  userType: string;
+  userName: string;
   profilePhoto: string;
 }
 
-let cache: EmployeeProfileSummary | null = null;
+let cache: UserProfileSummary | null = null;
 let loading = false;
+
 const listeners = new Set<() => void>();
 
-const notify = () => listeners.forEach((listener) => listener());
-const currentToken = () => window.localStorage.getItem("authToken") || "";
+const notify = () => {
+  listeners.forEach((listener) => listener());
+};
+
+const currentToken = () =>
+  window.localStorage.getItem("authToken") || "";
+
+const currentUserType = () =>
+  window.localStorage.getItem("userType") || "";
+
+const getProfileEndpoint = (userType: string) => {
+  switch (userType) {
+    case "Employee":
+      return "employee/profile";
+
+    case "Branch":
+      return "branch/profile";
+
+    default:
+      return "";
+  }
+};
 
 async function load() {
   if (loading) return;
+
+  const userType = currentUserType();
+  const endpoint = getProfileEndpoint(userType);
+
+  // No profile API for unsupported user types
+  if (!endpoint) {
+    cache = null;
+    notify();
+    return;
+  }
+
   loading = true;
+
   try {
-    // TODO: confirm the GET route of getMyProfile (mounted on /employee)
-    const res = await Get("employee/profile", {}, false);
+    const res = await Get(endpoint, {}, false);
+
     if (res.data?.success) {
+      const profileData = res.data?.data || {};
+
       cache = {
         token: currentToken(),
-        employeeName: res.data.data?.employeeName || "",
-        profilePhoto: res.data.data?.profilePhoto || "",
+        userType,
+
+        userName:
+          profileData.employeeName ||
+          profileData.branchName ||
+          profileData.name ||
+          "",
+
+        profilePhoto:
+          profileData.profilePhoto ||
+          profileData.branchLogo ||
+          profileData.profileImage ||
+          "",
       };
+
       notify();
     }
   } catch (error) {
-    // keep the fallback icon / name
+    // Keep fallback icon / name
   } finally {
     loading = false;
   }
 }
 
 /**
- * Call this after the profile is saved (General settings page) so the
- * avatar in the sidebar updates right away.
+ * Call this after the profile is saved so the avatar/name
+ * updates immediately.
  */
-export const refreshEmployeeProfile = () => load();
+export const refreshEmployeeProfile = () => {
+  // Clear current cache so the latest profile is fetched
+  cache = null;
+  return load();
+};
 
-/** `enabled` = only the employee role needs it (super admin has no employee profile). */
+/**
+ * enabled = true only when Employee or Branch profile
+ * should be displayed.
+ */
 export function useEmployeeProfile(enabled: boolean) {
   const [, forceRender] = useState(0);
 
   useEffect(() => {
     if (!enabled) return;
 
-    const listener = () => forceRender((n) => n + 1);
+    const listener = () => {
+      forceRender((n) => n + 1);
+    };
+
     listeners.add(listener);
 
-    // load once per login session (cache is tied to the auth token)
-    if (!cache || cache.token !== currentToken()) load();
+    const token = currentToken();
+    const userType = currentUserType();
+
+    // Load profile when:
+    // 1. No cache exists
+    // 2. Token changed
+    // 3. User type changed
+    if (
+      !cache ||
+      cache.token !== token ||
+      cache.userType !== userType
+    ) {
+      load();
+    }
 
     return () => {
       listeners.delete(listener);
     };
   }, [enabled]);
 
-  return enabled && cache && cache.token === currentToken() ? cache : null;
+  if (
+    !enabled ||
+    !cache ||
+    cache.token !== currentToken() ||
+    cache.userType !== currentUserType()
+  ) {
+    return null;
+  }
+
+  return {
+    ...cache,
+
+    // Keep old property name so existing UI doesn't break
+    employeeName: cache.userName,
+  };
 }
