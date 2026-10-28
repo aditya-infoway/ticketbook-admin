@@ -108,6 +108,7 @@ const reducer = (
 const PENDING_TOKEN_KEY = "pendingToken";
 const PENDING_EMAIL_KEY = "pendingEmail";
 const COMPANY_ID_KEY = "companyId";
+const ROLE_KEY = "role"; // read by getCurrentRole() in navigation/role.ts
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -137,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.localStorage.removeItem(COMPANY_ID_KEY);
           window.localStorage.removeItem("user");
           window.localStorage.removeItem(EXPIRES_AT_KEY);
+          window.localStorage.removeItem(ROLE_KEY);
           dispatch({
             type: "INITIALIZE",
             payload: { isAuthenticated: false, user: null },
@@ -175,14 +177,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const expiresAt = Number(window.localStorage.getItem(EXPIRES_AT_KEY));
       const msLeft = expiresAt - Date.now();
 
-      if (msLeft <= 0) {
+      if (msLeft <= 0) {                             
         logout();
         toasterrormsg("Session expired due to inactivity.");
         return;
       }
       timer = setTimeout(scheduleCheck, msLeft);
     };
-
+ 
     const handleActivity = () => {
       resetExpiry();
     };
@@ -199,19 +201,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [state.isAuthenticated]);
 
   // STEP 1: login validate — OTP nahi
-  const login = async (credentials: { email: string; password: string }) => {
+  const login = async (credentials: {
+    email: string;
+    password: string;
+     role?: "superAdmin" | "employee" | "branch";
+  }) => {
     dispatch({ type: "LOGIN_REQUEST" });
     try {
-      const response = await Post(
-        "superadmin/login",
-        { email: credentials.email, password: credentials.password },
-        false,
-      );
+    const isStaff =
+  credentials.role === "employee" || credentials.role === "branch";
+const response = await Post(
+  credentials.role === "employee"
+    ? "employee/login"
+    : credentials.role === "branch"
+      ? "branch/login"
+      : "superadmin/login",
+  { email: credentials.email, password: credentials.password },
+  false,
+);
       const result = response.data;
 
       if (result.status !== 200) {
         throw new Error(result.message || "Login failed");
       }
+
+      // Employees belong to one company: no company select step, session starts now
+if (isStaff) {
+  const { token, ...profile } = result.data;
+  const user = { ...profile, role: credentials.role } as unknown as User;
+
+  window.localStorage.setItem(PENDING_TOKEN_KEY, token);
+  window.localStorage.setItem(PENDING_EMAIL_KEY, profile.email);
+  setSession(token);
+
+  toastsuccessmsg(result.message);
+  dispatch({
+    type: "LOGIN_SUCCESS",
+    payload: { pendingToken: token, pendingEmail: profile.email, user },
+  });
+  return;
+}
 
       // ✅ CHANGE #2 — companyId/companyName bhi destructure kiya
       const { token, email, companyId, companyName } = result.data;
@@ -254,12 +283,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem("authToken", token);
     window.localStorage.setItem(COMPANY_ID_KEY, companyId);
     window.localStorage.setItem("authToken", token); // (duplicate line, already existed)
-    window.localStorage.setItem("user", JSON.stringify(state.user));
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { financialYears: _fy, ...userToStore } = (state.user as any) || {};
+
+window.localStorage.setItem("user", JSON.stringify(userToStore));
+window.localStorage.setItem(
+  ROLE_KEY,
+  (state.user as any)?.role ?? "superAdmin",
+);
     resetExpiry(); // was setExpiry() — wrong name, causes ReferenceError
     window.localStorage.removeItem(PENDING_TOKEN_KEY);
     window.localStorage.removeItem(PENDING_EMAIL_KEY);
 
-    dispatch({ type: "SESSION_ESTABLISHED", payload: { user: state.user } });
+dispatch({ type: "SESSION_ESTABLISHED", payload: { user: userToStore as User } });
   };
 
   const logout = async () => {
@@ -271,6 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.localStorage.removeItem(PENDING_TOKEN_KEY);
     window.localStorage.removeItem(PENDING_EMAIL_KEY);
     window.localStorage.removeItem(EXPIRES_AT_KEY); // add alongside the other removeItem calls
+    window.localStorage.removeItem(ROLE_KEY);
     dispatch({ type: "LOGOUT" });
   };
 
