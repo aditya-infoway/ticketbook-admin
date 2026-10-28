@@ -1,10 +1,10 @@
 // Import Dependencies
 import clsx from "clsx";
-import {
-  ChatBubbleBottomCenterIcon,
-  DocumentMagnifyingGlassIcon,
-  QuestionMarkCircleIcon,
-} from "@heroicons/react/24/outline";
+// import {
+//   ChatBubbleBottomCenterIcon,
+//   DocumentMagnifyingGlassIcon,
+//   QuestionMarkCircleIcon,
+// } from "@heroicons/react/24/outline";
 import { Link, NavLink, To } from "react-router";
 import { useTranslation } from "react-i18next";
 
@@ -16,7 +16,7 @@ import { createScopedKeydownHandler } from "@/utils/dom/createScopedKeydownHandl
 import { useThemeContext } from "@/app/contexts/theme/context";
 import { useBreakpointsContext } from "@/app/contexts/breakpoint/context";
 import { useSidebarContext } from "@/app/contexts/sidebar/context";
-import { settings } from "@/app/navigation/segments/settings";
+import { settings } from "@/app/navigation/settings";
 import { navigationIcons } from "@/app/navigation/icons";
 
 // ----------------------------------------------------------------------

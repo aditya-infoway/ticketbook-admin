@@ -1,108 +1,91 @@
-import { TbPalette, TbUsers } from "react-icons/tb";
+import { TbPalette } from "react-icons/tb";
 import {
   ArrowLeftStartOnRectangleIcon,
-  CalendarDaysIcon,
-  ClockIcon,
-  CubeIcon,
-  DocumentPlusIcon,
   HomeIcon,
-  PhoneArrowUpRightIcon,
-  RectangleStackIcon,
-  Squares2X2Icon,
-  TagIcon,
   UserIcon as HiUserIcon,
-  UserPlusIcon,
-  ClipboardDocumentListIcon,
-  BuildingLibraryIcon,
-  BriefcaseIcon,
-  CheckBadgeIcon,
-  BanknotesIcon,
-  DocumentTextIcon,
-  ReceiptRefundIcon,
-  CurrencyRupeeIcon,
-  ArrowsRightLeftIcon,
-  ShoppingCartIcon,
-  CubeTransparentIcon,
-  UsersIcon,
-  UserGroupIcon,
-  CircleStackIcon,
   HashtagIcon,
+  ArrowPathRoundedSquareIcon,
+  BellIcon,
+  BuildingOffice2Icon,
+  BuildingStorefrontIcon,
+  ChartBarIcon,
+  ClockIcon,
+  Cog6ToothIcon,
+  DocumentMagnifyingGlassIcon,
+  PlusCircleIcon,
+  ShareIcon,
+  ShieldCheckIcon,
+  TagIcon,
+  TicketIcon,
+  UserCircleIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 import { ElementType } from "react";
 
 import DashboardsIcon from "@/assets/dualicons/dashboards.svg?react";
-import FormsIcon from "@/assets/dualicons/forms.svg?react";
 import SettingIcon from "@/assets/dualicons/setting.svg?react";
 
+// One icon map shared by superAdmin / branch / employee navigation.
 export const navigationIcons: Record<string, ElementType> = {
   dashboards: DashboardsIcon,
-  registration: FormsIcon,
-  leads: TbUsers,
   logout: ArrowLeftStartOnRectangleIcon,
-
   "dashboards.home": HomeIcon,
 
-  "registration.new": DocumentPlusIcon,
-  "registration.expired": ClockIcon,
+  branchMaster: BuildingStorefrontIcon,
+  "branchMaster.list": BuildingStorefrontIcon,
 
-  "leads.new": UserPlusIcon,
-  "leads.todaySchedule": CalendarDaysIcon,
-  "leads.followUp": PhoneArrowUpRightIcon,
+  regionMaster: ShareIcon,
+  "regionMaster.list": ShareIcon,
 
-  master: Squares2X2Icon,
-  "master.category": TagIcon,
-  "master.productSeries": RectangleStackIcon,
-  "master.model": CubeIcon,
-  "master.variant": CubeIcon,
-  "master.variantStructure": RectangleStackIcon,
-  "master.bom": CubeTransparentIcon,
-  "master.brand": BuildingLibraryIcon,
+  departmentMaster: BuildingOffice2Icon,
+  "departmentMaster.list": BuildingOffice2Icon,
 
-  itemMaster: CubeIcon,
-  "itemMaster.list": CubeIcon,
+  employeeMaster: UsersIcon,
+  "employeeMaster.list": UsersIcon,
 
-  leadMaster: UserGroupIcon,
-  "leadMaster.list": UserGroupIcon,
+  rolePermissionMaster: ShieldCheckIcon,
+  "rolePermissionMaster.list": ShieldCheckIcon,
 
-  followups: TbUsers,
-  "followups.list": TbUsers,
+  managerAssignment: UserCircleIcon,
+  "managerAssignment.list": UserCircleIcon,
 
-  // User Master
-  userMaster: UsersIcon,
-  "user_master.createAccount": UserPlusIcon,
-  "user_master.createEmployee": UsersIcon,
+  ticketCategoryMaster: TagIcon,
+  "ticketCategoryMaster.list": TagIcon,
 
-  // Purchase Master
-  purchaseMaster: ArrowsRightLeftIcon,
-  "purchase_master.purchaseRegister": ClipboardDocumentListIcon,
+  ticketWorkflowMaster: ArrowPathRoundedSquareIcon,
+  "ticketWorkflowMaster.list": ArrowPathRoundedSquareIcon,
 
-  stockReport: CircleStackIcon,
-  "stock_report.stockReport": ClipboardDocumentListIcon,
+  slaEscalationMaster: ClockIcon,
+  "slaEscalationMaster.list": ClockIcon,
 
-  // Enquiry Master
-  enquiryMaster: ClipboardDocumentListIcon,
-  "enquiry_master.enquiryType": ClipboardDocumentListIcon,
-  "enquiry_master.enquirySource": TagIcon,
-  "enquiry_master.profession": BriefcaseIcon,
-  "enquiry_master.enquiryStatus": CheckBadgeIcon,
-  "enquiry_master.banker": BuildingLibraryIcon,
-  "enquiry_master.finance": BanknotesIcon,
+  ticketManagement: TicketIcon,
+  "ticketManagement.list": TicketIcon,
 
-  // Accounting Master
-  accountingMaster: BanknotesIcon,
+  notificationMaster: BellIcon,
+  "notificationMaster.list": BellIcon,
 
-  "accounting_master.debitNote": DocumentTextIcon,
-  "accounting_master.creditNote": ReceiptRefundIcon,
-  "accounting_master.cashPayment": CurrencyRupeeIcon,
-  "accounting_master.bankPayment": BuildingLibraryIcon,
-  "accounting_master.cashReceipt": CurrencyRupeeIcon,
-  "accounting_master.bankReceipt": BuildingLibraryIcon,
-  "accounting_master.contra": ArrowsRightLeftIcon,
-  "accounting_master.journalEntry": ClipboardDocumentListIcon,
-  "accounting_master.cashBook": ClipboardDocumentListIcon,
-  "accounting_master.bankBook": ClipboardDocumentListIcon,
-  "accounting_master.ledgerReport": ClipboardDocumentListIcon,
+  reportsAnalytics: ChartBarIcon,
+  "reportsAnalytics.list": ChartBarIcon,
 
+  ticketHistoryAudit: DocumentMagnifyingGlassIcon,
+  "ticketHistoryAudit.list": DocumentMagnifyingGlassIcon,
+
+  companySettings: Cog6ToothIcon,
+  "companySettings.list": Cog6ToothIcon,
+
+  raiseTicket: PlusCircleIcon,
+  "raiseTicket.list": PlusCircleIcon,
+
+  myTickets: TicketIcon,
+  "myTickets.list": TicketIcon,
+
+  myTicketHistory: DocumentMagnifyingGlassIcon,
+  "myTicketHistory.list": DocumentMagnifyingGlassIcon,
+
+  myNotifications: BellIcon,
+  "myNotifications.list": BellIcon,
+
+  // Existing settings icons (kept so settings.ts keeps working)
   settings: SettingIcon,
   "settings.general": HiUserIcon,
   "settings.appearance": TbPalette,

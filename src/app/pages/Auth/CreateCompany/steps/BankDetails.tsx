@@ -43,7 +43,7 @@ export function BankDetails({
       companyName: formData.companyInfo.companyName,
       natureOfBusiness: formData.companyInfo.natureOfBusiness,
       taxSystem: formData.companyInfo.taxSystem,
-
+      companyCode: formData.companyInfo.companyCode,
       // Basic Details
       addressLine1: formData.basicDetails.addressLine1,
       addressLine2: formData.basicDetails.addressLine2 ?? "",
