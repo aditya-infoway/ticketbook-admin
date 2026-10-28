@@ -1,5 +1,6 @@
 export interface Region {
   id: string;
+  regionNo?: string;
   regionCode: string;
   regionName: string;
   regionTypeId: string;

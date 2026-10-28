@@ -94,7 +94,7 @@ export default function DepartmentPage() {
       } else {
         toasterrormsg(deptRes?.data?.message || "Failed to fetch departments.");
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while fetching department data.");
     } finally {
       setLoading(false);
@@ -185,7 +185,7 @@ export default function DepartmentPage() {
           );
         }
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while saving the department.");
     }
   };
@@ -222,7 +222,7 @@ export default function DepartmentPage() {
       } else {
         toasterrormsg(response.data?.message || "Failed to update status.");
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while updating the status.");
     }
   };
@@ -241,7 +241,7 @@ export default function DepartmentPage() {
       } else {
         toasterrormsg(response.data?.message || "Failed to delete department.");
       }
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while deleting the department.");
     }
   };
@@ -261,7 +261,7 @@ export default function DepartmentPage() {
       setData((prev) => prev.filter((item) => !ids.has(item.id)));
       setRowSelection({});
       toastsuccessmsg("Selected departments deleted successfully.");
-    } catch (error) {
+    } catch {
       toasterrormsg("Something went wrong while deleting departments.");
     }
   };

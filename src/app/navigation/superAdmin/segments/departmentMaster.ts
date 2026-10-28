@@ -18,5 +18,29 @@ export const departmentMaster: NavigationTree = {
       title: "Create Type",
       icon: "departmentMaster.createType",
     },
+    {
+      id: "departmentMaster.role-master",
+      type: "collapse",
+      path: "/department-master/role-master",
+      title: "Role Master",
+      transKey: "Role Master",
+      icon: "departmentMaster.role-master",
+      childs: [
+        {
+          id: "departmentMaster.role-master.role-category",
+          type: "item",
+          path: "/department-master/role-master/role-category",
+          title: "Role Category",
+          transKey: "Role Category",
+        },
+        {
+          id: "departmentMaster.role-master.role",
+          type: "item",
+          path: "/department-master/role-master/role",
+          title: "Role",
+          transKey: "Role",
+        },
+      ],
+    },
   ],
 };

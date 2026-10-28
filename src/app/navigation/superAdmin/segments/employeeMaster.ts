@@ -7,8 +7,15 @@ export const employeeMaster: NavigationTree = {
     {
       id: "employeeMaster.list",
       type: "item",
-      path: "/employee-master/list",
+      path: "/employee-master/employee-list",
       title: "Employee List",
+      icon: "employeeMaster.list",
+    },
+     {
+      id: "employeeMaster.typemaster",
+      type: "item",
+      path: "/employee-master/employee-type",
+      title: "Employee Type Master",
       icon: "employeeMaster.list",
     },
     {

@@ -17,58 +17,10 @@ import { MasterToolbar } from "../shared/MasterToolbar";
 import { BranchDataDrawer } from "./BranchDataDrawer";
 import { columns, exportColumns } from "./columns";
 import type { Branch } from "../shared/types";
-
-const seedBranches: Branch[] = [
-  {
-    id: "b1",
-    branchCode: "BR-001",
-    branchName: "Mumbai Central",
-    region: "West",
-    country: "India",
-    countryCode: "IN",
-    state: "Maharashtra",
-    stateCode: "MH",
-    city: "Mumbai",
-    fullAddress: "101, Marine Drive",
-    pinCode: "400001",
-    phoneNumber: 9876543210,
-    contactNumber: 9876543210,
-    branchEmail: "mumbai@company.com",
-    branchManager: "John Doe",
-    areaManager: "Jane Smith",
-    openingDate: "2022-04-01",
-    workingHours: "9-6",
-    status: "Active",
-    createdBy: "System",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "b2",
-    branchCode: "BR-002",
-    branchName: "Delhi North",
-    region: "North",
-    country: "India",
-    countryCode: "IN",
-    state: "Delhi",
-    stateCode: "DL",
-    city: "New Delhi",
-    fullAddress: "22, Connaught Place",
-    pinCode: "110001",
-    phoneNumber: 9876543211,
-    contactNumber: 9876543211,
-    branchEmail: "delhi@company.com",
-    branchManager: "Mike Johnson",
-    areaManager: "Jane Smith",
-    openingDate: "2021-11-10",
-    workingHours: "10-7",
-    status: "Active",
-    createdBy: "System",
-    createdAt: "2023-11-10",
-  },
-];
+import { Delete, Get, Put } from "@/ApiHelper";
 
 export default function BranchPage() {
-  const [data, setData] = useState<Branch[]>(seedBranches);
+  const [data, setData] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -80,10 +32,28 @@ export default function BranchPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterStatus, setFilterStatus] = useState("");
 
+  // bump on every open so the drawer remounts and re-reads editBranch
+  const [drawerKey, setDrawerKey] = useState(0);
+  const openDrawer = (row: Branch | null) => {
+    setEditBranch(row);
+    setDrawerKey((k) => k + 1);
+    setDrawerOpen(true);
+  };
+
   const fetchAll = async () => {
     setLoading(true);
     try {
-      // TODO: API fetch
+      const res: any = await Get("superadmin/branch/list", {}, false);
+      const rows: any[] = res?.data?.data ?? [];
+      setData(
+        rows.map((r) => ({
+          ...r,
+          id: String(r.branchId),
+          createdAt: r.created,
+        })),
+      );
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to load branches");
     } finally {
       setLoading(false);
     }
@@ -116,25 +86,59 @@ export default function BranchPage() {
     getPaginationRowModel: getPaginationRowModel(),
     // 👈 This is required for the action buttons to work
     meta: {
-      openEditDrawer: (branch: Branch) => {
-        setEditBranch(branch);
-        setDrawerOpen(true);
-      },
-      deleteRow: (row: any) => {
+      openEditDrawer: (branch: Branch) => openDrawer(branch),
+      deleteRow: async (row: any) => {
         const branch = row.original;
-        {
-          setData((prev) => prev.filter((b) => b.id !== branch.id));
-          toast.success("Branch deleted successfully");
+        if (
+          window.confirm(
+            `Are you sure you want to delete ${branch.branchName}?`,
+          )
+        ) {
+          try {
+            await Delete(
+              "superadmin/branch/delete",
+              { branchId: branch.id },
+              false,
+            );
+            toast.success("Branch deleted successfully");
+            fetchAll();
+          } catch (err: any) {
+            toast.error(err?.response?.data?.message || "Delete failed");
+          }
         }
       },
-      toggleStatus: (branch: Branch) => {
+      toggleStatus: async (branch: Branch) => {
         const newStatus = branch.status === "Active" ? "Inactive" : "Active";
-        setData((prev) =>
-          prev.map((b) =>
-            b.id === branch.id ? { ...b, status: newStatus } : b,
-          ),
-        );
-        toast.success(`Branch marked as ${newStatus}`);
+        try {
+          // update validator needs the full payload (password stays unchanged when omitted)
+          await Put(
+            "superadmin/branch/update",
+            {
+              branchId: branch.id,
+              branchCode: branch.branchCode,
+              branchName: branch.branchName,
+              regionId: branch.regionId || null,
+              country: branch.country,
+              state: branch.state,
+              city: branch.city,
+              fullAddress: branch.fullAddress,
+              pinCode: branch.pinCode,
+              contactNumber: String(branch.contactNumber || ""),
+              phoneNumber: String(branch.phoneNumber || ""),
+              branchEmail: branch.branchEmail,
+              branchManager: branch.branchManager,
+              areaManager: branch.areaManager,
+              openingDate: branch.openingDate,
+              workingHours: branch.workingHours,
+              status: newStatus,
+            },
+            false,
+          );
+          toast.success(`Branch marked as ${newStatus}`);
+          fetchAll();
+        } catch (err: any) {
+          toast.error(err?.response?.data?.message || "Status update failed");
+        }
       },
     },
   });
@@ -150,8 +154,7 @@ export default function BranchPage() {
           showFilters={false}
           onToggleFilters={() => setShowFilters((v) => !v)}
           onCreate={() => {
-            setEditBranch(null);
-            setDrawerOpen(true);
+            openDrawer(null);
           }}
           onExportExcel={() =>
             exportToExcel(filteredData, exportColumns, "branches")
@@ -183,6 +186,7 @@ export default function BranchPage() {
       </div>
 
       <BranchDataDrawer
+        key={drawerKey}
         isOpen={drawerOpen}
         close={() => setDrawerOpen(false)}
         onSaved={fetchAll}

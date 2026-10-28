@@ -12,7 +12,7 @@ import { Get } from "@/ApiHelper";
 import { Listbox } from "@/components/shared/form/StyledListbox";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Button, Input, Textarea } from "@/components/ui";
-import { Department, formatDateTime } from "./data";
+import { Department } from "./data";
 import { departmentScopeOptions, departmentStatusOptions } from "./options";
 
 interface Option {

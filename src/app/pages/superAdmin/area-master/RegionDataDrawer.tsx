@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState,useEffect } from "react";
+import { Fragment, useMemo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Button, Input } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
-import { Get,Post,Put } from "@/ApiHelper";
+import { Get, Post, Put } from "@/ApiHelper";
 import type { Region } from "./shared/types";
 
 interface RegionDrawerProps {
@@ -28,7 +28,6 @@ interface Opt {
 }
 
 // Mock Region Type Options (Replace with API fetch later)
-
 
 const STATUS_OPTIONS = [
   { id: "Active", label: "Active" },
@@ -58,7 +57,8 @@ function getInitialForm(editRegion: Region | null) {
       label: c.name,
     }));
 
-    const country = countryOptions.find((o) => o.label === editRegion.country) || null;
+    const country =
+      countryOptions.find((o) => o.label === editRegion.country) || null;
 
     let state: Opt | null = null;
     let city: Opt | null = null;
@@ -95,8 +95,8 @@ function getInitialForm(editRegion: Region | null) {
 
   // New region -> generate IDs only once
   return {
-    id: `REG-ID-${Math.floor(100 + Math.random() * 900)}`,
-    regionCode: `REG-${Math.floor(100 + Math.random() * 900)}`,
+    id:"",
+    regionCode: "",
     regionName: "",
     regionTypeId: "",
     description: "",
@@ -107,18 +107,18 @@ function getInitialForm(editRegion: Region | null) {
     status: "Active",
   };
 }
- 
+
 export function RegionDataDrawer({
   isOpen,
   close,
   onSaved,
   editRegion,
 }: RegionDrawerProps) {
-const [form, setForm] = useState(() => getInitialForm(editRegion));
-const [errors, setErrors] = useState<Record<string, string>>({});
-const [submitting, setSubmitting] = useState(false);
-const [nextNo, setNextNo] = useState("");
-const [regionTypes, setRegionTypes] = useState<Opt[]>([]);
+  const [form, setForm] = useState(() => getInitialForm(editRegion));
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [nextNo, setNextNo] = useState("");
+  const [regionTypes, setRegionTypes] = useState<Opt[]>([]);
   const sf = (k: keyof typeof form, v: any) => {
     setForm((f) => ({ ...f, [k]: v }));
     if (errors[k as string]) setErrors((prev) => ({ ...prev, [k]: "" }));
@@ -133,59 +133,52 @@ const [regionTypes, setRegionTypes] = useState<Opt[]>([]);
     [],
   );
 
+  useEffect(() => {
+    if (!isOpen || editRegion) return; // sirf create mode me
+    const financialYearId = localStorage.getItem("financialYearId");
+    if (!financialYearId) return;
 
-useEffect(() => {
-  if (!isOpen || editRegion) return; // sirf create mode me
-  const financialYearId = localStorage.getItem("financialYearId");
-  if (!financialYearId) return;
-
-  (async () => {
-    try {
-      const res = await Get(
-        "superadmin/region/next-number",
-        { financialYearId },
-        false,
-      );
-      if (res?.data?.success) {
-        setNextNo(res.data.data.regionNo); // 👈 backend jo field de
-      }
-    } catch (error) {
-      console.error("Region number error:", error);
-    }
-  })();
-}, [isOpen, editRegion]);
-useEffect(() => {
-  if (!isOpen) return;
-
-  (async () => {
-    try {
-      const res = await Get(
-        "superadmin/region-type/list",
-        {},
-        false,
-      );
-
-  
-
-      if (res?.data?.success) {
-        const list = res.data.data || [];
-
-        setRegionTypes(
-          list.map((item: any) => ({
-            id: String(item.regionTypeId),
-            label: item.typeName,
-          })),
+    (async () => {
+      try {
+        const res = await Get(
+          "superadmin/region/next-number",
+          { financialYearId },
+          false,
         );
-      } else {
-        setRegionTypes([]);
+        if (res?.data?.success) {
+          setNextNo(res.data.data.regionNo); // 👈 backend jo field de
+        }
+      } catch (error) {
+        console.error("Region number error:", error);
       }
-    } catch (error) {
-      console.error("Region type list error:", error);
-      setRegionTypes([]);
-      toast.error("Failed to load region types");
-    }
-  })();
-}, [isOpen]);
+    })();
+  }, [isOpen, editRegion]);
+  useEffect(() => {
+    if (!isOpen) return;
+
+    (async () => {
+      try {
+        const res = await Get("superadmin/region-type/list", {}, false);
+
+        if (res?.data?.success) {
+          const list = res.data.data || [];
+
+          setRegionTypes(
+            list.map((item: any) => ({
+              id: String(item.regionTypeId),
+              label: item.typeName,
+            })),
+          );
+        } else {
+          setRegionTypes([]);
+        }
+      } catch (error) {
+        console.error("Region type list error:", error);
+        setRegionTypes([]);
+        toast.error("Failed to load region types");
+      }
+    })();
+  }, [isOpen]);
   const stateOptions = useMemo(
     () =>
       form.country
@@ -222,89 +215,89 @@ useEffect(() => {
     return Object.keys(next).length === 0;
   };
 
-const onSubmit = async () => {
-  if (!validate()) return;
+  const onSubmit = async () => {
+    if (!validate()) return;
 
-  const financialYearId = localStorage.getItem("financialYearId");
-  const companyId = localStorage.getItem("companyId");
+    const financialYearId = localStorage.getItem("financialYearId");
+    const companyId = localStorage.getItem("companyId");
 
-  if (!financialYearId) {
-    toast.error("Financial Year not found. Please select a company year.");
-    return;
-  }
-
-  try {
-    setSubmitting(true);
-
-    // ✅ Create ke waqt Region ID = nextNo (API se aaya)
-    // ✅ Edit ke waqt Region ID = form.id (existing record)
-    const regionId = editRegion ? form.id : nextNo;
-
-    const payload: any = {
-      financialYearId: Number(financialYearId),
-
-      ...(companyId ? { companyId: Number(companyId) } : {}),
-
-      regionCode: form.regionCode,
-      regionName: form.regionName,
-      description: form.description,
-
-      regionTypeId: form.regionTypeId ? Number(form.regionTypeId) : null,
-
-      country: form.country?.label || "",
-      state: form.state?.label || "",
-      city: form.city?.label || "",
-
-      displayOrder: form.displayOrder ? Number(form.displayOrder) : null,
-
-      status: form.status,
-
-      createdBy: companyId ? Number(companyId) : undefined,
-      createdType: "Super Admin",
-    };
-
-    console.log("Region Payload:", payload, "regionId:", regionId);
-
-    let response;
-
-    if (editRegion) {
-      // ✅ Update — regionId body me
-      response = await Put(
-        "superadmin/region/update",
-        { regionId, ...payload },
-        false,
-      );
-    } else {
-      // ✅ Create — regionId body me
-      response = await Post(
-        "superadmin/region/create",
-        { regionId, ...payload },
-        false,
-      );
+    if (!financialYearId) {
+      toast.error("Financial Year not found. Please select a company year.");
+      return;
     }
 
-    if (response.data?.success) {
-      toast.success(
-        response.data?.message ||
-          (editRegion
-            ? "Region updated successfully"
-            : "Region added successfully"),
-      );
-      onSaved();
-      handleClose();
-    } else {
-      toast.error(response.data?.message || "Failed to save region.");
+    try {
+      setSubmitting(true);
+
+      // ✅ Create ke waqt Region ID = nextNo (API se aaya)
+      // ✅ Edit ke waqt Region ID = form.id (existing record)
+      const regionId = editRegion ? form.id : nextNo;
+
+      const payload: any = {
+        financialYearId: Number(financialYearId),
+
+        ...(companyId ? { companyId: Number(companyId) } : {}),
+
+        regionCode: form.regionCode,
+        regionName: form.regionName,
+        description: form.description,
+
+        regionTypeId: form.regionTypeId ? Number(form.regionTypeId) : null,
+
+        country: form.country?.label || "",
+        state: form.state?.label || "",
+        city: form.city?.label || "",
+
+        displayOrder: form.displayOrder ? Number(form.displayOrder) : null,
+
+        status: form.status,
+
+        createdBy: companyId ? Number(companyId) : undefined,
+        createdType: "Super Admin",
+      };
+
+      console.log("Region Payload:", payload, "regionId:", regionId);
+
+      let response;
+
+      if (editRegion) {
+        // ✅ Update — regionId body me
+        response = await Put(
+          "superadmin/region/update",
+          { regionId, ...payload },
+          false,
+        );
+      } else {
+        // ✅ Create — regionId body me
+        response = await Post(
+          "superadmin/region/create",
+          { regionId, ...payload },
+          false,
+        );
+      }
+
+      if (response.data?.success) {
+        toast.success(
+          response.data?.message ||
+            (editRegion
+              ? "Region updated successfully"
+              : "Region added successfully"),
+        );
+        onSaved();
+        handleClose();
+      } else {
+        toast.error(response.data?.message || "Failed to save region.");
+      }
+    } catch (error) {
+      console.error("Region save error:", error);
+      toast.error("Something went wrong while saving.");
+    } finally {
+      setSubmitting(false);
     }
-  } catch (error) {
-    console.error("Region save error:", error);
-    toast.error("Something went wrong while saving.");
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[110]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-110" onClose={handleClose}>
         <TransitionChild
           as="div"
           enter="ease-out duration-300"
@@ -327,7 +320,7 @@ const onSubmit = async () => {
           className="dark:bg-dark-700 fixed top-0 right-0 flex h-full w-full transform-gpu flex-col bg-white transition-transform duration-200 lg:max-w-[50%]"
         >
           {/* Header */}
-          <div className="bg-primary-600 flex flex-shrink-0 items-center justify-between px-5 py-4 text-white">
+          <div className="bg-primary-600 flex shrink-0 items-center justify-between px-5 py-4 text-white">
             <h3 className="text-base font-bold">
               {editRegion ? "Edit Region / Area" : "Add Region / Area"}
             </h3>
@@ -343,16 +336,15 @@ const onSubmit = async () => {
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              
               {/* Region ID */}
               <div>
                 <FieldLabel>Region ID (Auto)</FieldLabel>
                 <Input
-    value={editRegion ? form.id : nextNo || "Generating..."}
-    readOnly
-    disabled
-    className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
-  />
+                  value={editRegion?.regionNo || nextNo || "Generating..."}
+                  readOnly
+                  disabled
+                  className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
+                />
               </div>
 
               {/* Region Code */}
@@ -364,7 +356,9 @@ const onSubmit = async () => {
                   onChange={(e: any) => sf("regionCode", e.target.value)}
                 />
                 {errors.regionCode && (
-                  <p className="mt-1 text-xs text-red-500">{errors.regionCode}</p>
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.regionCode}
+                  </p>
                 )}
               </div>
 
@@ -377,36 +371,38 @@ const onSubmit = async () => {
                   onChange={(e: any) => sf("regionName", e.target.value)}
                 />
                 {errors.regionName && (
-                  <p className="mt-1 text-xs text-red-500">{errors.regionName}</p>
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.regionName}
+                  </p>
                 )}
               </div>
 
               {/* Region Type */}
               <div>
                 <FieldLabel required>Region / Area Type</FieldLabel>
-             <Combobox
-  data={regionTypes}
-  displayField="label"
-  value={
-    regionTypes.find(
-      (t) => t.id === form.regionTypeId,
-    ) || null
-  }
-  onChange={(v: any) => {
-    sf("regionTypeId", v?.id || "");
+                <Combobox
+                  data={regionTypes}
+                  displayField="label"
+                  value={
+                    regionTypes.find((t) => t.id === form.regionTypeId) || null
+                  }
+                  onChange={(v: any) => {
+                    sf("regionTypeId", v?.id || "");
 
-    if (errors.regionTypeId) {
-      setErrors((p) => ({
-        ...p,
-        regionTypeId: "",
-      }));
-    }
-  }}
-  placeholder="Select region type"
-  searchFields={["label"]}
-/>
+                    if (errors.regionTypeId) {
+                      setErrors((p) => ({
+                        ...p,
+                        regionTypeId: "",
+                      }));
+                    }
+                  }}
+                  placeholder="Select region type"
+                  searchFields={["label"]}
+                />
                 {errors.regionTypeId && (
-                  <p className="mt-1 text-xs text-red-500">{errors.regionTypeId}</p>
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.regionTypeId}
+                  </p>
                 )}
               </div>
 
@@ -414,7 +410,7 @@ const onSubmit = async () => {
               <div className="sm:col-span-2">
                 <FieldLabel>Description</FieldLabel>
                 <textarea
-                  className="dark:bg-dark-800 dark:border-dark-600 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:text-dark-100 dark:placeholder:text-dark-400"
+                  className="dark:bg-dark-800 dark:border-dark-600 focus:border-primary-500 focus:ring-primary-500 dark:text-dark-100 dark:placeholder:text-dark-400 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-1 focus:outline-none"
                   rows={3}
                   placeholder="Enter description (optional)"
                   value={form.description}
@@ -478,7 +474,9 @@ const onSubmit = async () => {
                   min={1}
                   placeholder="Enter display order"
                   value={form.displayOrder}
-                  onChange={(e: any) => sf("displayOrder", Number(e.target.value))}
+                  onChange={(e: any) =>
+                    sf("displayOrder", Number(e.target.value))
+                  }
                 />
               </div>
 
@@ -499,7 +497,7 @@ const onSubmit = async () => {
           </div>
 
           {/* Footer */}
-          <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
             <Button
               variant="outlined"
               color="secondary"
