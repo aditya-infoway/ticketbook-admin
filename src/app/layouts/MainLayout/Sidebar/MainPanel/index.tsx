@@ -11,7 +11,9 @@ import { Item } from "./Menu/item";
 import { Profile } from "../../Profile";
 import { useThemeContext } from "@/app/contexts/theme/context";
 import { useSidebarContext } from "@/app/contexts/sidebar/context"; // ✅ add kiya
-import { settings } from "@/app/navigation/settings";
+import { useAuthContext } from "@/app/contexts/auth/context";
+import { getCurrentRole } from "@/app/navigation/role";
+import { getSettings } from "@/app/navigation/roleSettings";
 import { NavigationTree } from "@/@types/navigation";
 import { SegmentPath } from "..";
 
@@ -30,7 +32,19 @@ export function MainPanel({
 }: MainPanelProps) {
   const { cardSkin } = useThemeContext();
   const { isExpanded, open } = useSidebarContext(); // ✅ add kiya
-  const appLogo = useCompanyIcon();
+  const { user } = useAuthContext();
+
+  const role = getCurrentRole();
+  const settings = getSettings(role);
+
+  // Super admin: icon from the company details (hook).
+  // Employee: company icon / logo that came with the login response.
+  const companyIcon = useCompanyIcon();
+  const sessionUser = user as any;
+  const appLogo =
+    role === "superAdmin"
+      ? companyIcon
+      : sessionUser?.companyIcon || sessionUser?.companyLogo || companyIcon;
 
   const handleSettingsClick = () => {
     setActiveSegmentPath?.(settings.path);
@@ -69,8 +83,8 @@ export function MainPanel({
           <Item
             id={settings.id}
             component={Link}
-            to="/settings/appearance"
-            onClick={handleSettingsClick} // ✅ ye add kiya
+            to={settings.childs?.[0]?.path ?? settings.path}
+            onClick={handleSettingsClick}
             title="Settings"
             isActive={activeSegmentPath === settings.path}
             icon={settings.icon}

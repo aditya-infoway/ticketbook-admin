@@ -18,8 +18,11 @@ import { APP_FAVICON, APP_NAME, ColorType } from "@/constants/app";
 
 import { useAuthContext } from "@/app/contexts/auth/context";
 import { GHOST_ENTRY_PATH } from "@/constants/app";
+import { getCurrentRole } from "@/app/navigation/role";
+import { getSettings } from "@/app/navigation/roleSettings";
+import { useEmployeeProfile } from "../../../hooks/Useemployeeprofile";
 import { useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Get } from "@/ApiHelper";
 
 // Define Link Types
@@ -32,60 +35,32 @@ interface LinkItem {
   color: ColorType;
 }
 
-const links: LinkItem[] = [
-  {
-    id: "1",
-    title: "Profile",
-    description: "Your profile Setting",
-    to: "/settings/general",
-    Icon: TbUser,
-    color: "warning",
-  },
-  // {
-  //   id: "2",
-  //   title: "Messages",
-  //   description: "Your messages and tasks",
-  //   to: "/apps/chat",
-  //   Icon: ChatBubbleLeftIcon,
-  //   color: "info",
-  // },
-  // {
-  //   id: "3",
-  //   title: "Team",
-  //   description: "Your team members",
-  //   to: "#",
-  //   Icon: TbUsersGroup,
-  //   color: "secondary",
-  // },
-  // {
-  //   id: "4",
-  //   title: "Billing",
-  //   description: "Your billing information",
-  //   to: "/settings/billing",
-  //   Icon: TbCoins,
-  //   color: "error",
-  // },
-  {
-    id: "5",
-    title: "Settings",
-    description: "Webapp settings",
-    to: "/settings/appearance",
-    Icon: Cog6ToothIcon,
-    color: "success",
-  },
-];
-
 // ----------------------------------------------------------------------
 
 export function Profile() {
-  const { logout } = useAuthContext();
+  const { logout, user } = useAuthContext();
   const navigate = useNavigate();
 
-  const [companyName, setCompanyName] = useState("Company Name");
+  const role = getCurrentRole();
+  const isSuperAdmin = role === "superAdmin";
+
+  // Employee: company / name come from the login response (kept in `user`).
+  // Super admin: fetched from company details (needs the company token).
+  const sessionUser = user as any;
+
+  // Employee: own name + profile photo (same data as the General settings page)
+  const employeeProfile = useEmployeeProfile(!isSuperAdmin);
+
+  const [companyName, setCompanyName] = useState(
+    sessionUser?.companyName || "Company Name",
+  );
   const [companyLogo, setCompanyLogo] = useState("");
   const [companyIcon, setCompanyIcon] = useState("");
 
   useEffect(() => {
+    // company-details API is for the super admin token only
+    if (!isSuperAdmin) return;
+
     const fetchCompanyName = async () => {
       try {
         const companyDetailsId = localStorage.getItem("companyDetailsId");
@@ -112,7 +87,41 @@ export function Profile() {
     };
 
     fetchCompanyName();
-  }, []);
+  }, [isSuperAdmin]);
+
+  // Links follow the settings segment of the role, so they always match the
+  // paths of the sidebar: /settings/..., /branch/settings/..., /employee/settings/...
+  const { profilePath, settingsPath } = useMemo(() => {
+    const segment = getSettings(role);
+    const find = (key: string) =>
+      segment.childs?.find((child) => child.path?.endsWith(`/${key}`))?.path;
+
+    const fallback = segment.path || "/settings";
+
+    return {
+      profilePath: find("general") || find("profile") || fallback,
+      settingsPath: find("appearance") || fallback,
+    };
+  }, [role]);
+
+  const links: LinkItem[] = [
+    {
+      id: "1",
+      title: isSuperAdmin ? "Profile" : "My Profile",
+      description: "Your profile Setting",
+      to: profilePath,
+      Icon: TbUser,
+      color: "warning",
+    },
+    {
+      id: "5",
+      title: "Settings",
+      description: "Webapp settings",
+      to: settingsPath,
+      Icon: Cog6ToothIcon,
+      color: "success",
+    },
+  ];
 
   const handleLogout = async (close: () => void) => {
     try {
@@ -124,7 +133,27 @@ export function Profile() {
     }
   };
 
-  const logoSrc = companyIcon || companyLogo || APP_FAVICON;
+  // Super admin: logo from company details.
+  // Employee: own profile photo -> company icon / logo -> default icon.
+  const employeePhoto = employeeProfile?.profilePhoto || "";
+  const logoSrc = isSuperAdmin
+    ? companyIcon || companyLogo || APP_FAVICON
+    : employeePhoto ||
+      sessionUser?.companyIcon ||
+      sessionUser?.companyLogo ||
+      APP_FAVICON;
+
+  // a real photo should fill the circle, logos / icons stay fully visible
+  const imageClass = employeePhoto ? "object-cover" : "object-contain";
+
+  // Super admin -> company name / "Company Profile"
+  // Employee    -> own name / company name
+  const displayName = isSuperAdmin
+    ? companyName || "Company Name"
+    : employeeProfile?.employeeName || sessionUser?.employeeName || "My Profile";
+  const subtitle = isSuperAdmin
+    ? "Company Profile"
+    : sessionUser?.companyName || companyName;
 
   return (
     <Popover className="relative">
@@ -133,8 +162,8 @@ export function Profile() {
         size={12}
         role="button"
         src={logoSrc}
-        alt={companyName || APP_NAME}
-        classNames={{ image: "object-contain p-0.5" }}
+        alt={displayName || APP_NAME}
+        classNames={{ image: `${imageClass} ${employeePhoto ? "" : "p-0.5"}` }}
         className="cursor-pointer"
       />
 
@@ -157,20 +186,21 @@ export function Profile() {
                 <Avatar
                   size={14}
                   src={logoSrc}
-                  alt={companyName || APP_NAME}
-                  classNames={{ image: "object-contain p-1" }}
+                  alt={displayName || APP_NAME}
+                  classNames={{ image: `${imageClass} ${employeePhoto ? "" : "p-1"}` }}
                 />
 
-                <div>
+                <div className="min-w-0">
                   <Link
-                    className="hover:text-primary-600 focus:text-primary-600 dark:text-dark-100 dark:hover:text-primary-400 dark:focus:text-primary-400 text-base font-medium text-gray-700"
-                    to="/settings/general"
+                    className="hover:text-primary-600 focus:text-primary-600 dark:text-dark-100 dark:hover:text-primary-400 dark:focus:text-primary-400 block truncate text-base font-medium text-gray-700"
+                    to={profilePath}
+                    onClick={() => close()}
                   >
-                    {companyName || "Company Name"}
+                    {displayName}
                   </Link>
 
-                  <p className="dark:text-dark-300 mt-0.5 text-xs text-gray-400">
-                    Company Profile
+                  <p className="dark:text-dark-300 mt-0.5 truncate text-xs text-gray-400">
+                    {subtitle}
                   </p>
                 </div>
               </div>

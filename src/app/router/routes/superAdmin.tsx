@@ -64,6 +64,14 @@ export const superAdminRoutes: RouteObject[] = [
     }),
   },
   {
+    path: "/department-master/resolver-team",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/department-master/resolver-team")
+      ).default,
+    }),
+  },
+  {
     path: "/department-master/role-master/role",
     lazy: async () => ({
       Component: (
@@ -104,10 +112,12 @@ export const superAdminRoutes: RouteObject[] = [
       ).default,
     }),
   },
-    {
+  {
     path: "/employee-master/employee-list",
     lazy: async () => ({
-      Component: (await import("@/app/pages/superAdmin/employee-master/employee-list")).default,
+      Component: (
+        await import("@/app/pages/superAdmin/employee-master/employee-list")
+      ).default,
     }),
   },
   {

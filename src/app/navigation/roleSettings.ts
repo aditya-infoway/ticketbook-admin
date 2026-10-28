@@ -2,27 +2,33 @@ import { NavigationTree } from "@/@types/navigation";
 import { settings } from "./settings";
 import { UserRole } from "./role";
 
-/**
- * Which Settings pages each role can see in the sidebar (matched by path).
- * "all" = no filtering.
- *
- * Keep this in sync with the RoleGuard blocks of the settings routes in
- * router/protected.tsx (the sidebar only hides links, the guard blocks URLs).
- */
-export const SETTINGS_ACCESS: Record<UserRole, string[] | "all"> = {
-  superAdmin: "all",
-  branch: ["/settings/general", "/settings/appearance"],
-  employee: ["/settings/general", "/settings/appearance"],
+const SETTINGS_PREFIX: Record<UserRole, string> = {
+  superAdmin: "/settings",
+  branch: "/branch/settings",
+  employee: "/employee/settings",
 };
 
-export const getSettings = (role: UserRole): NavigationTree => {
-  const allowed = SETTINGS_ACCESS[role];
-  if (allowed === "all") return settings;
+const SETTINGS_ACCESS: Record<UserRole, string[] | "all"> = {
+  superAdmin: "all",
+  branch: ["general", "appearance"],
+  employee: ["general", "appearance"],
+};
 
-  return {
-    ...settings,
-    childs: settings.childs?.filter(
-      (child) => !!child.path && allowed.includes(child.path),
-    ),
-  };
+const rewritePath = (path: string | undefined, prefix: string) =>
+  path ? path.replace(/^\/settings/, prefix) : path;
+
+export const getSettings = (role: UserRole): NavigationTree => {
+  const prefix = SETTINGS_PREFIX[role];
+  const allowed = SETTINGS_ACCESS[role];
+
+  const childs = (settings.childs ?? [])
+    .filter((child) => {
+      if (allowed === "all") return true;
+      const last = child.path?.split("/").filter(Boolean).pop();
+      return !!last && allowed.includes(last);
+    })
+    .map((child) => ({ ...child, path: rewritePath(child.path, prefix) }));
+
+  // root path bhi rewrite hona chahiye, taaki isRouteActive(/employee/settings/general) match kare
+return { ...settings, path: rewritePath(settings.path, prefix), childs } as NavigationTree;
 };
