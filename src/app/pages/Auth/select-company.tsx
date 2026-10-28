@@ -20,12 +20,17 @@ function formatCompanyDateRange(startDate: string, endDate: string) {
   if (!startDate || !endDate) return "";
   const start = new Date(startDate);
   const end = new Date(endDate);
-  const opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", year: "numeric" };
+  const opts: Intl.DateTimeFormatOptions = {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  };
   return `${start.toLocaleDateString("en-GB", opts)} - ${end.toLocaleDateString("en-GB", opts)}`;
 }
 
 export default function SelectCompany() {
-  const { user, completeAuth } = useAuthContext();   // 👈 completeAuth destructure karo
+  const { user, completeAuth } = useAuthContext();
+const isEmployee = ["employee", "branch"].includes((user as any)?.role);
   const navigate = useNavigate();
   const [financialYears, setFinancialYears] = useState<FinancialYearRow[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -41,6 +46,11 @@ export default function SelectCompany() {
   const fetchFinancialYears = async () => {
     setLoading(true);
     try {
+      if (isEmployee) {
+        setFinancialYears((user as any)?.financialYears || []);
+        return;
+      }
+
       const response = await Get("superadmin/financial-years", {}, false);
       if (response.data?.success) {
         setFinancialYears(response.data.data || []);
@@ -67,8 +77,8 @@ export default function SelectCompany() {
     localStorage.setItem("financialYearId", String(row.financialYearId));
     localStorage.setItem("companyDetailsId", String(row.companyDetailsId));
 
-    completeAuth(String(row.companyId));   // 👈 isAuthenticated ko true karega
-    navigate("/dashboards/home");           // 👈 "dashboard" nahi, "dashboards" (route config ke mutabik)
+    completeAuth(String(row.companyId)); // 👈 isAuthenticated ko true karega
+    navigate("/dashboards/home"); // 👈 "dashboard" nahi, "dashboards" (route config ke mutabik)
   };
 
   const handleCreateSuccess = () => {
@@ -82,17 +92,17 @@ export default function SelectCompany() {
     <Page title="Select Company">
       <main className="min-h-screen bg-white">
         <div className="w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden min-h-screen">
+          <div className="grid min-h-screen grid-cols-1 gap-0 overflow-hidden lg:grid-cols-2">
             {/* Left Side */}
-            <div className="flex flex-col bg-white justify-between min-h-screen relative">
+            <div className="relative flex min-h-screen flex-col justify-between bg-white">
               {/* Top Section: Logo, Title, and Table */}
               <div className="w-full">
                 {/* Logo Area */}
-                <div className="py-6 bg-white flex flex-col items-center justify-center pt-40">
+                <div className="flex flex-col items-center justify-center bg-white py-6 pt-40">
                   <img
                     src={APP_LOGO}
                     alt="Ticket Book"
-                    className="h-30 w-100 "
+                    className="h-30 w-100"
                   />
                 </div>
 
@@ -104,32 +114,34 @@ export default function SelectCompany() {
                     />
                   </div>
                 ) : (
-                  <div className="px-6 sm:px-10 py-4 w-full">
+                  <div className="w-full px-6 py-4 sm:px-10">
                     {/* Header Banner */}
                     <div
-                      className="px-4 py-3 text-left text-white font-bold text-lg tracking-wide rounded-t-sm"
+                      className="rounded-t-sm px-4 py-3 text-left text-lg font-bold tracking-wide text-white"
                       style={{ backgroundColor: "#1a2fa8" }}
                     >
                       Select Company
                     </div>
 
                     {/* Table Container */}
-                    <div className="w-full border border-t-0 border-gray-300 rounded-b-sm shadow-sm overflow-hidden">
+                    <div className="w-full overflow-hidden rounded-b-sm border border-t-0 border-gray-300 shadow-sm">
                       {/* Table Header */}
-                      <div className="grid grid-cols-2 bg-gray-100 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-gray-700 border-b border-gray-300">
+                      <div className="grid grid-cols-2 border-b border-gray-300 bg-gray-100 px-4 py-2.5 text-xs font-bold tracking-wider text-gray-700 uppercase">
                         <span>COMPANY NAME</span>
                         <span className="text-right">DATE</span>
                       </div>
 
                       {/* Fixed Height Scrollable Rows */}
-                      <div className="h-[320px] overflow-y-auto bg-white divide-y divide-gray-200">
+                      <div className="h-[320px] divide-y divide-gray-200 overflow-y-auto bg-white">
                         {loading ? (
-                          <div className="px-4 py-12 text-center text-sm text-gray-400 bg-white">
+                          <div className="bg-white px-4 py-12 text-center text-sm text-gray-400">
                             Loading...
                           </div>
                         ) : financialYears.length === 0 ? (
-                          <div className="px-4 py-12 text-center text-sm text-gray-400 bg-white">
-                            No companies found. Create a new company to continue.
+                          <div className="bg-white px-4 py-12 text-center text-sm text-gray-400">
+                            {isEmployee
+                              ? "No financial year found. Please contact the administrator."
+                              : "No companies found. Create a new company to continue."}
                           </div>
                         ) : (
                           financialYears.map((row, index) => (
@@ -137,18 +149,22 @@ export default function SelectCompany() {
                               key={row.financialYearId}
                               type="button"
                               onClick={() => handleCompanySelect(row)}
-                              className={`grid w-full grid-cols-2 px-4 py-3.5 text-left text-xs font-medium transition-colors ${selectedRowId === row.financialYearId
-                                  ? "bg-blue-50 text-blue-900 font-bold ring-1 ring-inset ring-blue-300"
+                              className={`grid w-full grid-cols-2 px-4 py-3.5 text-left text-xs font-medium transition-colors ${
+                                selectedRowId === row.financialYearId
+                                  ? "bg-blue-50 font-bold text-blue-900 ring-1 ring-blue-300 ring-inset"
                                   : index % 2 === 0
                                     ? "bg-white text-gray-800 hover:bg-gray-50"
                                     : "bg-gray-50 text-gray-800 hover:bg-gray-100/70"
-                                }`}
+                              }`}
                             >
                               <span className="truncate pr-4 font-semibold text-gray-700">
                                 {row.companyName}
                               </span>
-                              <span className="text-right text-gray-500 font-medium whitespace-nowrap">
-                                {formatCompanyDateRange(row.startDate, row.endDate)}
+                              <span className="text-right font-medium whitespace-nowrap text-gray-500">
+                                {formatCompanyDateRange(
+                                  row.startDate,
+                                  row.endDate,
+                                )}
                               </span>
                             </button>
                           ))
@@ -160,8 +176,8 @@ export default function SelectCompany() {
               </div>
 
               {/* Pinned Action Button at Bottom - only when no companies exist */}
-              {!showCreateForm && !loading && !hasCompanies && (
-                <div className="w-full border-t pt-4 bg-white sticky bottom-2 z-10 px-10 rounded-lg">
+          {!showCreateForm && !loading && !hasCompanies && !isEmployee && (
+                <div className="sticky bottom-2 z-10 w-full rounded-lg border-t bg-white px-10 pt-4">
                   <Button
                     type="button"
                     onClick={() => setShowCreateForm(true)}
@@ -175,11 +191,11 @@ export default function SelectCompany() {
             </div>
 
             {/* Right Side - Branding Banner Image */}
-            <div className="relative hidden lg:flex items-center justify-center bg-[#b81d24]">
+            <div className="relative hidden items-center justify-center bg-[#b81d24] lg:flex">
               <img
                 src="images/ammar/login.png"
                 alt="Select Company"
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             </div>
           </div>

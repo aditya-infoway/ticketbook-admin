@@ -129,103 +129,137 @@ export default function DepartmentPage() {
     scopeName: getScopeLabel(row.scope),
     createdAtText: formatDateTime(row.createdAt),
   }));
+const buildPayload = (item: Department) => {
+  const financialYearId = localStorage.getItem("financialYearId");
+  const companyId = localStorage.getItem("companyId");
 
+  return {
+    financialYearId: Number(financialYearId),
+    ...(companyId ? { companyId: Number(companyId) } : {}),
+    departmentCode: item.code,
+    departmentName: item.name,
+    description: item.description,
+    departmentTypeId: item.typeId
+      ? Number(item.typeId)
+      : null,
+    parentDepartmentId: item.parentId
+      ? Number(item.parentId)
+      : null,
+    scope: item.scope,
+    status: item.status,
+    displayOrder: item.displayOrder
+      ? Number(item.displayOrder)
+      : null,
+    createdBy: companyId
+      ? Number(companyId)
+      : undefined,
+    createdType: "Super Admin",
+  };
+};
   // ---- Save (create or update) via API ----
   const handleSave = async (item: Department) => {
-    const financialYearId = localStorage.getItem("financialYearId");
-    const companyId = localStorage.getItem("companyId"); // key ka naam apne localStorage me check kar lena
+  const financialYearId = localStorage.getItem("financialYearId");
 
-    if (!financialYearId) {
-      toasterrormsg("Financial Year not found. Please select a company year.");
-      return;
-    }
+  if (!financialYearId) {
+    toasterrormsg(
+      "Financial Year not found. Please select a company year.",
+    );
+    return;
+  }
 
-    const payload: any = {
-      financialYearId: Number(financialYearId),
-      ...(companyId ? { companyId: Number(companyId) } : {}),
-      departmentCode: item.code,
-      departmentName: item.name,
-      description: item.description,
-      departmentTypeId: item.typeId ? Number(item.typeId) : null,
-      parentDepartmentId: item.parentId ? Number(item.parentId) : null,
-      scope: item.scope,
-      status: item.status,
-      displayOrder: item.displayOrder ? Number(item.displayOrder) : null,
-      createdBy: companyId ? Number(companyId) : undefined,
-      createdType: "Super Admin",
-    };
+  const payload = buildPayload(item);
 
-    try {
-      if (item.id) {
-        const response = await Put(
-          API.update,
-          { departmentId: item.id, ...payload },
-          false,
-        );
-        if (response.data?.success) {
-          toastsuccessmsg(
-            response.data?.message || "Department updated successfully.",
-          );
-          fetchAll();
-        } else {
-          toasterrormsg(
-            response.data?.message || "Failed to update department.",
-          );
-        }
-      } else {
-        const response = await Post(API.create, payload, false);
-        if (response.data?.success) {
-          toastsuccessmsg(
-            response.data?.message || "Department created successfully.",
-          );
-          fetchAll();
-        } else {
-          toasterrormsg(
-            response.data?.message || "Failed to create department.",
-          );
-        }
-      }
-    } catch {
-      toasterrormsg("Something went wrong while saving the department.");
-    }
-  };
-  const handleToggleStatus = async (row: Department) => {
-    const nextStatus = row.status === "Active" ? "Inactive" : "Active";
-    try {
+  try {
+    if (item.id) {
       const response = await Put(
-        "master/department/update",
+        API.update,
         {
-          departmentId: row.id,
-          departmentCode: row.code,
-          departmentName: row.name,
-          description: row.description,
-          departmentTypeId: row.typeId ? Number(row.typeId) : null,
-          parentDepartmentId: row.parentId ? Number(row.parentId) : null,
-          scope: row.scope,
-          status: nextStatus,
-          displayOrder: row.displayOrder ? Number(row.displayOrder) : null,
-          createdBy: Number(localStorage.getItem("companyId")) || undefined,
-          createdType: "Super Admin",
+          departmentId: item.id,
+          ...payload,
         },
         false,
       );
+
       if (response.data?.success) {
         toastsuccessmsg(
           response.data?.message ||
-            `Department ${nextStatus === "Active" ? "activated" : "deactivated"} successfully.`,
+            "Department updated successfully.",
         );
-        setData((prev) =>
-          prev.map((item) =>
-            item.id === row.id ? { ...item, status: nextStatus } : item,
-          ),
-        );
+        fetchAll();
       } else {
-        toasterrormsg(response.data?.message || "Failed to update status.");
+        toasterrormsg(
+          response.data?.message ||
+            "Failed to update department.",
+        );
       }
-    } catch {
-      toasterrormsg("Something went wrong while updating the status.");
+    } else {
+      const response = await Post(
+        API.create,
+        payload,
+        false,
+      );
+
+      if (response.data?.success) {
+        toastsuccessmsg(
+          response.data?.message ||
+            "Department created successfully.",
+        );
+        fetchAll();
+      } else {
+        toasterrormsg(
+          response.data?.message ||
+            "Failed to create department.",
+        );
+      }
     }
-  };
+  } catch {
+    toasterrormsg(
+      "Something went wrong while saving the department.",
+    );
+  }
+};
+  const handleToggleStatus = async (row: Department) => {
+  const nextStatus = row.status === "Active" ? "Inactive" : "Active";
+
+  try {
+    const response = await Put(
+      API.update,
+      {
+        departmentId: row.id,
+        ...buildPayload({
+          ...row,
+          status: nextStatus,
+        }),
+      },
+      false,
+    );
+
+    if (response.data?.success) {
+      toastsuccessmsg(
+        response.data?.message ||
+          `Department ${
+            nextStatus === "Active" ? "activated" : "deactivated"
+          } successfully.`,
+      );
+
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === row.id
+            ? { ...item, status: nextStatus }
+            : item,
+        ),
+      );
+    } else {
+      toasterrormsg(
+        response.data?.message || "Failed to update status.",
+      );
+    }
+  } catch {
+    toasterrormsg(
+      "Something went wrong while updating the status.",
+    );
+  }
+};
   const handleDeleteOne = async (row: Department) => {
     try {
       const response = await Delete(

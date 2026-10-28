@@ -204,16 +204,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (credentials: {
     email: string;
     password: string;
-    role?: "superAdmin" | "employee";
+     role?: "superAdmin" | "employee" | "branch";
   }) => {
     dispatch({ type: "LOGIN_REQUEST" });
     try {
-      const isEmployee = credentials.role === "employee";
-      const response = await Post(
-        isEmployee ? "employee/login" : "superadmin/login",
-        { email: credentials.email, password: credentials.password },
-        false,
-      );
+    const isStaff =
+  credentials.role === "employee" || credentials.role === "branch";
+const response = await Post(
+  credentials.role === "employee"
+    ? "employee/login"
+    : credentials.role === "branch"
+      ? "branch/login"
+      : "superadmin/login",
+  { email: credentials.email, password: credentials.password },
+  false,
+);
       const result = response.data;
 
       if (result.status !== 200) {
@@ -221,21 +226,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Employees belong to one company: no company select step, session starts now
-      if (isEmployee) {
-        const { token, ...profile } = result.data;
-        const user = { ...profile, role: "employee" } as unknown as User;
+if (isStaff) {
+  const { token, ...profile } = result.data;
+  const user = { ...profile, role: credentials.role } as unknown as User;
 
-        setSession(token);
-        window.localStorage.setItem("authToken", token);
-        window.localStorage.setItem(COMPANY_ID_KEY, String(profile.companyId));
-        window.localStorage.setItem("user", JSON.stringify(user));
-        window.localStorage.setItem(ROLE_KEY, "employee");
-        resetExpiry();
+  window.localStorage.setItem(PENDING_TOKEN_KEY, token);
+  window.localStorage.setItem(PENDING_EMAIL_KEY, profile.email);
+  setSession(token);
 
-        toastsuccessmsg(result.message);
-        dispatch({ type: "SESSION_ESTABLISHED", payload: { user } });
-        return;
-      }
+  toastsuccessmsg(result.message);
+  dispatch({
+    type: "LOGIN_SUCCESS",
+    payload: { pendingToken: token, pendingEmail: profile.email, user },
+  });
+  return;
+}
 
       // ✅ CHANGE #2 — companyId/companyName bhi destructure kiya
       const { token, email, companyId, companyName } = result.data;
@@ -278,13 +283,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem("authToken", token);
     window.localStorage.setItem(COMPANY_ID_KEY, companyId);
     window.localStorage.setItem("authToken", token); // (duplicate line, already existed)
-    window.localStorage.setItem("user", JSON.stringify(state.user));
-    window.localStorage.setItem(ROLE_KEY, "superAdmin");
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { financialYears: _fy, ...userToStore } = (state.user as any) || {};
+
+window.localStorage.setItem("user", JSON.stringify(userToStore));
+window.localStorage.setItem(
+  ROLE_KEY,
+  (state.user as any)?.role ?? "superAdmin",
+);
     resetExpiry(); // was setExpiry() — wrong name, causes ReferenceError
     window.localStorage.removeItem(PENDING_TOKEN_KEY);
     window.localStorage.removeItem(PENDING_EMAIL_KEY);
 
-    dispatch({ type: "SESSION_ESTABLISHED", payload: { user: state.user } });
+dispatch({ type: "SESSION_ESTABLISHED", payload: { user: userToStore as User } });
   };
 
   const logout = async () => {

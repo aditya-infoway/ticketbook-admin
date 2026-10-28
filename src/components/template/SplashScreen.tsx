@@ -1,5 +1,5 @@
 // Local Imports
-import { APP_LOGO } from "@/constants/app";
+import { APP_FAVICON } from "@/constants/app";
 import { Progress } from "@/components/ui";
 
 // ----------------------------------------------------------------------
@@ -9,7 +9,7 @@ export function SplashScreen() {
     <>
       <div className="fixed grid h-full w-full place-content-center">
         <img
-          src={APP_LOGO}
+          src={APP_FAVICON}
           alt="Ticket Book"
           className="h-28 w-auto object-contain"
         />

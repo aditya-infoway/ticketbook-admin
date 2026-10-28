@@ -14,10 +14,10 @@ import { Page } from "@/components/shared/Page";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 
 // ----------------------------------------------------------------------
-
 const roles = [
   { id: 1, name: "Super Admin" },
   { id: 2, name: "Employee" },
+  { id: 3, name: "Branch" },
 ];
 
 export default function SignIn() {
@@ -43,9 +43,14 @@ export default function SignIn() {
 
   const onSubmit = async (data: AuthFormValues) => {
     try {
-      const role = selectedRole.id === 2 ? "employee" : "superAdmin";
+      const role =
+        selectedRole.id === 2
+          ? "employee"
+          : selectedRole.id === 3
+            ? "branch"
+            : "superAdmin";
       await login({ email: data.email, password: data.password, role });
-      navigate(role === "employee" ? "/dashboards/home" : "/select-company");
+      navigate("/select-company");
     } catch (err) {
       // error handled by context
     }

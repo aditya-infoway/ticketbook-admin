@@ -107,6 +107,8 @@ export default function BranchPage() {
           }
         }
       },
+
+      
       toggleStatus: async (branch: Branch) => {
         const newStatus = branch.status === "Active" ? "Inactive" : "Active";
         try {

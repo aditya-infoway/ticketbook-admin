@@ -12,7 +12,7 @@ export interface AuthContextType {
   login: (credentials: {
     email: string;
     password: string;
-    role?: "superAdmin" | "employee";
+    role?: "superAdmin" | "employee"| "branch";
   }) => Promise<void>;
   completeAuth: (companyId: string) => void;
   logout: () => Promise<void>;
