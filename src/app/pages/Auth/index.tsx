@@ -43,8 +43,9 @@ export default function SignIn() {
 
   const onSubmit = async (data: AuthFormValues) => {
     try {
-      await login({ email: data.email, password: data.password });
-      navigate("/select-company");
+      const role = selectedRole.id === 2 ? "employee" : "superAdmin";
+      await login({ email: data.email, password: data.password, role });
+      navigate(role === "employee" ? "/dashboards/home" : "/select-company");
     } catch (err) {
       // error handled by context
     }
@@ -80,7 +81,7 @@ export default function SignIn() {
 
                 <div className="mt-6 text-left">
                   <h2 className="text-primary text-2xl font-bold sm:text-3xl">
-                    Welcome to <span className="text-main">Ticket Book</span> 
+                    Welcome to <span className="text-main">Ticket Book</span>
                   </h2>
                   <p className="mt-1 leading-relaxed text-gray-600">
                     Streamline your business operations with a powerful and
