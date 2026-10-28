@@ -15,8 +15,10 @@ export interface Branch {
   contactNumber: number;
   phoneNumber: number;
   branchEmail: string;
-  branchManager: string;
+   branchManager: string;
   areaManager: string;
+  branchManagerId?: number | null;
+  areaManagerId?: number | null;
   openingDate: string;
   workingHours: string;
   status: "Active" | "Inactive";

@@ -27,19 +27,6 @@ interface Opt {
   label: string;
 }
 
-const employeeOptions = [
-  { id: "emp-1", label: "John Doe" },
-  { id: "emp-2", label: "Jane Smith" },
-  { id: "emp-3", label: "Mike Johnson" },
-  { id: "emp-4", label: "Sarah Williams" },
-];
-
-// stopgap until managers come from the employee table
-const employeeNameOf = (id: string) =>
-  employeeOptions.find((e) => e.id === id)?.label ?? "";
-const employeeIdOf = (name: string) =>
-  employeeOptions.find((e) => e.label === name)?.id ?? "";
-
 const workingHoursOptions = [
   { id: "9-6", label: "9:00 AM - 6:00 PM" },
   { id: "10-7", label: "10:00 AM - 7:00 PM" },
@@ -110,8 +97,12 @@ function getInitialForm(editBranch: Branch | null) {
       contactNumber: String(editBranch.contactNumber || ""),
       phoneNumber: String(editBranch.phoneNumber || ""),
       branchEmail: editBranch.branchEmail,
-      branchManager: employeeIdOf(editBranch.branchManager),
-      areaManager: employeeIdOf(editBranch.areaManager),
+      branchManager: editBranch.branchManagerId
+        ? String(editBranch.branchManagerId)
+        : "",
+      areaManager: editBranch.areaManagerId
+        ? String(editBranch.areaManagerId)
+        : "",
       openingDate: editBranch.openingDate,
       workingHours: editBranch.workingHours,
       status: editBranch.status,
@@ -156,6 +147,37 @@ export function BranchDataDrawer({
 
   const [regionOptions, setRegionOptions] = useState<Opt[]>([]);
   const [nextNo, setNextNo] = useState("");
+  const [employees, setEmployees] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      try {
+        const res: any = await Get("superadmin/employee/list", {}, false);
+        setEmployees(res?.data?.data ?? []);
+      } catch {
+        toast.error("Failed to load employees");
+      }
+    })();
+  }, [isOpen]);
+
+  const toOptions = (list: any[], roleName: string): Opt[] =>
+    list
+      .filter(
+        (e) =>
+          e.employmentStatus === "Active" &&
+          e.roleName?.trim().toLowerCase() === roleName.toLowerCase(),
+      )
+      .map((e) => ({ id: String(e.employeeId), label: e.employeeName }));
+
+  const branchManagers = useMemo(
+    () => toOptions(employees, "Branch Manager"),
+    [employees],
+  );
+  const areaManagers = useMemo(
+    () => toOptions(employees, "Area Manager"),
+    [employees],
+  );
 
   // Region / Area dropdown from DB
   useEffect(() => {
@@ -293,8 +315,8 @@ export function BranchDataDrawer({
         branchEmail: form.branchEmail.trim(),
         password: form.password,
         confirmPassword: form.confirmPassword,
-        branchManager: employeeNameOf(form.branchManager),
-        areaManager: employeeNameOf(form.areaManager),
+        branchManagerId: form.branchManager ? Number(form.branchManager) : null,
+        areaManagerId: form.areaManager ? Number(form.areaManager) : null,
         openingDate: form.openingDate || "",
         workingHours: form.workingHours || "",
         status: form.status,
@@ -596,30 +618,31 @@ export function BranchDataDrawer({
               {/* Branch Manager */}
               <div>
                 <FieldLabel>Branch Manager</FieldLabel>
-                <Listbox
-                  data={employeeOptions}
+                <Combobox
+                  data={branchManagers}
+                  displayField="label"
                   value={
-                    employeeOptions.find((e) => e.id === form.branchManager) ||
+                    branchManagers.find((e) => e.id === form.branchManager) ||
                     null
                   }
-                  onChange={(e: any) => sf("branchManager", e?.id || "")}
-                  displayField="label"
-                  placeholder="Select manager"
+                  onChange={(v: any) => sf("branchManager", v?.id || "")}
+                  placeholder="Search manager..."
+                  searchFields={["label"]}
                 />
               </div>
 
               {/* Area Manager */}
               <div>
                 <FieldLabel>Area Manager</FieldLabel>
-                <Listbox
-                  data={employeeOptions}
-                  value={
-                    employeeOptions.find((e) => e.id === form.areaManager) ||
-                    null
-                  }
-                  onChange={(e: any) => sf("areaManager", e?.id || "")}
+                <Combobox
+                  data={areaManagers}
                   displayField="label"
-                  placeholder="Select manager"
+                  value={
+                    areaManagers.find((e) => e.id === form.areaManager) || null
+                  }
+                  onChange={(v: any) => sf("areaManager", v?.id || "")}
+                  placeholder="Search manager..."
+                  searchFields={["label"]}
                 />
               </div>
 
