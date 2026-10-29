@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Get } from "@/ApiHelper";
 import { APP_LOGO } from "@/constants/app";
+import { useAuthContext } from "@/app/contexts/auth/context";
+import { getCurrentRole } from "@/app/navigation/role";
+import { useEmployeeProfile } from "@/hooks/Useemployeeprofile";
+import { useBranchProfile } from "@/hooks/useBranchProfile";
 
 let cachedIcon: string | null = null; // null = not fetched yet
 const listeners = new Set<(icon: string) => void>();
@@ -30,15 +34,45 @@ export async function refreshCompanyIcon() {
 }
 
 export function useCompanyIcon() {
+  const { user } = useAuthContext();
+  const sessionUser = user as any;
+
+  const role = getCurrentRole();
+  const isSuperAdmin = role === "superAdmin";
+  const isBranch = role === "branch";
+  const isEmployee = !isSuperAdmin && !isBranch;
+
+  // Employee / Branch ki apni photo (dono store alag hain)
+  const employeeProfile = useEmployeeProfile(isEmployee);
+  const branchProfile = useBranchProfile(isBranch);
+
   const [icon, setIcon] = useState<string>(cachedIcon ?? "");
 
   useEffect(() => {
+    // company-details API sirf super admin token ke liye hai
+    if (!isSuperAdmin) return;
+
     listeners.add(setIcon);
     if (cachedIcon === null) refreshCompanyIcon();
     return () => {
       listeners.delete(setIcon);
     };
-  }, []);
+  }, [isSuperAdmin]);
 
-  return icon || APP_LOGO; // no icon saved -> default logo
+  // Employee / Branch: apni photo -> company icon / logo (login response) -> default
+  if (isBranch || isEmployee) {
+    const ownPhoto = isBranch
+      ? branchProfile?.profilePhoto
+      : employeeProfile?.profilePhoto;
+
+    return (
+      ownPhoto ||
+      sessionUser?.companyIcon ||
+      sessionUser?.companyLogo ||
+      APP_LOGO
+    );
+  }
+
+  // Super admin: company icon, na ho to default logo
+  return icon || APP_LOGO;
 }

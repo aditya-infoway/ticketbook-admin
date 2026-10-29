@@ -28,6 +28,9 @@ const prefixForOptions = [
   { id: "BRANCH", label: "BRANCH" },
   { id: "EMPLOYEE_TYPE", label: "Employee Type Master" },
   { id: "EMPLOYEE", label: "Employee List" },
+  { id: "RESOLVER_TEAM", label: "RESOLVER TEAM MASTER" },
+  { id: "TICKET_CATEGORY", label: "Ticket Category Master" },
+  { id: "TICKET_STATUS", label: "Ticket Status Master" },
 ];
 
 const schema = yup.object({
@@ -64,7 +67,7 @@ export default function Prefix() {
   // liye res.data.success/status check karna zaroori he, warna message
   // kabhi dikhega hi nahi.
 
-  const fetchPrefixes = async () => {
+  async function fetchPrefixes() {
     try {
       // useHeader = false -> apiHelper sends application/json headers
       const res = await Get("superadmin/prefix/list", {}, false);
@@ -80,7 +83,7 @@ export default function Prefix() {
         error?.response?.data?.message || "Failed to load prefixes",
       );
     }
-  };
+  }
 
   const onSubmit = async (values: PrefixFormValues) => {
     try {

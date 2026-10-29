@@ -8,7 +8,7 @@ import {
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { toast } from "sonner";
 import { Get, Post, Put } from "../../../../ApiHelper";
-import { Button, Input } from "@/components/ui";
+import { Button, Input, Textarea } from "@/components/ui";
 import { Listbox } from "@/components/shared/form/StyledListbox";
 import type { RegionType } from "./shared/types";
 
@@ -24,20 +24,20 @@ const STATUS_OPTIONS = [
   { id: "Inactive", label: "Inactive" },
 ];
 
-function FieldLabel({
-  children,
-  required,
-}: {
-  children: React.ReactNode;
-  required?: boolean;
-}) {
-  return (
-    <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">
-      {children}
-      {required && <span className="ml-0.5 text-red-500">*</span>}
-    </label>
-  );
-}
+// function FieldLabel({
+//   children,
+//   required,
+// }: {
+//   children: React.ReactNode;
+//   required?: boolean;
+// }) {
+//   return (
+//     <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">
+//       {children}
+//       {required && <span className="ml-0.5 text-red-500">*</span>}
+//     </label>
+//   );
+// }
 
 // Helper to create initial form
 function getInitialForm(editRegionType: RegionType | null) {
@@ -64,7 +64,12 @@ function getInitialForm(editRegionType: RegionType | null) {
     status: "Active",
   };
 }
-
+const req = (text: string) => (
+  <>
+    {text}
+    <span className="ml-0.5 text-red-500">*</span>
+  </>
+);
 export function RegionTypeDataDrawer({
   isOpen,
   close,
@@ -163,7 +168,7 @@ export function RegionTypeDataDrawer({
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[110]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-110" onClose={handleClose}>
         <TransitionChild
           as="div"
           enter="ease-out duration-300"
@@ -186,7 +191,7 @@ export function RegionTypeDataDrawer({
           className="dark:bg-dark-700 fixed top-0 right-0 flex h-full w-full transform-gpu flex-col bg-white transition-transform duration-200 lg:max-w-[50%]"
         >
           {/* Header */}
-          <div className="bg-primary-600 flex flex-shrink-0 items-center justify-between px-5 py-4 text-white">
+          <div className="bg-primary-600 flex shrink-0 items-center justify-between px-5 py-4 text-white">
             <h3 className="text-base font-bold">
               {editRegionType ? "Edit Region Type" : "Add Region Type"}
             </h3>
@@ -201,90 +206,70 @@ export function RegionTypeDataDrawer({
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Type ID */}
-              <div>
-                <FieldLabel>Type ID</FieldLabel>
-                <Input
-                  value={
-                    editRegionType?.regionTypeNo || nextNo || "Generating..."
-                  }
-                  readOnly
-                  disabled
-                  className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
-                />
-              </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+  {/* Type ID */}
+  <Input
+    label="Type ID"
+    value={editRegionType?.regionTypeNo || nextNo || "Generating..."}
+    readOnly
+    disabled
+  />
 
-              {/* Type Code */}
-              <div>
-                <FieldLabel required>Type Code</FieldLabel>
-                <Input
-                  placeholder="Enter code"
-                  value={form.typeCode}
-                  onChange={(e: any) => sf("typeCode", e.target.value)}
-                />
-                {errors.typeCode && (
-                  <p className="mt-1 text-xs text-red-500">{errors.typeCode}</p>
-                )}
-              </div>
+  {/* Type Code */}
+  <Input
+    label={req("Type Code")}
+    placeholder="Enter code"
+    value={form.typeCode}
+    onChange={(e: any) => sf("typeCode", e.target.value)}
+    error={errors.typeCode}
+  />
 
-              {/* Type Name */}
-              <div className="sm:col-span-2">
-                <FieldLabel required>Type Name</FieldLabel>
-                <Input
-                  placeholder="Enter type name"
-                  value={form.typeName}
-                  onChange={(e: any) => sf("typeName", e.target.value)}
-                />
-                {errors.typeName && (
-                  <p className="mt-1 text-xs text-red-500">{errors.typeName}</p>
-                )}
-              </div>
+  {/* Type Name */}
+  <div className="sm:col-span-2">
+    <Input
+      label={req("Type Name")}
+      placeholder="Enter type name"
+      value={form.typeName}
+      onChange={(e: any) => sf("typeName", e.target.value)}
+      error={errors.typeName}
+    />
+  </div>
 
-              {/* Description */}
-              <div className="sm:col-span-2">
-                <FieldLabel>Description</FieldLabel>
-                <textarea
-                  className="dark:bg-dark-800 dark:border-dark-600 focus:border-primary-500 focus:ring-primary-500 dark:text-dark-100 dark:placeholder:text-dark-400 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-1 focus:outline-none"
-                  rows={3}
-                  placeholder="Enter description (optional)"
-                  value={form.description}
-                  onChange={(e) => sf("description", e.target.value)}
-                />
-              </div>
+  {/* Description */}
+  <div className="sm:col-span-2">
+    <Textarea
+      label="Description"
+      placeholder="Enter description (optional)"
+      rows={3}
+      value={form.description}
+      onChange={(e: any) => sf("description", e.target.value)}
+    />
+  </div>
 
-              {/* Display Order */}
-              <div>
-                <FieldLabel>Display Order</FieldLabel>
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="Enter display order"
-                  value={form.displayOrder}
-                  onChange={(e: any) =>
-                    sf("displayOrder", Number(e.target.value))
-                  }
-                />
-              </div>
+  {/* Display Order */}
+  <Input
+    label="Display Order"
+    type="number"
+    min={1}
+    placeholder="Enter display order"
+    value={form.displayOrder}
+    onChange={(e: any) => sf("displayOrder", Number(e.target.value))}
+  />
 
-              {/* Status */}
-              <div>
-                <FieldLabel required>Status</FieldLabel>
-                <Listbox
-                  data={STATUS_OPTIONS}
-                  value={
-                    STATUS_OPTIONS.find((s) => s.id === form.status) || null
-                  }
-                  onChange={(s: any) => sf("status", s?.id || "Active")}
-                  displayField="label"
-                  placeholder="Select status"
-                />
-              </div>
-            </div>
+  {/* Status */}
+  <Listbox
+    label={req("Status")}
+    data={STATUS_OPTIONS}
+    value={STATUS_OPTIONS.find((s) => s.id === form.status) || null}
+    onChange={(s: any) => sf("status", s?.id || "Active")}
+    displayField="label"
+    placeholder="Select status"
+  />
+</div>
           </div>
 
           {/* Footer */}
-          <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
             <Button
               variant="outlined"
               color="secondary"

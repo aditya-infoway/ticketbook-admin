@@ -53,9 +53,13 @@ const dialCodeOptions = Country.getAllCountries()
     }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+ useEffect(() => {
+  const timer = setTimeout(() => {
+    void load();
+  }, 0);
+
+  return () => clearTimeout(timer);
+}, []);
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -255,10 +259,10 @@ const dialCodeOptions = Country.getAllCountries()
         </div>
 
         <div className="mt-8 flex justify-end space-x-3">
-          <Button type="button" className="min-w-[7rem]" disabled={loading} onClick={load}>
+          <Button type="button" className="min-w-28" disabled={loading} onClick={load}>
             Reset
           </Button>
-          <Button type="submit" className="min-w-[7rem]" color="primary" disabled={loading}>
+          <Button type="submit" className="min-w-28" color="primary" disabled={loading}>
             {loading ? "Saving..." : "Save"}
           </Button>
         </div>

@@ -16,6 +16,7 @@ export interface Employee {
   roleCategoryId?: string;
   roleCategoryName?: string;
   roleId?: string;
+    branchId?: string;
   roleName?: string;
   employeeCode: string;
   employeeName: string;

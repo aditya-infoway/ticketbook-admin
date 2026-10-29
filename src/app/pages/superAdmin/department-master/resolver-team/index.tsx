@@ -24,8 +24,10 @@ function mapApiTeam(item: any): ResolverTeam {
   return {
     id: String(item.resolverTeamId),
     resolverTeamNo: item.resolverTeamNo ?? "",
+    teamCode: item.teamCode ?? "",
     teamName: item.teamName ?? "",
-    departmentId: item.departmentId ? String(item.departmentId) : "",
+    departmentIds: (item.departmentIds ?? []).map(String),
+    departmentNames: item.departmentNames ?? [],
     departmentName: item.departmentName ?? "",
     teamDescription: item.teamDescription ?? "",
     teamLeaderId: item.teamLeaderId ? String(item.teamLeaderId) : "",
@@ -108,7 +110,9 @@ export default function ResolverTeamPage() {
       openEditDrawer: (team: ResolverTeam) => openDrawer(team),
       deleteRow: async (row: any) => {
         const team = row.original;
-        if (window.confirm(`Are you sure you want to delete ${team.teamName}?`)) {
+        if (
+          window.confirm(`Are you sure you want to delete ${team.teamName}?`)
+        ) {
           try {
             await Delete(
               "superadmin/resolver-team/delete",
@@ -130,10 +134,13 @@ export default function ResolverTeamPage() {
             "superadmin/resolver-team/update",
             {
               resolverTeamId: team.id,
+              teamCode: (team as any).teamCode,
               teamName: team.teamName,
               teamDescription: team.teamDescription,
-              departmentId: Number(team.departmentId),
-              teamLeaderId: team.teamLeaderId ? Number(team.teamLeaderId) : null,
+              departmentIds: ((team as any).departmentIds || []).map(Number),
+              teamLeaderId: team.teamLeaderId
+                ? Number(team.teamLeaderId)
+                : null,
               teamMemberIds: (team.teamMemberIds || []).map(Number),
               coverageType: team.coverageType,
               regionId: team.regionId ? Number(team.regionId) : null,
