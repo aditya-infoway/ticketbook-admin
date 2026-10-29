@@ -8,7 +8,7 @@ import {
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { toast } from "sonner";
 import { Get, Post, Put } from "@/ApiHelper";
-import { Button, Input } from "@/components/ui";
+import { Button, Input, Textarea } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
 import { MultiSelect } from "@/components/shared/form/MultiSelect";
@@ -27,35 +27,9 @@ interface Opt {
   regionId?: string; // branches only
 }
 
-// Mock Dropdown Data (Replace with API later)
-const DEPARTMENTS = [
-  { id: "dep1", label: "Technical Support" },
-  { id: "dep2", label: "Sales" },
-  { id: "dep3", label: "Operations" },
-];
-
-const EMPLOYEES = [
-  { id: "emp1", label: "John Doe" },
-  { id: "emp2", label: "Jane Smith" },
-  { id: "emp3", label: "Mike Johnson" },
-  { id: "emp4", label: "Sarah Williams" },
-];
-
 const COVERAGE_TYPES = [
   { id: "All", label: "All Regions" },
   { id: "Specific", label: "Specific Region(s)" },
-];
-
-const REGIONS = [
-  { id: "r1", label: "North Region" },
-  { id: "r2", label: "South Region" },
-  { id: "r3", label: "East Region" },
-];
-
-const BRANCHES = [
-  { id: "b1", label: "Mumbai Central" },
-  { id: "b2", label: "Delhi North" },
-  { id: "b3", label: "Bangalore South" },
 ];
 
 const ASSIGNMENT_METHODS = [
@@ -68,16 +42,18 @@ const STATUS_OPTIONS = [
   { id: "Inactive", label: "Inactive" },
 ];
 
-// MultiSelect requires `name` instead of `label`
-const employeeMultiOptions = EMPLOYEES.map((e) => ({
-  id: e.id,
-  name: e.label,
-}));
-const branchMultiOptions = BRANCHES.map((b) => ({ id: b.id, name: b.label }));
-
 const keepActive = (status: string, id: string, selected: string[]) =>
   status === "Active" || selected.includes(id);
 
+// Label with red asterisk
+const req = (text: string) => (
+  <>
+    {text}
+    <span className="ml-0.5 text-red-500">*</span>
+  </>
+);
+
+// Sirf MultiSelect ke liye (agar uska label/error prop support nahi karta)
 function FieldLabel({
   children,
   required,
@@ -97,8 +73,16 @@ function getInitialForm(editTeam: ResolverTeam | null) {
   if (editTeam) {
     return {
       id: editTeam.id,
+      // ResolverTeam type me teamCode add kar lena, tab `as any` hata sakte ho
+      teamCode: ((editTeam as any).teamCode as string) || "",
       teamName: editTeam.teamName,
-      departmentId: editTeam.departmentId,
+      departmentIds: (
+        (editTeam as any).departmentIds ||
+        (editTeam.departmentId ? [editTeam.departmentId] : [])
+      ).map(String) as string[],
+
+      // new wale return me
+
       teamDescription: editTeam.teamDescription,
       teamLeaderId: editTeam.teamLeaderId,
       teamMemberIds: (editTeam.teamMemberIds || []).map(String) as string[],
@@ -115,8 +99,9 @@ function getInitialForm(editTeam: ResolverTeam | null) {
 
   return {
     id: "",
+    teamCode: "",
     teamName: "",
-    departmentId: "",
+    departmentIds: [] as string[],
     teamDescription: "",
     teamLeaderId: "",
     teamMemberIds: [] as string[],
@@ -168,7 +153,7 @@ export function ResolverTeamDataDrawer({
         setDepartments(
           rows(deptRes)
             .filter((r) =>
-              keepActive(r.status, String(r.departmentId), [form.departmentId]),
+              keepActive(r.status, String(r.departmentId), form.departmentIds),
             )
             .map((r) => ({
               id: String(r.departmentId),
@@ -235,6 +220,10 @@ export function ResolverTeamDataDrawer({
     () => employees.map((e) => ({ id: e.id, name: e.label })),
     [employees],
   );
+  const departmentOptions = useMemo(
+    () => departments.map((d) => ({ id: d.id, name: d.label })),
+    [departments],
+  );
   // Branches shown depend on the selected region
   const branchOptions = useMemo(
     () =>
@@ -248,8 +237,10 @@ export function ResolverTeamDataDrawer({
 
   const validate = () => {
     const next: Record<string, string> = {};
+    if (!form.teamCode.trim()) next.teamCode = "Team code is required";
     if (!form.teamName.trim()) next.teamName = "Team name is required";
-    if (!form.departmentId) next.departmentId = "Department is required";
+    if (form.departmentIds.length === 0)
+      next.departmentIds = "At least one department is required";
     if (form.teamMemberIds.length === 0)
       next.teamMemberIds = "At least one member is required";
     if (!form.coverageType) next.coverageType = "Coverage type is required";
@@ -278,9 +269,10 @@ export function ResolverTeamDataDrawer({
       setSubmitting(true);
       // only fields the backend validator allows (no `id`)
       const payload = {
+        teamCode: form.teamCode.trim(),
         teamName: form.teamName.trim(),
         teamDescription: form.teamDescription.trim(),
-        departmentId: Number(form.departmentId),
+        departmentIds: form.departmentIds.map(Number),
         teamLeaderId: form.teamLeaderId ? Number(form.teamLeaderId) : null,
         teamMemberIds: form.teamMemberIds.map(Number),
         coverageType: form.coverageType,
@@ -325,13 +317,16 @@ export function ResolverTeamDataDrawer({
   const selectedMembers = memberOptions.filter((opt) =>
     form.teamMemberIds.includes(opt.id),
   );
+  const selectedDepartments = departmentOptions.filter((opt) =>
+    form.departmentIds.includes(opt.id),
+  );
   const selectedBranches = branchOptions.filter((opt) =>
     form.assignedBranchIds.includes(opt.id),
   );
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[110]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-110" onClose={handleClose}>
         <TransitionChild
           as="div"
           enter="ease-out duration-300"
@@ -354,7 +349,7 @@ export function ResolverTeamDataDrawer({
           className="dark:bg-dark-700 fixed top-0 right-0 flex h-full w-full transform-gpu flex-col bg-white transition-transform duration-200 lg:max-w-[50%]"
         >
           {/* Header */}
-          <div className="bg-primary-600 flex flex-shrink-0 items-center justify-between px-5 py-4 text-white">
+          <div className="bg-primary-600 flex shrink-0 items-center justify-between px-5 py-4 text-white">
             <h3 className="text-base font-bold">
               {editTeam ? "Edit Resolver Team" : "Add Resolver Team"}
             </h3>
@@ -370,54 +365,70 @@ export function ResolverTeamDataDrawer({
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Team ID */}
-              <div>
-                <FieldLabel>Team ID</FieldLabel>
-                <Input
-                  value={editTeam?.resolverTeamNo || nextNo || "Generating..."}
-                  readOnly
-                  disabled
-                  className="bg-gray-50 text-gray-500"
-                />
-              </div>
+              {/* 1. Team ID (Auto) */}
+              <Input
+                label="Team ID"
+                value={editTeam?.resolverTeamNo || nextNo || "Generating..."}
+                readOnly
+                disabled
+              />
 
-              {/* Team Name */}
-              <div>
-                <FieldLabel required>Team Name</FieldLabel>
-                <Input
-                  placeholder="Enter team name"
-                  value={form.teamName}
-                  onChange={(e: any) => sf("teamName", e.target.value)}
-                />
-                {errors.teamName && (
-                  <p className="mt-1 text-xs text-red-500">{errors.teamName}</p>
-                )}
-              </div>
+              {/* 2. Team Code */}
+              <Input
+                label={req("Team Code")}
+                placeholder="Enter team code"
+                value={form.teamCode}
+                onChange={(e: any) => sf("teamCode", e.target.value)}
+                error={errors.teamCode}
+              />
 
-              {/* Department */}
-              <div>
+              {/* 3. Team Name */}
+              <Input
+                label={req("Team Name")}
+                placeholder="Enter team name"
+                value={form.teamName}
+                onChange={(e: any) => sf("teamName", e.target.value)}
+                error={errors.teamName}
+              />
+
+              {/* 4. Department (Multi-Select) */}
+              <div className="sm:col-span-2">
                 <FieldLabel required>Department</FieldLabel>
-                <Combobox
-                  data={departments}
-                  displayField="label"
-                  value={
-                    departments.find((d) => d.id === form.departmentId) || null
+                <MultiSelect
+                  data={departmentOptions}
+                  displayField="name"
+                  value={selectedDepartments}
+                  onChange={(selected) =>
+                    sf(
+                      "departmentIds",
+                      selected.map((s) => s.id),
+                    )
                   }
-                  onChange={(v: any) => sf("departmentId", v?.id || "")}
-                  placeholder="Select department"
-                  searchFields={["label"]}
+                  placeholder="Search and select departments..."
+                  searchFields={["name"]}
                 />
-                {errors.departmentId && (
+                {errors.departmentIds && (
                   <p className="mt-1 text-xs text-red-500">
-                    {errors.departmentId}
+                    {errors.departmentIds}
                   </p>
                 )}
               </div>
 
-              {/* Team Leader */}
-              <div>
-                <FieldLabel>Team Leader</FieldLabel>
+              {/* 5. Team Description */}
+              <div className="sm:col-span-2">
+                <Textarea
+                  label="Team Description"
+                  placeholder="Optional description..."
+                  rows={3}
+                  value={form.teamDescription}
+                  onChange={(e: any) => sf("teamDescription", e.target.value)}
+                />
+              </div>
+
+              {/* 6. Team Leader */}
+              <div className="sm:col-span-2">
                 <Combobox
+                  label="Team Leader"
                   data={employees}
                   displayField="label"
                   value={
@@ -429,7 +440,7 @@ export function ResolverTeamDataDrawer({
                 />
               </div>
 
-              {/* Team Members (Multi-Select) */}
+              {/* 7. Team Members (Multi-Select) */}
               <div className="sm:col-span-2">
                 <FieldLabel required>Team Members</FieldLabel>
                 <MultiSelect
@@ -452,40 +463,48 @@ export function ResolverTeamDataDrawer({
                 )}
               </div>
 
-              {/* Coverage Type */}
-              <div>
-                <FieldLabel required>Coverage Type</FieldLabel>
-                <Listbox
-                  data={COVERAGE_TYPES}
-                  value={
-                    COVERAGE_TYPES.find((c) => c.id === form.coverageType) ||
-                    null
-                  }
-                  onChange={(v: any) =>
-                    setForm((f) => ({
-                      ...f,
-                      coverageType: v?.id || "",
-                      ...(v?.id === "All"
-                        ? { regionId: "", assignedBranchIds: [] as string[] }
-                        : {}),
-                    }))
-                  }
-                  displayField="label"
-                  placeholder="Select coverage"
-                />
-                {errors.coverageType && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.coverageType}
-                  </p>
-                )}
-              </div>
+              {/* 8. Coverage Type */}
+              <Listbox
+                label={req("Coverage Type")}
+                data={COVERAGE_TYPES}
+                value={
+                  COVERAGE_TYPES.find((c) => c.id === form.coverageType) || null
+                }
+                onChange={(v: any) =>
+                  setForm((f) => ({
+                    ...f,
+                    coverageType: v?.id || "",
+                    ...(v?.id === "All"
+                      ? { regionId: "", assignedBranchIds: [] as string[] }
+                      : {}),
+                  }))
+                }
+                displayField="label"
+                placeholder="Select coverage"
+                error={errors.coverageType}
+              />
 
+              {/* 11. Assignment Method */}
+              <Listbox
+                label={req("Assignment Method")}
+                data={ASSIGNMENT_METHODS}
+                value={
+                  ASSIGNMENT_METHODS.find(
+                    (a) => a.id === form.assignmentMethod,
+                  ) || null
+                }
+                onChange={(v: any) => sf("assignmentMethod", v?.id || "")}
+                displayField="label"
+                placeholder="Select method"
+                error={errors.assignmentMethod}
+              />
+
+              {/* 9 & 10. Conditional: Region + Branches */}
               {form.coverageType === "Specific" && (
                 <>
-                  {/* Region / Area */}
-                  <div>
-                    <FieldLabel>Region / Area</FieldLabel>
+                  <div className="sm:col-span-2">
                     <Combobox
+                      label="Region / Area"
                       data={regions}
                       displayField="label"
                       value={
@@ -506,15 +525,10 @@ export function ResolverTeamDataDrawer({
                       }
                       placeholder="Select region"
                       searchFields={["label"]}
+                      error={errors.regionId}
                     />
-                    {errors.regionId && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.regionId}
-                      </p>
-                    )}
                   </div>
 
-                  {/* Assigned Branches */}
                   <div className="sm:col-span-2">
                     <FieldLabel>Assigned Branches</FieldLabel>
                     <MultiSelect
@@ -534,73 +548,30 @@ export function ResolverTeamDataDrawer({
                 </>
               )}
 
-              {/* Assignment Method */}
-              <div>
-                <FieldLabel required>Assignment Method</FieldLabel>
-                <Listbox
-                  data={ASSIGNMENT_METHODS}
-                  value={
-                    ASSIGNMENT_METHODS.find(
-                      (a) => a.id === form.assignmentMethod,
-                    ) || null
-                  }
-                  onChange={(v: any) => sf("assignmentMethod", v?.id || "")}
-                  displayField="label"
-                  placeholder="Select method"
-                />
-                {errors.assignmentMethod && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.assignmentMethod}
-                  </p>
-                )}
-              </div>
+              {/* 12. Team Email */}
+              <Input
+                label="Team Email"
+                type="email"
+                placeholder="team@company.com"
+                value={form.teamEmail}
+                onChange={(e: any) => sf("teamEmail", e.target.value)}
+                error={errors.teamEmail}
+              />
 
-              {/* Team Email */}
-              <div>
-                <FieldLabel>Team Email</FieldLabel>
-                <Input
-                  type="email"
-                  placeholder="team@company.com"
-                  value={form.teamEmail}
-                  onChange={(e: any) => sf("teamEmail", e.target.value)}
-                />
-                {errors.teamEmail && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.teamEmail}
-                  </p>
-                )}
-              </div>
-
-              {/* Team Description */}
-              <div className="sm:col-span-2">
-                <FieldLabel>Team Description</FieldLabel>
-                <textarea
-                  className="focus:border-primary-500 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-100 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-1 focus:outline-none"
-                  rows={3}
-                  placeholder="Optional description..."
-                  value={form.teamDescription}
-                  onChange={(e) => sf("teamDescription", e.target.value)}
-                />
-              </div>
-
-              {/* Team Status */}
-              <div className="sm:col-span-2">
-                <FieldLabel required>Team Status</FieldLabel>
-                <Listbox
-                  data={STATUS_OPTIONS}
-                  value={
-                    STATUS_OPTIONS.find((s) => s.id === form.status) || null
-                  }
-                  onChange={(v: any) => sf("status", v?.id || "Active")}
-                  displayField="label"
-                  placeholder="Select status"
-                />
-              </div>
+              {/* 13. Team Status */}
+              <Listbox
+                label={req("Team Status")}
+                data={STATUS_OPTIONS}
+                value={STATUS_OPTIONS.find((s) => s.id === form.status) || null}
+                onChange={(v: any) => sf("status", v?.id || "Active")}
+                displayField="label"
+                placeholder="Select status"
+              />
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
             <Button
               variant="outlined"
               color="secondary"

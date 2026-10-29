@@ -21,6 +21,7 @@ import { GHOST_ENTRY_PATH } from "@/constants/app";
 import { getCurrentRole } from "@/app/navigation/role";
 import { getSettings } from "@/app/navigation/roleSettings";
 import { useEmployeeProfile } from "../../../hooks/Useemployeeprofile";
+import { useBranchProfile } from "../../../hooks/useBranchProfile";
 import { useNavigate } from "react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Get } from "@/ApiHelper";
@@ -43,13 +44,18 @@ export function Profile() {
 
   const role = getCurrentRole();
   const isSuperAdmin = role === "superAdmin";
+  const isBranch = role === "branch";
+  const isEmployee = !isSuperAdmin && !isBranch;
 
-  // Employee: company / name come from the login response (kept in `user`).
+  // Employee / Branch: name come from the login response (kept in `user`).
   // Super admin: fetched from company details (needs the company token).
   const sessionUser = user as any;
 
   // Employee: own name + profile photo (same data as the General settings page)
-  const employeeProfile = useEmployeeProfile(!isSuperAdmin);
+  const employeeProfile = useEmployeeProfile(isEmployee);
+
+  // Branch: own name + profile photo (alag store, branch/profile API)
+  const branchProfile = useBranchProfile(isBranch);
 
   const [companyName, setCompanyName] = useState(
     sessionUser?.companyName || "Company Name",
@@ -133,24 +139,35 @@ export function Profile() {
     }
   };
 
+  // Employee / Branch ki apni photo (super admin ki nahi hoti)
+  const ownPhoto = isBranch
+    ? branchProfile?.profilePhoto || ""
+    : isEmployee
+      ? employeeProfile?.profilePhoto || ""
+      : "";
+
   // Super admin: logo from company details.
-  // Employee: own profile photo -> company icon / logo -> default icon.
-  const employeePhoto = employeeProfile?.profilePhoto || "";
+  // Employee / Branch: own profile photo -> company icon / logo -> default icon.
   const logoSrc = isSuperAdmin
     ? companyIcon || companyLogo || APP_FAVICON
-    : employeePhoto ||
+    : ownPhoto ||
       sessionUser?.companyIcon ||
       sessionUser?.companyLogo ||
       APP_FAVICON;
 
   // a real photo should fill the circle, logos / icons stay fully visible
-  const imageClass = employeePhoto ? "object-cover" : "object-contain";
+  const imageClass = ownPhoto ? "object-cover" : "object-contain";
 
   // Super admin -> company name / "Company Profile"
   // Employee    -> own name / company name
+  // Branch      -> branch name / company name
+  const ownName = isBranch
+    ? branchProfile?.branchName || sessionUser?.branchName
+    : employeeProfile?.employeeName || sessionUser?.employeeName;
+
   const displayName = isSuperAdmin
     ? companyName || "Company Name"
-    : employeeProfile?.employeeName || sessionUser?.employeeName || "My Profile";
+    : ownName || "My Profile";
   const subtitle = isSuperAdmin
     ? "Company Profile"
     : sessionUser?.companyName || companyName;
@@ -163,7 +180,7 @@ export function Profile() {
         role="button"
         src={logoSrc}
         alt={displayName || APP_NAME}
-        classNames={{ image: `${imageClass} ${employeePhoto ? "" : "p-0.5"}` }}
+        classNames={{ image: `${imageClass} ${ownPhoto ? "" : "p-0.5"}` }}
         className="cursor-pointer"
       />
 
@@ -187,7 +204,9 @@ export function Profile() {
                   size={14}
                   src={logoSrc}
                   alt={displayName || APP_NAME}
-                  classNames={{ image: `${imageClass} ${employeePhoto ? "" : "p-1"}` }}
+                  classNames={{
+                    image: `${imageClass} ${ownPhoto ? "" : "p-1"}`,
+                  }}
                 />
 
                 <div className="min-w-0">

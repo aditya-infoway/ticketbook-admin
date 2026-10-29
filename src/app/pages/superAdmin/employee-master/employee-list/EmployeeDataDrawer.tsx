@@ -355,7 +355,7 @@ export function EmployeeDataDrawer({
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[110]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-110" onClose={handleClose}>
         <TransitionChild
           as="div"
           enter="ease-out duration-300"
@@ -378,7 +378,7 @@ export function EmployeeDataDrawer({
           className="dark:bg-dark-700 fixed top-0 right-0 flex h-full w-full transform-gpu flex-col bg-white transition-transform duration-200 lg:max-w-[60%]"
         >
           {/* Header */}
-          <div className="bg-primary-600 flex flex-shrink-0 items-center justify-between px-5 py-4 text-white">
+          <div className="bg-primary-600 flex shrink-0 items-center justify-between px-5 py-4 text-white">
             <h3 className="text-base font-bold">
               {editEmployee ? "Edit Employee" : "Add Employee"}
             </h3>
@@ -867,7 +867,7 @@ export function EmployeeDataDrawer({
           </div>
 
           {/* Footer */}
-          <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
             <Button
               variant="outlined"
               color="secondary"

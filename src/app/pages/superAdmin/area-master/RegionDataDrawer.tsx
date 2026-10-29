@@ -9,7 +9,7 @@ import { XMarkIcon } from "@heroicons/react/24/solid";
 import { Country, State, City } from "country-state-city";
 import { toast } from "sonner";
 
-import { Button, Input } from "@/components/ui";
+import { Button, Input, Textarea } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
 import { Get, Post, Put } from "@/ApiHelper";
@@ -34,20 +34,20 @@ const STATUS_OPTIONS = [
   { id: "Inactive", label: "Inactive" },
 ];
 
-function FieldLabel({
-  children,
-  required,
-}: {
-  children: React.ReactNode;
-  required?: boolean;
-}) {
-  return (
-    <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">
-      {children}
-      {required && <span className="ml-0.5 text-red-500">*</span>}
-    </label>
-  );
-}
+// function FieldLabel({
+//   children,
+//   required,
+// }: {
+//   children: React.ReactNode;
+//   required?: boolean;
+// }) {
+//   return (
+//     <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">
+//       {children}
+//       {required && <span className="ml-0.5 text-red-500">*</span>}
+//     </label>
+//   );
+// }
 
 // Helper to create initial form
 function getInitialForm(editRegion: Region | null) {
@@ -95,7 +95,7 @@ function getInitialForm(editRegion: Region | null) {
 
   // New region -> generate IDs only once
   return {
-    id:"",
+    id: "",
     regionCode: "",
     regionName: "",
     regionTypeId: "",
@@ -107,7 +107,12 @@ function getInitialForm(editRegion: Region | null) {
     status: "Active",
   };
 }
-
+const req = (text: string) => (
+  <>
+    {text}
+    <span className="ml-0.5 text-red-500">*</span>
+  </>
+);
 export function RegionDataDrawer({
   isOpen,
   close,
@@ -337,153 +342,118 @@ export function RegionDataDrawer({
           <div className="flex-1 overflow-y-auto p-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Region ID */}
-              <div>
-                <FieldLabel>Region ID (Auto)</FieldLabel>
-                <Input
-                  value={editRegion?.regionNo || nextNo || "Generating..."}
-                  readOnly
-                  disabled
-                  className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
-                />
-              </div>
+              <Input
+                label="Region ID (Auto)"
+                value={editRegion?.regionNo || nextNo || "Generating..."}
+                readOnly
+                disabled
+              />
 
               {/* Region Code */}
-              <div>
-                <FieldLabel required>Region Code</FieldLabel>
-                <Input
-                  placeholder="Enter code"
-                  value={form.regionCode}
-                  onChange={(e: any) => sf("regionCode", e.target.value)}
-                />
-                {errors.regionCode && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.regionCode}
-                  </p>
-                )}
-              </div>
+              <Input
+                label={req("Region Code")}
+                placeholder="Enter code"
+                value={form.regionCode}
+                onChange={(e: any) => sf("regionCode", e.target.value)}
+                error={errors.regionCode}
+              />
 
               {/* Region Name */}
-              <div>
-                <FieldLabel required>Region Name</FieldLabel>
-                <Input
-                  placeholder="Enter region name"
-                  value={form.regionName}
-                  onChange={(e: any) => sf("regionName", e.target.value)}
-                />
-                {errors.regionName && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.regionName}
-                  </p>
-                )}
-              </div>
+              <Input
+                label={req("Region Name")}
+                placeholder="Enter region name"
+                value={form.regionName}
+                onChange={(e: any) => sf("regionName", e.target.value)}
+                error={errors.regionName}
+              />
 
               {/* Region Type */}
-              <div>
-                <FieldLabel required>Region / Area Type</FieldLabel>
-                <Combobox
-                  data={regionTypes}
-                  displayField="label"
-                  value={
-                    regionTypes.find((t) => t.id === form.regionTypeId) || null
-                  }
-                  onChange={(v: any) => {
-                    sf("regionTypeId", v?.id || "");
-
-                    if (errors.regionTypeId) {
-                      setErrors((p) => ({
-                        ...p,
-                        regionTypeId: "",
-                      }));
-                    }
-                  }}
-                  placeholder="Select region type"
-                  searchFields={["label"]}
-                />
-                {errors.regionTypeId && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.regionTypeId}
-                  </p>
-                )}
-              </div>
+              <Combobox
+                label={req("Region / Area Type")}
+                data={regionTypes}
+                displayField="label"
+                value={
+                  regionTypes.find((t) => t.id === form.regionTypeId) || null
+                }
+                onChange={(v: any) => {
+                  sf("regionTypeId", v?.id || "");
+                  if (errors.regionTypeId)
+                    setErrors((p) => ({ ...p, regionTypeId: "" }));
+                }}
+                placeholder="Select region type"
+                searchFields={["label"]}
+                error={errors.regionTypeId}
+              />
 
               {/* Description */}
               <div className="sm:col-span-2">
-                <FieldLabel>Description</FieldLabel>
-                <textarea
-                  className="dark:bg-dark-800 dark:border-dark-600 focus:border-primary-500 focus:ring-primary-500 dark:text-dark-100 dark:placeholder:text-dark-400 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-1 focus:outline-none"
-                  rows={3}
+                <Textarea
+                  label="Description"
                   placeholder="Enter description (optional)"
+                  rows={3}
                   value={form.description}
-                  onChange={(e) => sf("description", e.target.value)}
+                  onChange={(e: any) => sf("description", e.target.value)}
                 />
               </div>
 
               {/* Country */}
-              <div>
-                <FieldLabel>Country</FieldLabel>
-                <Combobox
-                  data={countryOptions}
-                  displayField="label"
-                  value={form.country}
-                  onChange={(v: any) => {
-                    setForm((f) => ({
-                      ...f,
-                      country: v || null,
-                      state: null,
-                      city: null,
-                    }));
-                  }}
-                  placeholder="Search country..."
-                  searchFields={["label"]}
-                />
-              </div>
+              <Combobox
+                label="Country"
+                data={countryOptions}
+                displayField="label"
+                value={form.country}
+                onChange={(v: any) => {
+                  setForm((f) => ({
+                    ...f,
+                    country: v || null,
+                    state: null,
+                    city: null,
+                  }));
+                }}
+                placeholder="Search country..."
+                searchFields={["label"]}
+              />
 
               {/* State */}
-              <div>
-                <FieldLabel>State</FieldLabel>
-                <Combobox
-                  data={stateOptions}
-                  displayField="label"
-                  value={form.state}
-                  onChange={(v: any) => {
-                    setForm((f) => ({ ...f, state: v || null, city: null }));
-                  }}
-                  placeholder="Search state..."
-                  searchFields={["label"]}
-                />
-              </div>
+              <Combobox
+                label="State"
+                data={stateOptions}
+                displayField="label"
+                value={form.state}
+                onChange={(v: any) => {
+                  setForm((f) => ({ ...f, state: v || null, city: null }));
+                }}
+                placeholder="Search state..."
+                searchFields={["label"]}
+              />
 
               {/* City */}
-              <div>
-                <FieldLabel>City</FieldLabel>
-                <Combobox
-                  data={cityOptions}
-                  displayField="label"
-                  value={form.city}
-                  onChange={(v: any) => sf("city", v || null)}
-                  placeholder="Search city..."
-                  searchFields={["label"]}
-                />
-              </div>
+              <Combobox
+                label="City"
+                data={cityOptions}
+                displayField="label"
+                value={form.city}
+                onChange={(v: any) => sf("city", v || null)}
+                placeholder="Search city..."
+                searchFields={["label"]}
+              />
 
               {/* Display Order */}
-              <div>
-                <FieldLabel>Display Order</FieldLabel>
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="Enter display order"
-                  value={form.displayOrder}
-                  onChange={(e: any) =>
-                    sf("displayOrder", Number(e.target.value))
-                  }
-                />
-              </div>
+              <Input
+                label="Display Order"
+                type="number"
+                min={1}
+                placeholder="Enter display order"
+                value={form.displayOrder}
+                onChange={(e: any) =>
+                  sf("displayOrder", Number(e.target.value))
+                }
+              />
 
               {/* Status */}
               <div className="sm:col-span-2">
-                <FieldLabel required>Status</FieldLabel>
                 <Listbox
+                  label={req("Status")}
                   data={STATUS_OPTIONS}
                   value={
                     STATUS_OPTIONS.find((s) => s.id === form.status) || null

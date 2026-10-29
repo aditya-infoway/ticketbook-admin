@@ -41,20 +41,29 @@ export default function SignIn() {
     },
   });
 
-  const onSubmit = async (data: AuthFormValues) => {
-    try {
-      const role =
-        selectedRole.id === 2
-          ? "employee"
-          : selectedRole.id === 3
-            ? "branch"
-            : "superAdmin";
-      await login({ email: data.email, password: data.password, role });
-      navigate("/select-company");
-    } catch (err) {
-      // error handled by context
-    }
-  };
+
+const onSubmit = async (data: AuthFormValues) => {
+  try {
+    const role =
+      selectedRole.id === 2
+        ? "employee"
+        : selectedRole.id === 3
+          ? "branch"
+          : "superAdmin";
+
+    await login({
+      email: data.email,
+      password: data.password,
+      role,
+    });
+
+    navigate("/select-company");
+  } catch {
+    // Error is already handled by the context.
+  }
+};
+
+
 
   return (
     <Page title="Login">
