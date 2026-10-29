@@ -5,17 +5,17 @@ export const ticketCategoryMaster: NavigationTree = {
   ...baseNavigationObj.ticketCategoryMaster,
   childs: [
     {
-      id: "ticketCategoryMaster.issueCategories",
+      id: "ticketCategoryMaster.ticketcategory",
       type: "item",
-      path: "/ticket-category-master/issue-categories",
-      title: "Issue Categories",
+      path: "ticket-master/ticket-category",
+      title: "Ticket Categories",
       icon: "ticketCategoryMaster.issueCategories",
     },
     {
-      id: "ticketCategoryMaster.subCategories",
+      id: "ticketCategoryMaster.ticketstatus",
       type: "item",
-      path: "/ticket-category-master/sub-categories",
-      title: "Sub Categories",
+      path: "ticket-master/ticket-status",
+      title: "Ticket Status Master",
       icon: "ticketCategoryMaster.subCategories",
     },
   ],

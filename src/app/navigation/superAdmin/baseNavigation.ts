@@ -64,7 +64,7 @@ export const baseNavigationObj: Record<string, NavigationTree> = {
   ticketCategoryMaster: {
     id: "ticketCategoryMaster",
     type: "collapse",
-    path: "/ticket-category-master",
+    path: "/ticket-master",
     title: "Ticket Category Master",
     icon: "ticketCategoryMaster",
   },

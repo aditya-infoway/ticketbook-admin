@@ -145,12 +145,20 @@ export const superAdminRoutes: RouteObject[] = [
     element: <PlaceholderPage title="Department Manager" />,
   },
   {
-    path: "/ticket-category-master/issue-categories",
-    element: <PlaceholderPage title="Issue Categories" />,
+    path: "/ticket-master/ticket-category",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/ticket-master/ticket-category")
+      ).default,
+    }),
   },
   {
-    path: "/ticket-category-master/sub-categories",
-    element: <PlaceholderPage title="Sub Categories" />,
+    path: "/ticket-master/ticket-status",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/ticket-master/ticket-status")
+      ).default,
+    }),
   },
   {
     path: "/ticket-workflow-master/statuses",

@@ -10,8 +10,24 @@ import PlaceholderPage from "../PlaceholderPage";
 //   { path: "...", lazy: async () => ({ Component: (await import("@/app/pages/employee/...")).default }) }
 
 export const employeeRoutes: RouteObject[] = [
-  { path: "/employee/raise-ticket/list", element: <PlaceholderPage title="Raise Ticket" /> },
-  { path: "/employee/my-tickets/list", element: <PlaceholderPage title="My Tickets" /> },
-  { path: "/employee/my-ticket-history/list", element: <PlaceholderPage title="My Ticket History" /> },
-  { path: "/employee/notifications/list", element: <PlaceholderPage title="Notifications" /> },
+  {
+    path: "/employee/raise-ticket/create-ticket",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/employee/raise-ticket/create-ticket")
+      ).default,
+    }),
+  },
+  {
+    path: "/employee/my-tickets/list",
+    element: <PlaceholderPage title="My Tickets" />,
+  },
+  {
+    path: "/employee/my-ticket-history/list",
+    element: <PlaceholderPage title="My Ticket History" />,
+  },
+  {
+    path: "/employee/notifications/list",
+    element: <PlaceholderPage title="Notifications" />,
+  },
 ];
