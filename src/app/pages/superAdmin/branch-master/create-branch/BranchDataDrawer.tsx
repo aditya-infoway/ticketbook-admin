@@ -6,10 +6,12 @@ import {
   TransitionChild,
 } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
+import { HiPencil } from "react-icons/hi";
 import { Country, State, City } from "country-state-city";
 import { toast } from "sonner";
 import { Get, Post, Put } from "@/ApiHelper";
-import { Button, Input } from "@/components/ui";
+import { PreviewImg } from "@/components/shared/PreviewImg";
+import { Button, Input, Upload, Avatar, Textarea } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
 import { DatePicker } from "@/components/shared/form/Datepicker";
@@ -88,6 +90,8 @@ function getInitialForm(editBranch: Branch | null) {
       branchId: editBranch.id,
       branchCode: editBranch.branchCode,
       branchName: editBranch.branchName,
+      // Branch type me profilePhoto add hone tak any se read kar rahe hain
+      profilePhoto: ((editBranch as any).profilePhoto as string) || "",
       regionId: editBranch.regionId ? String(editBranch.regionId) : "",
       country,
       state,
@@ -116,6 +120,7 @@ function getInitialForm(editBranch: Branch | null) {
     branchId: "",
     branchCode: "",
     branchName: "",
+    profilePhoto: "",
     regionId: "",
     country: { id: "IN", label: "India" } as Opt,
     state: null as Opt | null,
@@ -144,6 +149,9 @@ export function BranchDataDrawer({
   const [form, setForm] = useState(() => getInitialForm(editBranch));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Nayi chuni hui photo (save par backend ko jati hai)
+  const [photo, setPhoto] = useState<File | null>(null);
 
   const [regionOptions, setRegionOptions] = useState<Opt[]>([]);
   const [nextNo, setNextNo] = useState("");
@@ -300,7 +308,7 @@ export function BranchDataDrawer({
 
     try {
       setSubmitting(true);
-      // only the fields the backend validator allows (no branchId in create)
+
       const payload = {
         branchCode: form.branchCode.trim(),
         branchName: form.branchName.trim(),
@@ -321,30 +329,40 @@ export function BranchDataDrawer({
         workingHours: form.workingHours || "",
         status: form.status,
       };
+
+      // multipart: sab fields FormData me, photo alag se
+      const fd = new FormData();
+      Object.entries(payload).forEach(([k, v]) => {
+        if (v === null || v === undefined) return;
+        fd.append(k, String(v));
+      });
+      if (photo) fd.append("profilePhoto", photo);
+
+      let res: any;
       if (editBranch) {
-        await Put(
-          "superadmin/branch/update",
-          { ...payload, branchId: editBranch.id },
-          false,
-        );
+        fd.append("branchId", String(editBranch.id));
+        res = await Put("superadmin/branch/update", fd, true);
       } else {
-        await Post(
-          "superadmin/branch/create",
-          {
-            ...payload,
-            financialYearId: localStorage.getItem("financialYearId"),
-          },
-          false,
+        fd.append(
+          "financialYearId",
+          localStorage.getItem("financialYearId") || "",
         );
+        res = await Post("superadmin/branch/create", fd, true);
       }
 
-      toast.success(
-        editBranch
-          ? "Branch updated successfully"
-          : "Branch added successfully",
-      );
-      onSaved();
-      handleClose();
+      // Backend business errors bhi HTTP 200 me aate hain, isliye success check
+      if (res?.data?.success) {
+        toast.success(
+          res.data.message ||
+            (editBranch
+              ? "Branch updated successfully"
+              : "Branch added successfully"),
+        );
+        onSaved();
+        handleClose();
+      } else {
+        toast.error(res?.data?.message || "Failed to save the branch.");
+      }
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ||
@@ -354,10 +372,15 @@ export function BranchDataDrawer({
       setSubmitting(false);
     }
   };
-
+  const req = (text: string) => (
+    <>
+      {text}
+      <span className="ml-0.5 text-red-500">*</span>
+    </>
+  );
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[110]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-110" onClose={handleClose}>
         <TransitionChild
           as="div"
           enter="ease-out duration-300"
@@ -380,7 +403,7 @@ export function BranchDataDrawer({
           className="dark:bg-dark-700 fixed top-0 right-0 flex h-full w-full transform-gpu flex-col bg-white transition-transform duration-200 lg:max-w-[50%]"
         >
           {/* Header */}
-          <div className="bg-primary-600 flex flex-shrink-0 items-center justify-between px-5 py-4 text-white">
+          <div className="bg-primary-600 flex shrink-0 items-center justify-between px-5 py-4 text-white">
             <h3 className="text-base font-bold">
               {editBranch ? "Edit Branch" : "Add Branch"}
             </h3>
@@ -395,226 +418,206 @@ export function BranchDataDrawer({
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-5">
+            {/* Profile Photo (Employee jaisa) */}
+            <div className="mb-6 flex flex-col space-y-1.5">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Profile Photo
+              </span>
+              <Avatar
+                size={20}
+                imgComponent={PreviewImg}
+                imgProps={{ file: photo } as any}
+                src={
+                  form.profilePhoto || "/images/logos/company-placeholder.svg"
+                }
+                classNames={{
+                  root: "ring-primary-600 dark:ring-primary-500 dark:ring-offset-dark-700 rounded-xl ring-offset-[3px] ring-offset-white transition-all hover:ring-3",
+                  display: "rounded-xl",
+                }}
+                indicator={
+                  <div className="dark:bg-dark-700 absolute right-0 bottom-0 -m-1 flex items-center justify-center rounded-full bg-white">
+                    {photo ? (
+                      <Button
+                        type="button"
+                        onClick={() => setPhoto(null)}
+                        isIcon
+                        className="size-6 rounded-full"
+                      >
+                        <XMarkIcon className="size-4" />
+                      </Button>
+                    ) : (
+                      <Upload
+                        name="profilePhoto"
+                        onChange={(files) => setPhoto(files[0])}
+                        accept="image/*"
+                      >
+                        {({ ...props }) => (
+                          <Button
+                            type="button"
+                            isIcon
+                            className="size-6 rounded-full"
+                            {...props}
+                          >
+                            <HiPencil className="size-3.5" />
+                          </Button>
+                        )}
+                      </Upload>
+                    )}
+                  </div>
+                }
+              />
+            </div>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Branch ID */}
-              <div>
-                <FieldLabel>Branch ID</FieldLabel>
-                <Input
-                  value={editBranch?.branchNo || nextNo || "Generating..."}
-                  readOnly
-                  disabled
-                  className="dark:bg-dark-800 w-full truncate bg-gray-50 text-gray-500"
-                />
-              </div>
+              {/* Branch ID */}
+              <Input
+                label="Branch ID"
+                value={editBranch?.branchNo || nextNo || "Generating..."}
+                readOnly
+                disabled
+              />
 
               {/* Branch Code */}
-              <div>
-                <FieldLabel required>Branch Code</FieldLabel>
-                <Input
-                  placeholder="Enter code"
-                  value={form.branchCode}
-                  onChange={(e: any) => sf("branchCode", e.target.value)}
-                />
-                {errors.branchCode && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.branchCode}
-                  </p>
-                )}
-              </div>
+              <Input
+                label={req("Branch Code")}
+                placeholder="Enter code"
+                value={form.branchCode}
+                onChange={(e: any) => sf("branchCode", e.target.value)}
+                error={errors.branchCode}
+              />
 
               {/* Branch Name */}
-              <div>
-                <FieldLabel required>Branch Name</FieldLabel>
-                <Input
-                  placeholder="Enter branch name"
-                  value={form.branchName}
-                  onChange={(e: any) => sf("branchName", e.target.value)}
-                />
-                {errors.branchName && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.branchName}
-                  </p>
-                )}
-              </div>
+              <Input
+                label={req("Branch Name")}
+                placeholder="Enter branch name"
+                value={form.branchName}
+                onChange={(e: any) => sf("branchName", e.target.value)}
+                error={errors.branchName}
+              />
 
               {/* Region */}
-              <div>
-                <FieldLabel>Region / Area</FieldLabel>
-                <Listbox
-                  data={regionOptions}
-                  value={
-                    regionOptions.find((r) => r.id === form.regionId) || null
-                  }
-                  onChange={(r: any) => sf("regionId", r?.id || "")}
-                  displayField="label"
-                  placeholder="Select region"
-                />
-              </div>
+              <Listbox
+                label="Region / Area"
+                data={regionOptions}
+                value={
+                  regionOptions.find((r) => r.id === form.regionId) || null
+                }
+                onChange={(r: any) => sf("regionId", r?.id || "")}
+                displayField="label"
+                placeholder="Select region"
+              />
 
               {/* Country */}
-              <div>
-                <FieldLabel required>Country</FieldLabel>
-                <Combobox
-                  data={countryOptions}
-                  displayField="label"
-                  value={form.country}
-                  onChange={(v: any) => {
-                    setForm((f) => ({
-                      ...f,
-                      country: v || null,
-                      state: null,
-                      city: null,
-                    }));
-                    if (errors.country)
-                      setErrors((p) => ({ ...p, country: "" }));
-                  }}
-                  placeholder="Search country..."
-                  searchFields={["label"]}
-                />
-                {errors.country && (
-                  <p className="mt-1 text-xs text-red-500">{errors.country}</p>
-                )}
-              </div>
+              <Combobox
+                label={req("Country")}
+                data={countryOptions}
+                displayField="label"
+                value={form.country}
+                onChange={(v: any) => {
+                  setForm((f) => ({
+                    ...f,
+                    country: v || null,
+                    state: null,
+                    city: null,
+                  }));
+                  if (errors.country) setErrors((p) => ({ ...p, country: "" }));
+                }}
+                placeholder="Search country..."
+                searchFields={["label"]}
+                error={errors.country}
+              />
 
               {/* State */}
-              <div>
-                <FieldLabel required>State</FieldLabel>
-                <Combobox
-                  data={stateOptions}
-                  displayField="label"
-                  value={form.state}
-                  onChange={(v: any) => {
-                    setForm((f) => ({ ...f, state: v || null, city: null }));
-                    if (errors.state) setErrors((p) => ({ ...p, state: "" }));
-                  }}
-                  placeholder="Search state..."
-                  searchFields={["label"]}
-                />
-                {errors.state && (
-                  <p className="mt-1 text-xs text-red-500">{errors.state}</p>
-                )}
-              </div>
+              <Combobox
+                label={req("State")}
+                data={stateOptions}
+                displayField="label"
+                value={form.state}
+                onChange={(v: any) => {
+                  setForm((f) => ({ ...f, state: v || null, city: null }));
+                  if (errors.state) setErrors((p) => ({ ...p, state: "" }));
+                }}
+                placeholder="Search state..."
+                searchFields={["label"]}
+                error={errors.state}
+              />
 
               {/* City */}
-              <div>
-                <FieldLabel required>City</FieldLabel>
-                <Combobox
-                  data={cityOptions}
-                  displayField="label"
-                  value={form.city}
-                  onChange={(v: any) => {
-                    sf("city", v || null);
-                    if (errors.city) setErrors((p) => ({ ...p, city: "" }));
-                  }}
-                  placeholder="Search city..."
-                  searchFields={["label"]}
-                />
-                {errors.city && (
-                  <p className="mt-1 text-xs text-red-500">{errors.city}</p>
-                )}
-              </div>
-
-              {/* Full Address */}
-              <div className="sm:col-span-2">
-                <FieldLabel required>Full Address</FieldLabel>
-                <Input
-                  placeholder="Enter full address"
-                  value={form.fullAddress}
-                  onChange={(e: any) => sf("fullAddress", e.target.value)}
-                />
-                {errors.fullAddress && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.fullAddress}
-                  </p>
-                )}
-              </div>
+              <Combobox
+                label={req("City")}
+                data={cityOptions}
+                displayField="label"
+                value={form.city}
+                onChange={(v: any) => {
+                  sf("city", v || null);
+                  if (errors.city) setErrors((p) => ({ ...p, city: "" }));
+                }}
+                placeholder="Search city..."
+                searchFields={["label"]}
+                error={errors.city}
+              />
 
               {/* Pin Code */}
-              <div>
-                <FieldLabel>Postal / PIN Code</FieldLabel>
-                <Input
-                  placeholder="Enter PIN code"
-                  value={form.pinCode}
-                  onChange={(e: any) => sf("pinCode", e.target.value)}
-                />
-              </div>
+              <Input
+                label="Postal / PIN Code"
+                placeholder="Enter PIN code"
+                value={form.pinCode}
+                onChange={(e: any) => sf("pinCode", e.target.value)}
+              />
 
               {/* Contact */}
-              <div>
-                <FieldLabel required>Contact Number</FieldLabel>
-                <Input
-                  placeholder="Enter contact number"
-                  value={form.contactNumber}
-                  onChange={(e: any) => sf("contactNumber", e.target.value)}
-                />
-                {errors.contactNumber && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.contactNumber}
-                  </p>
-                )}
-              </div>
+              <Input
+                label={req("Contact Number")}
+                placeholder="Enter contact number"
+                value={form.contactNumber}
+                onChange={(e: any) => sf("contactNumber", e.target.value)}
+                error={errors.contactNumber}
+              />
 
-              <div>
-                <FieldLabel>Phone Number</FieldLabel>
-                <Input
-                  placeholder="Enter phone number"
-                  value={form.phoneNumber}
-                  onChange={(e: any) => sf("phoneNumber", e.target.value)}
-                />
-              </div>
+              {/* Phone */}
+              <Input
+                label="Phone Number"
+                placeholder="Enter phone number"
+                value={form.phoneNumber}
+                onChange={(e: any) => sf("phoneNumber", e.target.value)}
+              />
 
               {/* Email */}
-              <div>
-                <FieldLabel required>Branch Email </FieldLabel>
-                <Input
-                  placeholder="Enter email"
-                  type="email"
-                  value={form.branchEmail}
-                  onChange={(e: any) => sf("branchEmail", e.target.value)}
-                />
-                {errors.branchEmail && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.branchEmail}
-                  </p>
-                )}
-              </div>
+              <Input
+                label={req("Branch Email")}
+                placeholder="Enter email"
+                type="email"
+                value={form.branchEmail}
+                onChange={(e: any) => sf("branchEmail", e.target.value)}
+                error={errors.branchEmail}
+              />
 
               {/* Password */}
-              <div>
-                <FieldLabel required={!editBranch}>Password</FieldLabel>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder={
-                    editBranch
-                      ? "Leave blank to keep current"
-                      : "Enter password"
-                  }
-                  value={form.password}
-                  onChange={(e: any) => sf("password", e.target.value)}
-                />
-                {errors.password && (
-                  <p className="mt-1 text-xs text-red-500">{errors.password}</p>
-                )}
-              </div>
+              <Input
+                label={editBranch ? "Password" : req("Password")}
+                type="password"
+                autoComplete="new-password"
+                placeholder={
+                  editBranch ? "Leave blank to keep current" : "Enter password"
+                }
+                value={form.password}
+                onChange={(e: any) => sf("password", e.target.value)}
+                error={errors.password}
+              />
 
               {/* Confirm Password */}
-              <div>
-                <FieldLabel required={!editBranch}>Confirm Password</FieldLabel>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Re-enter password"
-                  value={form.confirmPassword}
-                  onChange={(e: any) => sf("confirmPassword", e.target.value)}
-                />
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.confirmPassword}
-                  </p>
-                )}
-              </div>
-
+              <Input
+                label={
+                  editBranch ? "Confirm Password" : req("Confirm Password")
+                }
+                type="password"
+                autoComplete="new-password"
+                placeholder="Re-enter password"
+                value={form.confirmPassword}
+                onChange={(e: any) => sf("confirmPassword", e.target.value)}
+                error={errors.confirmPassword}
+              />
               {/* Branch Manager */}
               <div>
                 <FieldLabel>Branch Manager</FieldLabel>
@@ -646,7 +649,7 @@ export function BranchDataDrawer({
                 />
               </div>
 
-              {/* Opening Date — 👈 Updated to use DatePicker */}
+              {/* Opening Date */}
               <div>
                 <FieldLabel>Opening Date</FieldLabel>
                 <DatePicker
@@ -696,11 +699,22 @@ export function BranchDataDrawer({
                   placeholder="Select status"
                 />
               </div>
+
+              <div className="sm:col-span-2">
+                <Textarea
+                  label={req("Full Address")}
+                  placeholder="Enter full address"
+                  rows={3}
+                  value={form.fullAddress}
+                  onChange={(e: any) => sf("fullAddress", e.target.value)}
+                  error={errors.fullAddress}
+                />
+              </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
             <Button
               variant="outlined"
               color="secondary"

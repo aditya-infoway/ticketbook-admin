@@ -47,7 +47,7 @@ export default function BranchPage() {
       const rows: any[] = res?.data?.data ?? [];
       setData(
         rows.map((r) => ({
-          ...r,
+          ...r, // profilePhoto, branchManagerId, areaManagerId yahin se aate hain
           id: String(r.branchId),
           createdAt: r.created,
         })),
@@ -73,7 +73,7 @@ export default function BranchPage() {
   // Setup the table with meta options for the action column
   const table = useReactTable({
     data: filteredData,
-    columns, // 👈 Pass the static columns directly
+    columns,
     state: { globalFilter, sorting, rowSelection },
     enableRowSelection: true,
     getRowId: (row) => row.id,
@@ -84,36 +84,34 @@ export default function BranchPage() {
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    // 👈 This is required for the action buttons to work
+    // This is required for the action buttons to work
     meta: {
       openEditDrawer: (branch: Branch) => openDrawer(branch),
-      deleteRow: async (row: any) => {
-        const branch = row.original;
-        if (
-          window.confirm(
-            `Are you sure you want to delete ${branch.branchName}?`,
-          )
-        ) {
-          try {
-            await Delete(
-              "superadmin/branch/delete",
-              { branchId: branch.id },
-              false,
-            );
-            toast.success("Branch deleted successfully");
-            fetchAll();
-          } catch (err: any) {
-            toast.error(err?.response?.data?.message || "Delete failed");
-          }
-        }
-      },
+     deleteRow: async (row: any) => {
+  const branch = row.original;
+  try {
+    const res: any = await Delete(
+      "superadmin/branch/delete",
+      { branchId: branch.id },
+      false,
+    );
+    if (res?.data?.success) {
+      toast.success(res.data.message || "Branch deleted successfully");
+      fetchAll();
+    } else {
+      toast.error(res?.data?.message || "Delete failed");
+    }
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || "Delete failed");
+  }
+},
 
-      
       toggleStatus: async (branch: Branch) => {
         const newStatus = branch.status === "Active" ? "Inactive" : "Active";
         try {
           // update validator needs the full payload (password stays unchanged when omitted)
-          await Put(
+          // Manager ids zaroor bhejo, warna backend inhe null karke hata deta hai
+          const res: any = await Put(
             "superadmin/branch/update",
             {
               branchId: branch.id,
@@ -128,16 +126,20 @@ export default function BranchPage() {
               contactNumber: String(branch.contactNumber || ""),
               phoneNumber: String(branch.phoneNumber || ""),
               branchEmail: branch.branchEmail,
-              branchManager: branch.branchManager,
-              areaManager: branch.areaManager,
+              branchManagerId: (branch as any).branchManagerId || null,
+              areaManagerId: (branch as any).areaManagerId || null,
               openingDate: branch.openingDate,
               workingHours: branch.workingHours,
               status: newStatus,
             },
             false,
           );
-          toast.success(`Branch marked as ${newStatus}`);
-          fetchAll();
+          if (res?.data?.success) {
+            toast.success(`Branch marked as ${newStatus}`);
+            fetchAll();
+          } else {
+            toast.error(res?.data?.message || "Status update failed");
+          }
         } catch (err: any) {
           toast.error(err?.response?.data?.message || "Status update failed");
         }

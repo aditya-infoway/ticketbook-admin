@@ -1,0 +1,102 @@
+import { ColumnDef } from "@tanstack/react-table";
+import {
+  SelectCell,
+  SelectHeader,
+} from "@/components/shared/table/SelectCheckbox";
+import { createRowActions } from "../shared/createRowActions";
+import { TextCell } from "../shared/tableCells";
+import { ExportColumn } from "../shared/export";
+import type { TicketCategory } from "../shared/types";
+
+const RowActions = createRowActions<TicketCategory>("ticket category");
+
+export const columns: ColumnDef<TicketCategory>[] = [
+  {
+    id: "select",
+    header: SelectHeader,
+    cell: SelectCell,
+    enableSorting: false,
+  },
+  {
+    id: "ticketCategoryNo",
+    accessorKey: "ticketCategoryNo",
+    header: "Category ID",
+    cell: TextCell,
+  },
+  {
+    id: "categoryCode",
+    accessorKey: "categoryCode",
+    header: "Category Code",
+    cell: TextCell,
+  },
+  {
+    id: "categoryName",
+    accessorKey: "categoryName",
+    header: "Category Name",
+    cell: TextCell,
+  },
+  {
+    id: "departmentName",
+    accessorKey: "departmentName",
+    header: "Department",
+    cell: TextCell,
+  },
+  {
+    id: "defaultResolverTeamName",
+    accessorKey: "defaultResolverTeamName",
+    header: "Default Team",
+    cell: TextCell,
+  },
+  {
+    id: "displayOrder",
+    accessorKey: "displayOrder",
+    header: "Display Order",
+    cell: TextCell,
+  },
+  {
+    id: "status",
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row, table }) => {
+      const isActive = row.original.status === "Active";
+
+      const handleToggle = () => {
+        (table.options.meta as any)?.toggleStatus?.(row.original);
+      };
+
+      return (
+        <button
+          type="button"
+          onClick={handleToggle}
+          className={`focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+            isActive ? "bg-primary-500" : "dark:bg-dark-600 bg-gray-300"
+          }`}
+          title={`Mark as ${isActive ? "Inactive" : "Active"}`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              isActive ? "translate-x-2" : "-translate-x-2"
+            }`}
+          />
+        </button>
+      );
+    },
+    enableSorting: false,
+  },
+  {
+    id: "actions",
+    header: "Action",
+    cell: RowActions,
+    enableSorting: false,
+  },
+];
+
+export const exportColumns: ExportColumn<TicketCategory>[] = [
+  { key: "ticketCategoryNo", header: "Category ID" },
+  { key: "categoryCode", header: "Category Code" },
+  { key: "categoryName", header: "Category Name" },
+  { key: "departmentName", header: "Department" },
+  { key: "defaultResolverTeamName", header: "Default Resolver Team" },
+  { key: "displayOrder", header: "Display Order" },
+  { key: "status", header: "Status" },
+];

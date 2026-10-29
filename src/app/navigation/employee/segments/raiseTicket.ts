@@ -5,10 +5,10 @@ export const raiseTicket: NavigationTree = {
   ...baseNavigationObj.raiseTicket,
   childs: [
     {
-      id: "raiseTicket.list",
+      id: "raiseTicket.createticket",
       type: "item",
-      path: "/employee/raise-ticket/list",
-      title: "Raise Ticket",
+      path: "/employee/raise-ticket/create-ticket",
+      title: "Create Ticket",
       icon: "raiseTicket.list",
     },
   ],

@@ -9,18 +9,18 @@ import { RightSidebar } from "@/components/template/RightSidebar";
 import { Notifications } from "@/components/template/Notifications";
 import { Button } from "@/components/ui";
 import { SidebarToggleBtn } from "@/components/shared/SidebarToggleBtn";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useBreakpointsContext } from "@/app/contexts/breakpoint/context";
 import { Profile } from "../Profile";
 import { Search } from "@/components/template/Search";
 import { useThemeContext } from "@/app/contexts/theme/context";
-import { APP_LOGO } from "@/constants/app";
 
 export function Header() {
   const { smAndUp } = useBreakpointsContext();
   const { cardSkin } = useThemeContext();
 
   return (
-   <header
+    <header
       className={clsx(
         "app-header transition-content sticky top-0 z-20 flex h-16.25 items-center justify-between gap-4 border-b border-gray-200 bg-white/80 px-(--margin-x) backdrop-blur-sm backdrop-saturate-150 dark:border-dark-600",
         cardSkin === "bordered" ? "dark:bg-dark-900/80" : "dark:bg-dark-700/80",
@@ -29,11 +29,7 @@ export function Header() {
       <div className="flex items-center gap-3">
         <SidebarToggleBtn />
         <Link to="/" className="flex items-center gap-3">
-          <img
-            src={APP_LOGO}
-            alt="Ticket Book"
-            className="h-10 w-auto object-contain"
-          />
+          <BrandLogo photoClassName="size-10" logoClassName="h-10 w-auto" />
         </Link>
       </div>
 
@@ -88,4 +84,4 @@ export function Header() {
       </div>
     </header>
   );
-} 
+}

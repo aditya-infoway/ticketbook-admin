@@ -17,83 +17,105 @@ export const columns: ColumnDef<Branch>[] = [
     cell: SelectCell,
     enableSorting: false,
   },
-    {
-   id: "branchNo",
+  {
+    id: "branchNo",
     accessorKey: "branchNo",
     header: "Branch ID",
     cell: TextCell,
   },
-  { 
-    id: "branchCode", 
-    accessorKey: "branchCode", 
-    header: "Branch Code", 
-    cell: TextCell 
+  {
+    id: "branchName",
+    accessorKey: "branchName",
+    header: "Branch Name",
+    cell: ({ row }) => {
+      const photo = (row.original as any).profilePhoto as string | undefined;
+
+      return (
+        <div className="flex items-center gap-3">
+          <div className="dark:bg-dark-700 h-8 w-8 shrink-0 overflow-hidden rounded-full bg-gray-100">
+            {photo ? (
+              <img
+                src={photo}
+                alt="Avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs font-medium text-gray-500">
+                {row.original.branchName?.charAt(0) || "B"}
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-900 dark:text-gray-100">
+              {row.original.branchName}
+            </span>
+            <span className="text-xs text-gray-500">
+              {row.original.branchCode}
+            </span>
+          </div>
+        </div>
+      );
+    },
   },
-  { 
-    id: "branchName", 
-    accessorKey: "branchName", 
-    header: "Branch Name", 
-    cell: TextCell 
+  {
+    id: "region",
+    accessorKey: "region",
+    header: "Region",
+    cell: TextCell,
   },
-  { 
-    id: "region", 
-    accessorKey: "region", 
-    header: "Region", 
-    cell: TextCell 
+  {
+    id: "country",
+    accessorKey: "country",
+    header: "Country",
+    cell: TextCell,
   },
-  { 
-    id: "country", 
-    accessorKey: "country", 
-    header: "Country", 
-    cell: TextCell 
+  {
+    id: "state",
+    accessorKey: "state",
+    header: "State",
+    cell: TextCell,
   },
-  { 
-    id: "state", 
-    accessorKey: "state", 
-    header: "State", 
-    cell: TextCell 
+  {
+    id: "city",
+    accessorKey: "city",
+    header: "City",
+    cell: TextCell,
   },
-  { 
-    id: "city", 
-    accessorKey: "city", 
-    header: "City", 
-    cell: TextCell 
+  {
+    id: "contactNumber",
+    accessorKey: "contactNumber",
+    header: "Contact",
+    cell: TextCell,
   },
-  { 
-    id: "contactNumber", 
-    accessorKey: "contactNumber", 
-    header: "Contact", 
-    cell: TextCell 
+  {
+    id: "branchEmail",
+    accessorKey: "branchEmail",
+    header: "Email",
+    cell: TextCell,
   },
-  { 
-    id: "branchEmail", 
-    accessorKey: "branchEmail", 
-    header: "Email", 
-    cell: TextCell 
+  {
+    id: "branchManager",
+    accessorKey: "branchManager",
+    header: "Branch Manager",
+    cell: TextCell,
   },
-  { 
-    id: "branchManager", 
-    accessorKey: "branchManager", 
-    header: "Branch Manager", 
-    cell: TextCell 
+  {
+    id: "areaManager",
+    accessorKey: "areaManager",
+    header: "Area Manager",
+    cell: TextCell,
   },
-  { 
-    id: "areaManager", 
-    accessorKey: "areaManager", 
-    header: "Area Manager", 
-    cell: TextCell 
+  {
+    id: "openingDate",
+    accessorKey: "openingDate",
+    header: "Opening Date",
+    cell: TextCell,
   },
-  { 
-    id: "openingDate", 
-    accessorKey: "openingDate", 
-    header: "Opening Date", 
-    cell: TextCell 
-  },
-  { 
-    id: "workingHours", 
-    accessorKey: "workingHours", 
-    header: "Working Hours", 
-    cell: TextCell 
+  {
+    id: "workingHours",
+    accessorKey: "workingHours",
+    header: "Working Hours",
+    cell: TextCell,
   },
   {
     id: "status",
@@ -101,7 +123,7 @@ export const columns: ColumnDef<Branch>[] = [
     header: "Status",
     cell: ({ row, table }) => {
       const isActive = row.original.status === "Active";
-      
+
       const handleToggle = () => {
         // This calls the meta function we will set up in index.tsx
         (table.options.meta as any)?.toggleStatus?.(row.original);
@@ -111,8 +133,8 @@ export const columns: ColumnDef<Branch>[] = [
         <button
           type="button"
           onClick={handleToggle}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
-            isActive ? "bg-primary-500" : "bg-gray-300 dark:bg-dark-600"
+          className={`focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+            isActive ? "bg-primary-500" : "dark:bg-dark-600 bg-gray-300"
           }`}
           title={`Mark as ${isActive ? "Inactive" : "Active"}`}
         >
@@ -126,11 +148,11 @@ export const columns: ColumnDef<Branch>[] = [
     },
     enableSorting: false,
   },
-  { 
-    id: "actions", 
-    header: "Action", 
-    cell: RowActions, 
-    enableSorting: false 
+  {
+    id: "actions",
+    header: "Action",
+    cell: RowActions,
+    enableSorting: false,
   },
 ];
 

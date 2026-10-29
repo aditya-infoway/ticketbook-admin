@@ -4,8 +4,8 @@ import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 
 // Local Imports
-import { APP_LOGO } from "@/constants/app";
 import { Button } from "@/components/ui";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useSidebarContext } from "@/app/contexts/sidebar/context";
 import { useBreakpointsContext } from "@/app/contexts/breakpoint/context";
 
@@ -21,8 +21,8 @@ export function Header() {
         "flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 dark:border-dark-600 dark:bg-dark-900",
       )}
     >
-      <Link to="/" className="flex items-center gap-3">
-        <img src={APP_LOGO} alt="Ticket Book" className="h-8" />
+      <Link to="/" className="flex min-w-0 items-center gap-3">
+        <BrandLogo photoClassName="size-8" logoClassName="h-8" />
       </Link>
 
       {lgAndDown && (
