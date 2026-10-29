@@ -42,6 +42,7 @@ function mapApiEmployee(item: any): Employee {
     roleCategoryId: item.roleCategoryId ? String(item.roleCategoryId) : "",
     roleCategoryName: item.roleCategoryName ?? "",
     roleId: item.roleId ? String(item.roleId) : "",
+    branchId: item.branchId ? String(item.branchId) : "",
     roleName: item.roleName ?? "",
     roleDataScope: item.roleDataScope ?? "",
     additionalDepartments: (item.additionalDepartments ?? []).map(String),
@@ -156,6 +157,7 @@ export default function EmployeePage() {
                 ? Number(employee.roleCategoryId)
                 : null,
               roleId: employee.roleId ? Number(employee.roleId) : null,
+              branchId: employee.branchId ? Number(employee.branchId) : null,
               additionalDepartments: (employee.additionalDepartments || []).map(
                 Number,
               ),

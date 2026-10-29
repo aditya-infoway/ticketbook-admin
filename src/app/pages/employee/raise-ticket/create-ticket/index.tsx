@@ -14,13 +14,15 @@ import { Page } from "@/components/shared/Page";
 import { exportToExcel, exportToPdf } from "../shared/export";
 import { MasterTable } from "../shared/MasterTable";
 import { MasterToolbar } from "../shared/MasterToolbar";
-import { TicketDataDrawer, type TicketFormData } from "./TicketDataDrawer";
+import { TicketDataDrawer, type TicketFormData, type EditTicket } from "./TicketDataDrawer";
 import { columns, exportColumns } from "./columns";
 import type { CreateTicket } from "../shared/types";
 import { Get } from "@/ApiHelper";
 import { Button } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { DatePicker } from "@/components/shared/form/Datepicker";
+
+type DrawerMode = "create" | "edit" | "view";
 
 const mapApiTicket = (r: any): CreateTicket => ({
   ...r,
@@ -35,6 +37,18 @@ const EMPTY_FILTERS = {
   toDate: "",
 };
 
+// Helper to convert row data to EditTicket for the drawer
+const buildEditTicket = (row: any): EditTicket => ({
+  id: String(row.id ?? row.ticketId ?? ""),
+  ticketNo: row.ticketNumber ?? row.ticketNo ?? "",
+  ticketCode: row.ticketCode ?? "",
+  departmentId: String(row.departmentId ?? row.departmentid ?? ""),
+  categoryId: String(row.categoryId ?? row.categoryid ?? ""),
+  subject: row.subject ?? "",
+  issueDescription: row.issueDescription ?? row.description ?? "",
+  attachmentUrl: row.attachmentUrl ?? row.attachment ?? "",
+});
+
 export default function TicketPage() {
   const [data, setData] = useState<CreateTicket[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,15 +58,47 @@ export default function TicketPage() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerKey, setDrawerKey] = useState(0);
+  const [drawerMode, setDrawerMode] = useState<DrawerMode>("create");
+  const [activeTicket, setActiveTicket] = useState<EditTicket | null>(null);
+
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [formData, setFormData] = useState<TicketFormData | null>(null);
 
-  const openDrawer = () => {
+  // --- Drawer Handlers ---
+  const openCreateDrawer = () => {
+    setDrawerMode("create");
+    setActiveTicket(null);
     setDrawerKey((k) => k + 1);
     setDrawerOpen(true);
   };
 
+  const openWithDetail = async (row: any, mode: "edit" | "view") => {
+    let source = row;
+    try {
+      // Try to fetch detail if your API supports it. If not, it will fallback to row data.
+      const res: any = await Get(`employee/ticket/${row.id}`, {}, false);
+      if (res?.data?.success && res.data.data) {
+        source = { ...row, ...res.data.data };
+      }
+    } catch {
+      // ignore
+    }
+    setDrawerMode(mode);
+    setActiveTicket(buildEditTicket(source));
+    setDrawerKey((k) => k + 1);
+    setDrawerOpen(true);
+  };
+
+  const openEditDrawer = (row: any) => openWithDetail(row, "edit");
+  const openViewDrawer = (row: any) => openWithDetail(row, "view");
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setActiveTicket(null);
+  };
+
+  // --- Data Fetch ---
   const fetchFormData = async () => {
     try {
       const res: any = await Get("employee/ticket/form-data", {}, false);
@@ -94,6 +140,7 @@ export default function TicketPage() {
     fetchAll();
   }, [filters]);
 
+  // --- Table Config ---
   const table = useReactTable({
     data,
     columns,
@@ -108,19 +155,15 @@ export default function TicketPage() {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     meta: {
-      openEditDrawer: () => {
-        toast.info("Tickets cannot be edited once raised.");
-      },
-      viewRow: () => {
-        toast.info("Ticket details view is coming soon.");
-      },
+      // Yahan change kiya gaya hai: Ab yeh toast nahi, balki drawer open karega
+      openEditDrawer: (row: any) => openEditDrawer(row),
+      viewRow: (row: any) => openViewDrawer(row),
       deleteRow: () => {
         toast.error("Employees cannot delete tickets.");
       },
     },
   });
 
-  // Helper to format date to YYYY-MM-DD for the DatePicker component
   const formatDate = (date: Date) => {
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -138,7 +181,7 @@ export default function TicketPage() {
           table={table}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters((v) => !v)}
-          onCreate={openDrawer}
+          onCreate={openCreateDrawer}
           onExportExcel={() => exportToExcel(data, exportColumns, "my_tickets")}
           onExportPdf={() =>
             exportToPdf(data, exportColumns, "My Tickets", "my_tickets")
@@ -150,7 +193,7 @@ export default function TicketPage() {
                 displayField="label"
                 value={
                   formData?.departments.find(
-                    (d) => d.id === filters.departmentId,
+                    (d: any) => d.id === filters.departmentId,
                   ) || null
                 }
                 onChange={(v: any) =>
@@ -165,14 +208,14 @@ export default function TicketPage() {
               />
               <Combobox
                 data={(formData?.categories || []).filter(
-                  (c) =>
+                  (c: any) =>
                     !filters.departmentId ||
                     c.departmentId === filters.departmentId,
                 )}
                 displayField="label"
                 value={
                   formData?.categories.find(
-                    (c) => c.id === filters.categoryId,
+                    (c: any) => c.id === filters.categoryId,
                   ) || null
                 }
                 onChange={(v: any) =>
@@ -186,7 +229,7 @@ export default function TicketPage() {
                 displayField="label"
                 value={
                   formData?.statuses.find(
-                    (s) => s.id === filters.ticketStatusId,
+                    (s: any) => s.id === filters.ticketStatusId,
                   ) || null
                 }
                 onChange={(v: any) =>
@@ -196,38 +239,28 @@ export default function TicketPage() {
                 searchFields={["label"]}
               />
 
-              {/* Range DatePicker */}
               <div className="min-w-[200px]">
-                {/* Range DatePicker */}
-                <div className="min-w-[200px]">
-                  <DatePicker
-                    options={{
-                      mode: "range",
-                      dateFormat: "Y-m-d",
-                      defaultDate: filters.fromDate
-                        ? filters.toDate
-                          ? [filters.fromDate, filters.toDate]
-                          : [filters.fromDate]
-                        : [],
-                    }}
-                    placeholder="Filter by Date Range"
-                    onChange={(dates: Date[]) => {
-                      if (!dates || dates.length === 0) {
-                        setFilters((f) => ({ ...f, fromDate: "", toDate: "" }));
-                        return;
-                      }
-
-                      const from = dates[0] ? formatDate(dates[0]) : "";
-                      const to = dates[1] ? formatDate(dates[1]) : "";
-
-                      setFilters((f) => ({
-                        ...f,
-                        fromDate: from,
-                        toDate: to,
-                      }));
-                    }}
-                  />
-                </div>
+                <DatePicker
+                  options={{
+                    mode: "range",
+                    dateFormat: "Y-m-d",
+                    defaultDate: filters.fromDate
+                      ? filters.toDate
+                        ? [filters.fromDate, filters.toDate]
+                        : [filters.fromDate]
+                      : [],
+                  }}
+                  placeholder="Filter by Date Range"
+                  onChange={(dates: Date[]) => {
+                    if (!dates || dates.length === 0) {
+                      setFilters((f) => ({ ...f, fromDate: "", toDate: "" }));
+                      return;
+                    }
+                    const from = dates[0] ? formatDate(dates[0]) : "";
+                    const to = dates[1] ? formatDate(dates[1]) : "";
+                    setFilters((f) => ({ ...f, fromDate: from, toDate: to }));
+                  }}
+                />
               </div>
 
               <div className="mt-2 sm:col-span-2 lg:col-span-4">
@@ -258,12 +291,15 @@ export default function TicketPage() {
         />
       </div>
 
+      {/* Yahan mode aur ticket props add kiye gaye hain */}
       <TicketDataDrawer
         key={drawerKey}
         isOpen={drawerOpen}
-        close={() => setDrawerOpen(false)}
+        close={closeDrawer}
         onSaved={fetchAll}
         formData={formData}
+        ticket={activeTicket}
+        mode={drawerMode}
       />
     </Page>
   );

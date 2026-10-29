@@ -1,3 +1,4 @@
+// TicketDataDrawer.tsx
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   Dialog,
@@ -7,7 +8,7 @@ import {
 } from "@headlessui/react";
 import { XMarkIcon, PaperClipIcon } from "@heroicons/react/24/solid";
 import { toast } from "sonner";
-import { Get, Post } from "@/ApiHelper";
+import { Get, Post, Put } from "@/ApiHelper";
 import { Button, Input } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 
@@ -23,11 +24,26 @@ export interface TicketFormData {
   statuses: { id: string; label: string }[];
 }
 
+export interface EditTicket {
+  id: string;
+  ticketNo?: string;
+  ticketCode?: string;
+  departmentId: string;
+  categoryId: string;
+  subject: string;
+  issueDescription: string;
+  attachmentUrl?: string;
+}
+
+type DrawerMode = "create" | "edit" | "view";
+
 interface TicketDrawerProps {
   isOpen: boolean;
   close: () => void;
   onSaved: () => void;
   formData: TicketFormData | null;
+  ticket?: EditTicket | null;
+  mode?: DrawerMode;
 }
 
 function FieldLabel({
@@ -44,7 +60,7 @@ function FieldLabel({
     </label>
   );
 }
- 
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "application/pdf"];
 
@@ -53,7 +69,13 @@ export function TicketDataDrawer({
   close,
   onSaved,
   formData,
+  ticket,
+  mode = "create",
 }: TicketDrawerProps) {
+  const isViewMode = mode === "view";
+  const isEditMode = mode === "edit";
+  const isReadOnly = isViewMode;
+
   const [form, setForm] = useState({
     departmentId: "",
     categoryId: "",
@@ -69,17 +91,41 @@ export function TicketDataDrawer({
   useEffect(() => {
     if (!isOpen) return;
 
+    if (ticket) {
+      setForm({
+        departmentId: ticket.departmentId || "",
+        categoryId: ticket.categoryId || "",
+        subject: ticket.subject || "",
+        issueDescription: ticket.issueDescription || "",
+      });
+      setPreview({
+        ticketNo: ticket.ticketNo || "",
+        ticketCode: ticket.ticketCode || "",
+      });
+      setFile(null);
+      setErrors({});
+      return;
+    }
+
+    // create mode
+    setForm({
+      departmentId: "",
+      categoryId: "",
+      subject: "",
+      issueDescription: "",
+    });
+    setFile(null);
+    setErrors({});
+
     (async () => {
       try {
         const res: any = await Get("employee/ticket/next-number", {}, false);
-        if (res?.data?.success) {
-          setPreview(res.data.data);
-        }
+        if (res?.data?.success) setPreview(res.data.data);
       } catch {
         // preview only
       }
     })();
-  }, [isOpen]);
+  }, [isOpen, ticket, mode]);
 
   const emp = formData?.employee;
   const departments = formData?.departments || [];
@@ -92,11 +138,13 @@ export function TicketDataDrawer({
   );
 
   const sf = (k: keyof typeof form, v: any) => {
+    if (isReadOnly) return;
     setForm((f) => ({ ...f, [k]: v }));
     if (errors[k as string]) setErrors((prev) => ({ ...prev, [k]: "" }));
   };
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isReadOnly) return;
     const picked = e.target.files?.[0] || null;
     e.target.value = "";
     if (!picked) return;
@@ -126,6 +174,7 @@ export function TicketDataDrawer({
   };
 
   const onSubmit = async () => {
+    if (isViewMode) return;
     if (!validate()) return;
 
     try {
@@ -138,13 +187,30 @@ export function TicketDataDrawer({
       fd.append("issueDescription", form.issueDescription.trim());
       if (file) fd.append("attachment", file);
 
-      const res: any = await Post("employee/ticket/create", fd, true);
+      const endpoint = isEditMode
+        ? `employee/ticket/update/${ticket!.id}`
+        : "employee/ticket/create";
+
+      const res: any = isEditMode
+        ? await Put(endpoint, fd, true)
+        : await Post(endpoint, fd, true);
+
       if (!res?.data?.success) {
-        toast.error(res?.data?.message || "Failed to create ticket");
+        toast.error(
+          res?.data?.message ||
+            (isEditMode
+              ? "Failed to update ticket"
+              : "Failed to create ticket"),
+        );
         return;
       }
 
-      toast.success(res.data.message || "Ticket created successfully");
+      toast.success(
+        res.data.message ||
+          (isEditMode
+            ? "Ticket updated successfully"
+            : "Ticket created successfully"),
+      );
       onSaved();
       handleClose();
     } catch (err: any) {
@@ -155,6 +221,12 @@ export function TicketDataDrawer({
       setSubmitting(false);
     }
   };
+
+  const headerTitle = isViewMode
+    ? "View Ticket"
+    : isEditMode
+      ? "Edit Ticket"
+      : "Create New Ticket";
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -182,7 +254,7 @@ export function TicketDataDrawer({
         >
           {/* Header */}
           <div className="bg-primary-600 flex flex-shrink-0 items-center justify-between px-5 py-4 text-white">
-            <h3 className="text-base font-bold">Create New Ticket</h3>
+            <h3 className="text-base font-bold">{headerTitle}</h3>
             <button
               type="button"
               onClick={handleClose}
@@ -201,26 +273,23 @@ export function TicketDataDrawer({
                   Employee Details (Auto-fetched)
                 </h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  {/* Ticket ID */}
                   <div>
                     <span className="block text-xs text-gray-400">
                       Ticket ID
                     </span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {preview.ticketNo || "Generating..."}
+                      {preview.ticketNo || (isViewMode ? "-" : "Generating...")}
                     </span>
                   </div>
-
-                  {/* Ticket Number */}
                   <div>
                     <span className="block text-xs text-gray-400">
                       Ticket Number
                     </span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {preview.ticketCode || "Generating..."}
+                      {preview.ticketCode ||
+                        (isViewMode ? "-" : "Generating...")}
                     </span>
                   </div>
-
                   <div>
                     <span className="block text-xs text-gray-400">
                       Employee Name
@@ -263,7 +332,7 @@ export function TicketDataDrawer({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {/* Department */}
                   <div>
-                    <FieldLabel required>Department</FieldLabel>
+                    <FieldLabel required={!isViewMode}>Department</FieldLabel>
                     <Combobox
                       data={departments}
                       displayField="label"
@@ -272,11 +341,13 @@ export function TicketDataDrawer({
                         null
                       }
                       onChange={(v: any) => {
+                        if (isReadOnly) return;
                         sf("departmentId", v?.id || "");
                         sf("categoryId", "");
                       }}
                       placeholder="Select department"
                       searchFields={["label"]}
+                      disabled={isReadOnly}
                     />
                     {errors.departmentId && (
                       <p className="mt-1 text-xs text-red-500">
@@ -287,17 +358,24 @@ export function TicketDataDrawer({
 
                   {/* Ticket Category */}
                   <div>
-                    <FieldLabel required>Ticket Category</FieldLabel>
+                    <FieldLabel required={!isViewMode}>
+                      Ticket Category
+                    </FieldLabel>
                     <Combobox
                       data={categoryOptions}
                       displayField="label"
                       value={
-                        categoryOptions.find((c) => c.id === form.categoryId) ||
-                        null
+                        categoryOptions.find(
+                          (c) => c.id === form.categoryId,
+                        ) || null
                       }
-                      onChange={(v: any) => sf("categoryId", v?.id || "")}
+                      onChange={(v: any) => {
+                        if (isReadOnly) return;
+                        sf("categoryId", v?.id || "");
+                      }}
                       placeholder="Select category"
                       searchFields={["label"]}
+                      disabled={isReadOnly}
                     />
                     {errors.categoryId && (
                       <p className="mt-1 text-xs text-red-500">
@@ -309,11 +387,12 @@ export function TicketDataDrawer({
 
                 {/* Ticket Subject */}
                 <div>
-                  <FieldLabel required>Ticket Subject</FieldLabel>
+                  <FieldLabel required={!isViewMode}>Ticket Subject</FieldLabel>
                   <Input
                     placeholder="Brief summary of the issue"
                     value={form.subject}
                     onChange={(e: any) => sf("subject", e.target.value)}
+                    disabled={isReadOnly}
                   />
                   {errors.subject && (
                     <p className="mt-1 text-xs text-red-500">
@@ -324,13 +403,16 @@ export function TicketDataDrawer({
 
                 {/* Issue Description */}
                 <div>
-                  <FieldLabel required>Issue Description</FieldLabel>
+                  <FieldLabel required={!isViewMode}>
+                    Issue Description
+                  </FieldLabel>
                   <textarea
-                    className="focus:border-primary-500 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-100 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-1 focus:outline-none"
+                    className="focus:border-primary-500 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-800 dark:text-dark-100 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-1 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
                     rows={5}
                     placeholder="Describe the issue in detail..."
                     value={form.issueDescription}
                     onChange={(e) => sf("issueDescription", e.target.value)}
+                    disabled={isReadOnly}
                   />
                   {errors.issueDescription && (
                     <p className="mt-1 text-xs text-red-500">
@@ -339,47 +421,90 @@ export function TicketDataDrawer({
                   )}
                 </div>
 
-                {/* Attachment */}
-                <div>
-                  <FieldLabel>Attachment (Optional)</FieldLabel>
-                  <label className="dark:border-dark-600 dark:bg-dark-800 dark:hover:bg-dark-700 flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:bg-gray-100">
-                    <PaperClipIcon className="mb-2 h-6 w-6 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      {file ? file.name : "Click to upload a file"}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      PNG, JPG or PDF up to 5MB
-                    </span>
-                    <input
-                      type="file"
-                      accept=".png,.jpg,.jpeg,.pdf"
-                      className="hidden"
-                      onChange={onPickFile}
-                    />
-                  </label>
-                </div>
+                {/* Attachment - Create/Edit */}
+                {!isViewMode && (
+                  <div>
+                    <FieldLabel>Attachment (Optional)</FieldLabel>
+                    <label className="dark:border-dark-600 dark:bg-dark-800 dark:hover:bg-dark-700 flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:bg-gray-100">
+                      <PaperClipIcon className="mb-2 h-6 w-6 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                        {file ? file.name : "Click to upload a file"}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        PNG, JPG or PDF up to 5MB
+                      </span>
+                      <input
+                        type="file"
+                        accept=".png,.jpg,.jpeg,.pdf"
+                        className="hidden"
+                        onChange={onPickFile}
+                        disabled={isReadOnly}
+                      />
+                    </label>
+                    {isEditMode && ticket?.attachmentUrl && !file && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Existing attachment will be kept unless replaced.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Attachment - View only */}
+                {isViewMode && ticket?.attachmentUrl && (
+                  <div>
+                    <FieldLabel>Attachment</FieldLabel>
+                    <a
+                      href={ticket.attachmentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary-600 dark:text-primary-400 inline-flex items-center gap-2 text-sm font-medium hover:underline"
+                    >
+                      <PaperClipIcon className="size-4" />
+                      View Attachment
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Footer */}
           <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
-            <Button
-              variant="outlined"
-              color="secondary"
-              type="button"
-              onClick={handleClose}
-            >
-              Cancel
-            </Button>
-            <Button
-              color="primary"
-              type="button"
-              onClick={onSubmit}
-              disabled={submitting}
-            >
-              {submitting ? "Creating..." : "Create Ticket"}
-            </Button>
+            {isViewMode ? (
+              <Button
+                variant="outlined"
+                color="secondary"
+                type="button"
+                onClick={handleClose}
+              >
+                Close
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  type="button"
+                  onClick={handleClose}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  color="primary"
+                  type="button"
+                  onClick={onSubmit}
+                  disabled={submitting}
+                >
+                  {submitting
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Creating..."
+                    : isEditMode
+                      ? "Update Ticket"
+                      : "Create Ticket"}
+                </Button>
+              </>
+            )}
           </div>
         </TransitionChild>
       </Dialog>
