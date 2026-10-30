@@ -230,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { token, ...profile } = result.data;
 
         // Use role coming from backend (employee or contractor)
-        const finalRole = profile.role || credentials.role;
+     const finalRole = credentials.role;
 
         const user = { ...profile, role: finalRole } as unknown as User;
 

@@ -22,7 +22,7 @@ export const baseNavigationObj: Record<string, NavigationTree> = {
   myTickets: {
     id: "myTickets",
     type: "collapse",
-    path: "/employee/my-tickets",
+    path: "/employee/area-manager/my-ticket",
     title: "My Tickets",
     icon: "myTickets",
   },
