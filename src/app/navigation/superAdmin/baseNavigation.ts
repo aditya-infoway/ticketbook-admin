@@ -45,6 +45,14 @@ export const baseNavigationObj: Record<string, NavigationTree> = {
     icon: "employeeMaster",
   },
 
+  contractorMaster: {
+    id: "contractorMaster",
+    type: "collapse",
+    path: "/contractor-master",
+    title: "Contractor Master",
+    icon: "contractorMaster",
+  },
+
   rolePermissionMaster: {
     id: "rolePermissionMaster",
     type: "collapse",

@@ -19,8 +19,20 @@ export const employeeRoutes: RouteObject[] = [
     }),
   },
   {
-    path: "/employee/my-tickets/list",
-    element: <PlaceholderPage title="My Tickets" />,
+    path: "/employee/my-ticket/list",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/employee/my-ticket/TicketPage"))
+        .default,
+    }),
+  },
+
+  {
+    path: "/employee/my-ticket/:id",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/employee/my-ticket/TicketDetailsPage")
+      ).default,
+    }),
   },
   {
     path: "/employee/my-ticket-history/list",

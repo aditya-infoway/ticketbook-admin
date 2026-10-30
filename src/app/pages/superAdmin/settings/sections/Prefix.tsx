@@ -31,6 +31,7 @@ const prefixForOptions = [
   { id: "RESOLVER_TEAM", label: "RESOLVER TEAM MASTER" },
   { id: "TICKET_CATEGORY", label: "Ticket Category Master" },
   { id: "TICKET_STATUS", label: "Ticket Status Master" },
+  { id: "CONTRACTOR_DEPARTMENT", label: "Contractor Department" },
 ];
 
 const schema = yup.object({
