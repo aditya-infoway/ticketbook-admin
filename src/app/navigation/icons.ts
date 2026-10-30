@@ -19,6 +19,7 @@ import {
   TicketIcon,
   UserCircleIcon,
   UsersIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { ElementType } from "react";
 
@@ -42,6 +43,9 @@ export const navigationIcons: Record<string, ElementType> = {
 
   employeeMaster: UsersIcon,
   "employeeMaster.list": UsersIcon,
+
+  contractorMaster: WrenchScrewdriverIcon,
+  "contractorMaster.list": WrenchScrewdriverIcon,
 
   rolePermissionMaster: ShieldCheckIcon,
   "rolePermissionMaster.list": ShieldCheckIcon,

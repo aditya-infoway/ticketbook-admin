@@ -177,14 +177,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const expiresAt = Number(window.localStorage.getItem(EXPIRES_AT_KEY));
       const msLeft = expiresAt - Date.now();
 
-      if (msLeft <= 0) {                             
+      if (msLeft <= 0) {
         logout();
         toasterrormsg("Session expired due to inactivity.");
         return;
       }
       timer = setTimeout(scheduleCheck, msLeft);
     };
- 
+
     const handleActivity = () => {
       resetExpiry();
     };
@@ -204,43 +204,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (credentials: {
     email: string;
     password: string;
-     role?: "superAdmin" | "employee" | "branch";
+    role?: "superAdmin" | "employee" | "branch";
   }) => {
     dispatch({ type: "LOGIN_REQUEST" });
     try {
-    const isStaff =
-  credentials.role === "employee" || credentials.role === "branch";
-const response = await Post(
-  credentials.role === "employee"
-    ? "employee/login"
-    : credentials.role === "branch"
-      ? "branch/login"
-      : "superadmin/login",
-  { email: credentials.email, password: credentials.password },
-  false,
-);
+      const isStaff =
+        credentials.role === "employee" || credentials.role === "branch";
+      const response = await Post(
+        credentials.role === "employee"
+          ? "employee/login"
+          : credentials.role === "branch"
+            ? "branch/login"
+            : "superadmin/login",
+        { email: credentials.email, password: credentials.password },
+        false,
+      );
       const result = response.data;
 
-      if (result.status !== 200) {
-        throw new Error(result.message || "Login failed");
+      if (isStaff) {
+        const { token, ...profile } = result.data;
+
+        // Use role coming from backend (employee or contractor)
+        const finalRole = profile.role || credentials.role;
+
+        const user = { ...profile, role: finalRole } as unknown as User;
+
+        window.localStorage.setItem(PENDING_TOKEN_KEY, token);
+        window.localStorage.setItem(PENDING_EMAIL_KEY, profile.email);
+        setSession(token);
+
+        toastsuccessmsg(result.message);
+        dispatch({
+          type: "LOGIN_SUCCESS",
+          payload: { pendingToken: token, pendingEmail: profile.email, user },
+        });
+
+        return result.data; // ← return the data
       }
-
-      // Employees belong to one company: no company select step, session starts now
-if (isStaff) {
-  const { token, ...profile } = result.data;
-  const user = { ...profile, role: credentials.role } as unknown as User;
-
-  window.localStorage.setItem(PENDING_TOKEN_KEY, token);
-  window.localStorage.setItem(PENDING_EMAIL_KEY, profile.email);
-  setSession(token);
-
-  toastsuccessmsg(result.message);
-  dispatch({
-    type: "LOGIN_SUCCESS",
-    payload: { pendingToken: token, pendingEmail: profile.email, user },
-  });
-  return;
-}
 
       // ✅ CHANGE #2 — companyId/companyName bhi destructure kiya
       const { token, email, companyId, companyName } = result.data;
@@ -259,6 +259,8 @@ if (isStaff) {
           user: { companyId, companyName, email } as unknown as User,
         },
       });
+
+      return result.data;
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err.message || "Login failed";
@@ -284,19 +286,22 @@ if (isStaff) {
     window.localStorage.setItem(COMPANY_ID_KEY, companyId);
     window.localStorage.setItem("authToken", token); // (duplicate line, already existed)
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { financialYears: _fy, ...userToStore } = (state.user as any) || {};
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { financialYears: _fy, ...userToStore } = (state.user as any) || {};
 
-window.localStorage.setItem("user", JSON.stringify(userToStore));
-window.localStorage.setItem(
-  ROLE_KEY,
-  (state.user as any)?.role ?? "superAdmin",
-);
+    window.localStorage.setItem("user", JSON.stringify(userToStore));
+    window.localStorage.setItem(
+      ROLE_KEY,
+      (state.user as any)?.role ?? "superAdmin",
+    );
     resetExpiry(); // was setExpiry() — wrong name, causes ReferenceError
     window.localStorage.removeItem(PENDING_TOKEN_KEY);
     window.localStorage.removeItem(PENDING_EMAIL_KEY);
 
-dispatch({ type: "SESSION_ESTABLISHED", payload: { user: userToStore as User } });
+    dispatch({
+      type: "SESSION_ESTABLISHED",
+      payload: { user: userToStore as User },
+    });
   };
 
   const logout = async () => {

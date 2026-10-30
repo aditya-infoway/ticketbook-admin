@@ -14,7 +14,11 @@ import { Page } from "@/components/shared/Page";
 import { exportToExcel, exportToPdf } from "../shared/export";
 import { MasterTable } from "../shared/MasterTable";
 import { MasterToolbar } from "../shared/MasterToolbar";
-import { TicketDataDrawer, type TicketFormData, type EditTicket } from "./TicketDataDrawer";
+import {
+  TicketDataDrawer,
+  type TicketFormData,
+  type EditTicket,
+} from "./TicketDataDrawer";
 import { columns, exportColumns } from "./columns";
 import type { CreateTicket } from "../shared/types";
 import { Get } from "@/ApiHelper";
@@ -40,8 +44,8 @@ const EMPTY_FILTERS = {
 // Helper to convert row data to EditTicket for the drawer
 const buildEditTicket = (row: any): EditTicket => ({
   id: String(row.id ?? row.ticketId ?? ""),
-  ticketNo: row.ticketNumber ?? row.ticketNo ?? "",
-  ticketCode: row.ticketCode ?? "",
+  ticketNo: row.ticketNo ?? "",
+  ticketCode: row.ticketNumber ?? "",
   departmentId: String(row.departmentId ?? row.departmentid ?? ""),
   categoryId: String(row.categoryId ?? row.categoryid ?? ""),
   subject: row.subject ?? "",
@@ -73,24 +77,21 @@ export default function TicketPage() {
     setDrawerOpen(true);
   };
 
-  const openWithDetail = async (row: any, mode: "edit" | "view") => {
-    let source = row;
-    try {
-      // Try to fetch detail if your API supports it. If not, it will fallback to row data.
-      const res: any = await Get(`employee/ticket/${row.id}`, {}, false);
-      if (res?.data?.success && res.data.data) {
-        source = { ...row, ...res.data.data };
-      }
-    } catch {
-      // ignore
-    }
+  const openWithDetail = (row: any, mode: "edit" | "view") => {
     setDrawerMode(mode);
-    setActiveTicket(buildEditTicket(source));
+    setActiveTicket(buildEditTicket(row));
     setDrawerKey((k) => k + 1);
     setDrawerOpen(true);
   };
 
-  const openEditDrawer = (row: any) => openWithDetail(row, "edit");
+  const openEditDrawer = (row: any) => {
+    if (row.status !== "Open") {
+      toast.info("Only tickets with status Open can be edited.");
+      return;
+    }
+    openWithDetail(row, "edit");
+  };
+
   const openViewDrawer = (row: any) => openWithDetail(row, "view");
 
   const closeDrawer = () => {

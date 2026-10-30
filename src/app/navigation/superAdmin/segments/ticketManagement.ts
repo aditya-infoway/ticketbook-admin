@@ -8,7 +8,7 @@ export const ticketManagement: NavigationTree = {
       id: "ticketManagement.list",
       type: "item",
       path: "/ticket-management/list",
-      title: "All company tickets and actions ",
+      title: "Ticket Management ",
       icon: "ticketManagement.list",
     },
   ],
