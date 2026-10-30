@@ -51,18 +51,25 @@ const onSubmit = async (data: AuthFormValues) => {
           ? "branch"
           : "superAdmin";
 
-    await login({
+    const result = await login({
       email: data.email,
       password: data.password,
       role,
     });
 
-    navigate("/select-company");
+    // ---------- NEW ----------
+    // Backend returns isContractor: true when a contractor logs in
+    if (result?.isContractor || result?.role === "contractor") {
+      // Go directly to contractor panel (skip select-company)
+      navigate("/contractor-dashboard");   // ← change to your real contractor route
+    } else {
+      // Normal employee / branch flow
+      navigate("/select-company");
+    }
   } catch {
     // Error is already handled by the context.
   }
 };
-
 
 
   return (

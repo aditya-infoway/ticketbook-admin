@@ -121,6 +121,23 @@ export const superAdminRoutes: RouteObject[] = [
     }),
   },
   {
+    path: "/contractor-master/contractor-registration",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/contractor-master/contractor-registration")
+      ).default,
+    }),
+  },
+  {
+    path: "/contractor-master/contractor-department",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/contractor-master/contractor-department")
+      ).default,
+    }),
+  },
+
+  {
     path: "/employee-master/onboarding",
     element: <PlaceholderPage title="Employee Onboarding" />,
   },
@@ -180,9 +197,13 @@ export const superAdminRoutes: RouteObject[] = [
     path: "/sla-escalation-master/resolution-deadline",
     element: <PlaceholderPage title="Resolution Deadline" />,
   },
-  {
+   {
     path: "/ticket-management/list",
-    element: <PlaceholderPage title="Ticket Management" />,
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/ticketManagement")
+      ).default,
+    }),
   },
   {
     path: "/notification-master/templates",

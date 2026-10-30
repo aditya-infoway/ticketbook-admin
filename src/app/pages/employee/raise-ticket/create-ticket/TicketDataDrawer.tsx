@@ -77,10 +77,10 @@ export function TicketDataDrawer({
   const isReadOnly = isViewMode;
 
   const [form, setForm] = useState({
-    departmentId: "",
-    categoryId: "",
-    subject: "",
-    issueDescription: "",
+    departmentId: ticket?.departmentId || "",
+    categoryId: ticket?.categoryId || "",
+    subject: ticket?.subject || "",
+    issueDescription: ticket?.issueDescription || "",
   });
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -186,9 +186,10 @@ export function TicketDataDrawer({
       fd.append("subject", form.subject.trim());
       fd.append("issueDescription", form.issueDescription.trim());
       if (file) fd.append("attachment", file);
+      if (isEditMode && ticket) fd.append("ticketId", ticket.id);
 
       const endpoint = isEditMode
-        ? `employee/ticket/update/${ticket!.id}`
+        ? "employee/ticket/update"
         : "employee/ticket/create";
 
       const res: any = isEditMode
@@ -365,9 +366,8 @@ export function TicketDataDrawer({
                       data={categoryOptions}
                       displayField="label"
                       value={
-                        categoryOptions.find(
-                          (c) => c.id === form.categoryId,
-                        ) || null
+                        categoryOptions.find((c) => c.id === form.categoryId) ||
+                        null
                       }
                       onChange={(v: any) => {
                         if (isReadOnly) return;

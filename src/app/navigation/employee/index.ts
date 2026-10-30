@@ -1,15 +1,13 @@
-import { dashboards } from "./segments/dashboards";
-import { raiseTicket } from "./segments/raiseTicket";
-import { myTickets } from "./segments/myTickets";
-import { myTicketHistory } from "./segments/myTicketHistory";
-import { myNotifications } from "./segments/myNotifications";
-import { logout } from "./segments/logout";
+import { areaManagerNavigation } from "./areaManager";
+import { branchManagerNavigation } from "./branchManager";
+import { contractorNavigation } from "./contractor";
+import { EmployeeSubRole } from "../role";
 
-export const employeeNavigation = [
-  dashboards,
-  raiseTicket,
-  myTickets,
-  myTicketHistory,
-  myNotifications,
-  logout,
-];
+const navigationBySubRole = {
+  branch_manager: branchManagerNavigation,
+  area_manager: areaManagerNavigation,
+  contractor: contractorNavigation,
+};
+
+export const getEmployeeNavigation = (subRole: EmployeeSubRole | null) =>
+  subRole ? navigationBySubRole[subRole] : [];

@@ -14,6 +14,7 @@ import { reportsAnalytics } from "./segments/reportsAnalytics";
 import { ticketHistoryAudit } from "./segments/ticketHistoryAudit";
 import { companySettings } from "./segments/companySettings";
 import { logout } from "./segments/logout";
+import { contractorMaster } from "./segments/contractorMaster";
 
 export const superAdminNavigation = [
   dashboards,
@@ -21,6 +22,7 @@ export const superAdminNavigation = [
   regionMaster,
   departmentMaster,
   employeeMaster,
+  contractorMaster,
   rolePermissionMaster,
   managerAssignment,
   ticketCategoryMaster,
