@@ -49,6 +49,12 @@ export const columns: ColumnDef<Contractor>[] = [
     cell: TextCell,
   },
   {
+  id: "departmentName",
+  accessorKey: "departmentName",
+  header: "Department",
+  cell: TextCell,
+},
+  {
     id: "status",
     accessorKey: "status",
     header: "Status",
@@ -93,5 +99,6 @@ export const exportColumns: ExportColumn<Contractor>[] = [
   { key: "mobileNumber", header: "Mobile" },
   { key: "areaName", header: "Area" },
   { key: "branchName", header: "Branch" },
+  { key: "departmentName", header: "Department" },
   { key: "status", header: "Status" },
 ];
