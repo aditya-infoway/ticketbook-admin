@@ -221,6 +221,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       const result = response.data;
 
+      // ADD THIS
+      if (result.status !== 200 && result.success !== true) {
+        throw new Error(result.message || "Login failed");
+      }
+
       if (isStaff) {
         const { token, ...profile } = result.data;
 

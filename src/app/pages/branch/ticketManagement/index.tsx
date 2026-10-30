@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
+import { AssignTicketModal } from "./AssignTicketModal";
 import { Page } from "@/components/shared/Page";
 import { exportToExcel, exportToPdf } from "../shared/export";
 import { MasterTable } from "../shared/MasterTable";
@@ -61,6 +61,8 @@ export default function BranchTicketPage() {
   // Status drawer
   const [statusOpen, setStatusOpen] = useState(false);
   const [statusTicket, setStatusTicket] = useState<StatusTicket | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignTicket, setAssignTicket] = useState<any | null>(null);
 
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
@@ -129,6 +131,11 @@ export default function BranchTicketPage() {
     fetchAll();
   }, [filters]);
 
+  const openAssignModal = (row: any) => {
+    setAssignTicket(row);
+    setAssignOpen(true);
+  };
+
   // --- Table Config ---
   const table = useReactTable({
     data,
@@ -145,6 +152,7 @@ export default function BranchTicketPage() {
     getPaginationRowModel: getPaginationRowModel(),
     meta: {
       openStatusDrawer: (row: any) => openStatusDrawer(row),
+      openAssignDrawer: (row: any) => openAssignModal(row),
     } as any,
   });
 
@@ -283,6 +291,26 @@ export default function BranchTicketPage() {
         onSaved={fetchAll}
         ticket={statusTicket}
         statuses={formData?.statuses || []}
+      />
+
+      <AssignTicketModal
+        isOpen={assignOpen}
+        close={() => setAssignOpen(false)}
+        onSaved={fetchAll}
+        ticket={assignTicket}
+        // TODO: Replace with actual contractors API data
+        contractors={[
+          {
+            id: "1",
+            label: "John Doe (Plumbing)",
+            departmentName: "Maintenance",
+          },
+          {
+            id: "2",
+            label: "Jane Smith (Electrical)",
+            departmentName: "Electrical",
+          },
+        ]}
       />
     </Page>
   );

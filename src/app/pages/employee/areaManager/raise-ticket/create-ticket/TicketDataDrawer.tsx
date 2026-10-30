@@ -187,8 +187,14 @@ export function TicketDataDrawer({
       fd.append("issueDescription", form.issueDescription.trim());
       if (file) fd.append("attachment", file);
 
+      // ---------- ADD THIS ----------
+      if (isEditMode && ticket?.id) {
+        fd.append("ticketId", ticket.id); // or whatever name the backend expects
+      }
+      // ------------------------------
+
       const endpoint = isEditMode
-        ? `employee/ticket/update/${ticket!.id}`
+        ? "employee/ticket/update" 
         : "employee/ticket/create";
 
       const res: any = isEditMode
@@ -365,9 +371,8 @@ export function TicketDataDrawer({
                       data={categoryOptions}
                       displayField="label"
                       value={
-                        categoryOptions.find(
-                          (c) => c.id === form.categoryId,
-                        ) || null
+                        categoryOptions.find((c) => c.id === form.categoryId) ||
+                        null
                       }
                       onChange={(v: any) => {
                         if (isReadOnly) return;
