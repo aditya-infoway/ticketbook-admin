@@ -197,9 +197,13 @@ export const superAdminRoutes: RouteObject[] = [
     path: "/sla-escalation-master/resolution-deadline",
     element: <PlaceholderPage title="Resolution Deadline" />,
   },
-  {
+   {
     path: "/ticket-management/list",
-    element: <PlaceholderPage title="Ticket Management" />,
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/ticketManagement")
+      ).default,
+    }),
   },
   {
     path: "/notification-master/templates",
