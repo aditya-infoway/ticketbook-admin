@@ -69,6 +69,10 @@ function getInitialForm(editContractor: Contractor | null) {
       address: editContractor.address || "",
       areaId: editContractor.areaId || "",
       branchId: editContractor.branchId || "",
+   contractorDepartmentId: String(
+  editContractor.contractorDepartmentId ?? ""
+),
+                                           // naye wale me
       status: editContractor.status || "Active",
       password: "",
       confirmPassword: "",
@@ -84,6 +88,7 @@ function getInitialForm(editContractor: Contractor | null) {
     address: "",
     areaId: "",
     branchId: "",
+    contractorDepartmentId: "", 
     status: "Active",
     password: "",
     confirmPassword: "",
@@ -122,7 +127,7 @@ export function ContractorDrawer({
   // Dropdowns
   const [areas, setAreas] = useState<Opt[]>([]);
   const [branches, setBranches] = useState<Opt[]>([]);
-
+const [departments, setDepartments] = useState<Opt[]>([]);
   // Files
   const [files, setFiles] = useState<File[]>([]);
   const [existingDocs, setExistingDocs] = useState<string[]>(
@@ -134,9 +139,10 @@ export function ContractorDrawer({
     if (!isOpen) return;
     (async () => {
       try {
-        const [areaRes, branchRes]: any[] = await Promise.all([
+        const [areaRes, branchRes,deptRes]: any[] = await Promise.all([
           Get("superadmin/region/list", {}, false),
           Get("superadmin/branch/list", {}, false),
+            Get("superadmin/contractor-department/list", {}, false),
         ]);
 
         const rows = (res: any): any[] => res?.data?.data ?? [];
@@ -163,6 +169,18 @@ export function ContractorDrawer({
               regionId: String(r.regionId ?? ""),
             })),
         );
+        setDepartments(
+  rows(deptRes)
+    .filter(
+      (r) =>
+        r.status === "Active" ||
+        String(r.contractorDepartmentId) === initial.contractorDepartmentId,
+    )
+    .map((r) => ({
+      id: String(r.contractorDepartmentId),
+      label: r.departmentName,
+    })),
+);
       } catch (error) {
         console.error("Dropdown error:", error);
         toast.error("Failed to load dropdown data");
@@ -412,7 +430,23 @@ export function ContractorDrawer({
                     )}
                   />
                 </div>
-
+<div>
+  <FieldLabel>Contractor Department</FieldLabel>
+  <Controller
+    control={control}
+    name="contractorDepartmentId"
+    render={({ field }) => (
+      <Combobox
+        data={departments}
+        displayField="label"
+        value={departments.find((d) => d.id === field.value) || null}
+        onChange={(v: any) => field.onChange(v?.id || "")}
+        placeholder="Select department"
+        searchFields={["label"]}
+      />
+    )}
+  />
+</div>
                 {/* 👇 PASSWORD FIELDS WITH ICONS ONLY */}
                 <div>
                   <FieldLabel required={!editContractor}>Password</FieldLabel>

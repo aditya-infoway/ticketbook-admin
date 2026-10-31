@@ -23,6 +23,8 @@ export interface Contractor {
   areaName?: string;
   branchId: string;
   branchName?: string;
+  contractorDepartmentId?: string;
+departmentName?: string;
   registrationDate: string;
   status: "Active" | "Inactive";
   documents?: string[]; 

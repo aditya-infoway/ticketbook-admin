@@ -14,7 +14,11 @@ import { Page } from "@/components/shared/Page";
 import { exportToExcel, exportToPdf } from "../shared/export";
 import { MasterTable } from "../shared/MasterTable";
 import { MasterToolbar } from "../shared/MasterToolbar";
-import { TicketDataDrawer, type TicketFormData, type EditTicket } from "./TicketDataDrawer";
+import {
+  TicketDataDrawer,
+  type TicketFormData,
+  type EditTicket,
+} from "./TicketDataDrawer";
 import { columns, exportColumns } from "./columns";
 import type { CreateTicket } from "../shared/types";
 import { Get } from "@/ApiHelper";
@@ -40,8 +44,8 @@ const EMPTY_FILTERS = {
 // Helper to convert row data to EditTicket for the drawer
 const buildEditTicket = (row: any): EditTicket => ({
   id: String(row.id ?? row.ticketId ?? ""),
-  ticketNo: row.ticketNumber ?? row.ticketNo ?? "",
-  ticketCode: row.ticketCode ?? "",
+  ticketNo: row.ticketNo ?? "", // "26-27/001"  → Ticket ID
+  ticketCode: row.ticketNumber ?? "", // "01"         → Ticket Number
   departmentId: String(row.departmentId ?? row.departmentid ?? ""),
   categoryId: String(row.categoryId ?? row.categoryid ?? ""),
   subject: row.subject ?? "",

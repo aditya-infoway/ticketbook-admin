@@ -221,11 +221,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       const result = response.data;
 
+      // ADD THIS
+      if (result.status !== 200 && result.success !== true) {
+        throw new Error(result.message || "Login failed");
+      }
+
       if (isStaff) {
         const { token, ...profile } = result.data;
 
         // Use role coming from backend (employee or contractor)
-        const finalRole = profile.role || credentials.role;
+     const finalRole = credentials.role;
 
         const user = { ...profile, role: finalRole } as unknown as User;
 
