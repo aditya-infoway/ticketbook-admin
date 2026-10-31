@@ -23,11 +23,23 @@ export type BranchTicket = CreateTicket & {
   issueDescription?: string;
   attachment?: string | null;
   statusId?: string;
+  isAssigned?: boolean;
+  contractorName?: string;
+  assignedAt?: string;
 };
 
 // Row action: ellipsis dropdown with Edit + Assign
 function BranchRowActions({ row, table }: any) {
   const meta = table.options.meta as any;
+  const isAssigned = !!row.original.isAssigned;
+  const isStatusAssigned =
+    String(row.original.status || "").toLowerCase() === "assigned";
+  const canAssign = isStatusAssigned && !isAssigned;
+  const assignHint = isAssigned
+    ? "Already assigned"
+    : !isStatusAssigned
+      ? 'Set status to "Assigned" first (Edit)'
+      : "Assign contractor";
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -96,17 +108,24 @@ function BranchRowActions({ row, table }: any) {
             </button>
 
             {/* Assign -> model not created yet, wire later */}
+            {/* Assign: only after status = Assigned, and only once per ticket */}
             <button
               type="button"
+              disabled={!canAssign}
+              title={assignHint}
               onClick={() => {
+                if (!canAssign) return;
                 setOpen(false);
-                // TODO: open assign model here once created
                 meta?.openAssignDrawer?.(row.original);
               }}
-              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+                canAssign
+                  ? "cursor-pointer text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+                  : "cursor-not-allowed text-gray-400 opacity-50 dark:text-gray-500"
+              }`}
             >
               <UserPlusIcon className="size-4" />
-              Assign
+              {isAssigned ? "Assigned" : "Assign"}
             </button>
           </div>,
           document.body,
@@ -154,11 +173,18 @@ export const columns: ColumnDef<BranchTicket>[] = [
     cell: TextCell,
   },
   {
+    id: "contractorName",
+    accessorKey: "contractorName",
+    header: "Contractor",
+    cell: (info) => info.getValue<string>() || "-",
+  },
+  {
     id: "createdAt",
     accessorKey: "createdAt",
     header: "Created Date",
     cell: TextCell,
   },
+    
   {
     id: "status",
     accessorKey: "status",
@@ -206,4 +232,5 @@ export const exportColumns: ExportColumn<BranchTicket>[] = [
   { key: "departmentName", header: "Department" },
   { key: "createdAt", header: "Created Date" },
   { key: "status", header: "Status" },
+  { key: "contractorName", header: "Contractor" },
 ];

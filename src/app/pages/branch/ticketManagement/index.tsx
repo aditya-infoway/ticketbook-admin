@@ -26,6 +26,12 @@ interface BranchFormData {
   departments: { id: string; label: string }[];
   categories: { id: string; label: string; departmentId: string }[];
   statuses: { id: string; label: string }[];
+  contractors?: {
+    id: string;
+    label: string;
+    departmentId?: string;
+    departmentName?: string;
+  }[];
 }
 
 const EMPTY_FILTERS = {
@@ -67,6 +73,7 @@ export default function BranchTicketPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [formData, setFormData] = useState<BranchFormData | null>(null);
+  const [contractors, setContractors] = useState<any[]>([]);
 
   // --- Handlers ---
   const openStatusDrawer = (row: any) => {
@@ -93,8 +100,12 @@ export default function BranchTicketPage() {
   const fetchFormData = async () => {
     try {
       const res: any = await Get("branch/ticket/form-data", {}, false);
-      if (res?.data?.success) setFormData(res.data.data);
-      else toast.error(res?.data?.message || "Failed to load form data");
+      if (res?.data?.success) {
+        setFormData(res.data.data);
+        setContractors(res.data.data.contractors || []);
+      } else {
+        toast.error(res?.data?.message || "Failed to load form data");
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to load form data");
     }
@@ -132,6 +143,14 @@ export default function BranchTicketPage() {
   }, [filters]);
 
   const openAssignModal = (row: any) => {
+    if (row.isAssigned) {
+      toast.info("This ticket is already assigned.");
+      return;
+    }
+    if (String(row.status).toLowerCase() !== "assigned") {
+      toast.info('Change the status to "Assigned" first (Edit), then assign.');
+      return;
+    }
     setAssignTicket(row);
     setAssignOpen(true);
   };
@@ -298,19 +317,7 @@ export default function BranchTicketPage() {
         close={() => setAssignOpen(false)}
         onSaved={fetchAll}
         ticket={assignTicket}
-        // TODO: Replace with actual contractors API data
-        contractors={[
-          {
-            id: "1",
-            label: "John Doe (Plumbing)",
-            departmentName: "Maintenance",
-          },
-          {
-            id: "2",
-            label: "Jane Smith (Electrical)",
-            departmentName: "Electrical",
-          },
-        ]}
+        contractors={contractors}
       />
     </Page>
   );
