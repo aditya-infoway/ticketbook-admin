@@ -1,3 +1,4 @@
+// src/app/pages/employee/my-ticket/shared/MasterToolbar.tsx (or wherever this lives)
 import {
   ArrowDownTrayIcon,
   DocumentArrowDownIcon,
@@ -13,16 +14,16 @@ import { Button, Input } from "@/components/ui";
 
 interface MasterToolbarProps<T> {
   title: string;
-  createLabel?: string; // optional: branch jaise pages me create nahi hota
+  createLabel?: string; // 👈 Made optional
   searchPlaceholder: string;
   table: Table<T>;
-  onCreate?: () => void; // optional: na mile to Create button nahi dikhega
+  onCreate?: () => void; // 👈 Made optional
   showFilters: boolean;
   onToggleFilters: () => void;
   onExportExcel: () => void;
   onExportPdf: () => void;
   filterPanel?: ReactNode;
-  importButton?: ReactNode;
+  importButton?: ReactNode; 
 }
 
 export function MasterToolbar<T>({
@@ -36,7 +37,7 @@ export function MasterToolbar<T>({
   onExportExcel,
   onExportPdf,
   filterPanel,
-  importButton,
+  importButton, 
 }: MasterToolbarProps<T>) {
   return (
     <div className="table-toolbar px-(--margin-x) pt-4">
@@ -72,6 +73,8 @@ export function MasterToolbar<T>({
             <DocumentArrowDownIcon className="size-4 text-error-600" />
             <span>PDF</span>
           </Button>
+          
+          {/* 👇 Only render the Create button if onCreate is passed */}
           {onCreate && (
             <Button
               color="primary"
@@ -79,7 +82,7 @@ export function MasterToolbar<T>({
               onClick={onCreate}
             >
               <PlusIcon className="size-4" />
-              <span>{createLabel}</span>
+              <span>{createLabel || "Create"}</span>
             </Button>
           )}
         </div>

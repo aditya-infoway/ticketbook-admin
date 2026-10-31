@@ -1,58 +1,17 @@
+// src/app/pages/employee/my-ticket/columns.tsx
 import { ColumnDef } from "@tanstack/react-table";
-import { PencilSquareIcon } from "@heroicons/react/24/outline";
-import {
-  SelectCell,
-  SelectHeader,
-} from "@/components/shared/table/SelectCheckbox";
+import { Link } from "react-router"; // Or "react-router-dom" depending on your setup
+import { EyeIcon } from "@heroicons/react/24/outline"; // Import an icon
 import { TextCell } from "./shared/tableCells";
 import { ExportColumn } from "./shared/export";
 import type { CreateTicket } from "./shared/types";
 
-// Branch list me employee ki extra details bhi aati hain
-export type BranchTicket = CreateTicket & {
-  employeeName?: string;
-  employeeCode?: string;
-  branchName?: string;
-  contactNumber?: string;
-  issueDescription?: string;
-  attachment?: string | null;
-  statusId?: string;
-};
-
-// Row action: sirf Manage (details + status ek hi drawer me)
-function BranchRowActions({ row, table }: any) {
-  const meta = table.options.meta as any;
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        title="View / Manage Status"
-        onClick={() => meta?.openStatusDrawer?.(row.original)}
-        className="cursor-pointer rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-amber-600 dark:text-gray-400 dark:hover:bg-gray-700"
-      >
-        <PencilSquareIcon className="size-5" />
-      </button>
-    </div>
-  );
-}
-
-export const columns: ColumnDef<BranchTicket>[] = [
-  {
-    id: "select",
-    header: SelectHeader,
-    cell: SelectCell,
-    enableSorting: false,
-  },
+export const columns: ColumnDef<CreateTicket>[] = [
+  // Removed the 'select' checkbox column
   {
     id: "ticketNumber",
     accessorKey: "ticketNumber",
     header: "Ticket No.",
-    cell: TextCell,
-  },
-  {
-    id: "employeeName",
-    accessorKey: "employeeName",
-    header: "Employee",
     cell: TextCell,
   },
   {
@@ -110,17 +69,30 @@ export const columns: ColumnDef<BranchTicket>[] = [
     },
     enableSorting: false,
   },
-  {
+   {
     id: "actions",
     header: "Action",
-    cell: BranchRowActions,
+    cell: ({ row }) => {
+      return (
+        // 👇 Changed to justify-start so it aligns to the left of its cell
+        <div className="flex items-center justify-start">
+          <Link
+            to={`/ticket-management/view/${row.original.id}`}
+            className="text-primary-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 flex items-center justify-center rounded-md p-1.5 transition-colors"
+            title="View Details"
+          >
+            <EyeIcon className="size-5" />
+          </Link>
+        </div>
+      );
+    },
+
     enableSorting: false,
   },
 ];
 
-export const exportColumns: ExportColumn<BranchTicket>[] = [
+export const exportColumns: ExportColumn<CreateTicket>[] = [
   { key: "ticketNumber", header: "Ticket No." },
-  { key: "employeeName", header: "Employee" },
   { key: "subject", header: "Subject" },
   { key: "categoryName", header: "Category" },
   { key: "departmentName", header: "Department" },

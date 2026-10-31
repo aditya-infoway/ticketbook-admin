@@ -33,6 +33,7 @@ export interface EditTicket {
   subject: string;
   issueDescription: string;
   attachmentUrl?: string;
+    statusId?: string;
 }
 
 type DrawerMode = "create" | "edit" | "view";
@@ -81,6 +82,7 @@ export function TicketDataDrawer({
     categoryId: "",
     subject: "",
     issueDescription: "",
+      statusId: "", 
   });
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -97,6 +99,7 @@ export function TicketDataDrawer({
         categoryId: ticket.categoryId || "",
         subject: ticket.subject || "",
         issueDescription: ticket.issueDescription || "",
+            statusId: "",
       });
       setPreview({
         ticketNo: ticket.ticketNo || "",
@@ -113,6 +116,7 @@ export function TicketDataDrawer({
       categoryId: "",
       subject: "",
       issueDescription: "",
+          statusId: "",
     });
     setFile(null);
     setErrors({});
@@ -136,7 +140,20 @@ export function TicketDataDrawer({
       ),
     [formData, form.departmentId],
   );
+const closedStatusOptions = useMemo(
+  () =>
+    (formData?.statuses || []).filter(
+      (s) => s.label?.trim().toLowerCase() === "closed",
+    ),
+  [formData],
+);
 
+const currentStatusLabel = useMemo(
+  () =>
+    (formData?.statuses || []).find((s) => s.id === ticket?.statusId)?.label ||
+    "",
+  [formData, ticket],
+);
   const sf = (k: keyof typeof form, v: any) => {
     if (isReadOnly) return;
     setForm((f) => ({ ...f, [k]: v }));
@@ -186,9 +203,12 @@ export function TicketDataDrawer({
       fd.append("subject", form.subject.trim());
       fd.append("issueDescription", form.issueDescription.trim());
       if (file) fd.append("attachment", file);
-
+if (isEditMode && ticket?.id) {
+  fd.append("ticketId", ticket.id);
+  if (form.statusId) fd.append("ticketStatusId", form.statusId); // NEW
+}
       const endpoint = isEditMode
-        ? `employee/ticket/update/${ticket!.id}`
+      ? "employee/ticket/update"
         : "employee/ticket/create";
 
       const res: any = isEditMode
@@ -420,7 +440,28 @@ export function TicketDataDrawer({
                     </p>
                   )}
                 </div>
-
+{/* Status - Edit only (only "Closed" allowed) */}
+{isEditMode && (
+  <div>
+    <FieldLabel>Status</FieldLabel>
+    {currentStatusLabel && (
+      <p className="mb-1 text-xs text-gray-500">
+        Current status:{" "}
+        <span className="font-semibold">{currentStatusLabel}</span>
+      </p>
+    )}
+    <Combobox
+      data={closedStatusOptions}
+      displayField="label"
+      value={
+        closedStatusOptions.find((s) => s.id === form.statusId) || null
+      }
+      onChange={(v: any) => sf("statusId", v?.id || "")}
+      placeholder="Select status (Closed only)"
+      searchFields={["label"]}
+    />
+  </div>
+)}
                 {/* Attachment - Create/Edit */}
                 {!isViewMode && (
                   <div>

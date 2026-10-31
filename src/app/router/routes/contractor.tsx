@@ -1,9 +1,8 @@
-
 import { RouteObject } from "react-router";
 import PlaceholderPage from "../PlaceholderPage";
 import SubRoleGuard from "../SubRoleGuard";
 
-export const areaManagerRoutes: RouteObject[] = [
+export const contractorRoutes: RouteObject[] = [
   {
     path: "/employee/contractor",
     element: <SubRoleGuard allow="contractor" />,
@@ -16,9 +15,21 @@ export const areaManagerRoutes: RouteObject[] = [
           ).default,
         }),
       },
-      { path: "my-tickets/list", element: <PlaceholderPage title="My Tickets" /> },
-      { path: "my-ticket-history/list", element: <PlaceholderPage title="My Ticket History" /> },
-      { path: "notifications/list", element: <PlaceholderPage title="Notifications" /> },
+      {
+        path: "my-ticket",
+        lazy: async () => ({
+          Component: (await import("@/app/pages/employee/contractor/my-ticket"))
+            .default,
+        }),
+      },
+      {
+        path: "my-ticket-history/list",
+        element: <PlaceholderPage title="My Ticket History" />,
+      },
+      {
+        path: "notifications/list",
+        element: <PlaceholderPage title="Notifications" />,
+      },
     ],
   },
 ];
