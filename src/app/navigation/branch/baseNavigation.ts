@@ -29,12 +29,12 @@ export const baseNavigationObj: Record<string, NavigationTree> = {
     icon: "ticketManagement",
   },
 
-  reportsAnalytics: {
-    id: "reportsAnalytics",
+  contractorworkreview: {
+    id: "contractorworkreview",
     type: "collapse",
-    path: "/branch/reports-analytics",
-    title: "Reports & Analytics",
-    icon: "reportsAnalytics",
+    path: "/branch/contractor-work-review",
+    title: "Contractor Work Review",
+    icon: "contractorworkreview",
   },
 
   ticketHistoryAudit: {

@@ -17,6 +17,13 @@ export const branchRoutes: RouteObject[] = [
       Component: (await import("@/app/pages/branch/ticketManagement")).default,
     }),
   },
-  { path: "/branch/reports-analytics/list", element: <PlaceholderPage title="Reports & Analytics" /> },
+  {
+    path: "/branch/contractor-work-review/list",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/branch/contractor-work-review")
+      ).default,
+    }),
+  },
   { path: "/branch/ticket-history-audit/list", element: <PlaceholderPage title="Ticket History & Audit" /> },
 ];

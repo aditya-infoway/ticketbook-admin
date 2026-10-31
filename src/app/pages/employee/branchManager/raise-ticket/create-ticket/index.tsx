@@ -47,6 +47,7 @@ const buildEditTicket = (row: any): EditTicket => ({
   subject: row.subject ?? "",
   issueDescription: row.issueDescription ?? row.description ?? "",
   attachmentUrl: row.attachmentUrl ?? row.attachment ?? "",
+    statusId: String(row.ticketStatusId ?? row.statusId ?? row.statusid ?? ""),
 });
 
 export default function TicketPage() {
