@@ -206,10 +206,6 @@ export function TicketDataDrawer({
 
       // ---------- ADD THIS ----------
       if (isEditMode && ticket?.id) {
-        fd.append("ticketId", ticket.id); // or whatever name the backend expects
-      }
-      // ------------------------------
-      if (isEditMode && ticket?.id) {
         fd.append("ticketId", ticket.id);
         if (form.statusId) fd.append("ticketStatusId", form.statusId); // NEW
       }
