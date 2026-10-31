@@ -68,9 +68,12 @@ export const navigationIcons: Record<string, ElementType> = {
   notificationMaster: BellIcon,
   "notificationMaster.list": BellIcon,
 
-  reportsAnalytics: ChartBarIcon,
+  contractorworkreview: ChartBarIcon,
+  "contractorworkreview.list": ChartBarIcon,
+ reportsAnalytics: ChartBarIcon,
   "reportsAnalytics.list": ChartBarIcon,
 
+  
   ticketHistoryAudit: DocumentMagnifyingGlassIcon,
   "ticketHistoryAudit.list": DocumentMagnifyingGlassIcon,
 

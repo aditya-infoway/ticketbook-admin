@@ -1,9 +1,9 @@
+// src/app/pages/employee/my-ticket/TicketPage.tsx
 import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  RowSelectionState,
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -14,19 +14,17 @@ import { Page } from "@/components/shared/Page";
 import { exportToExcel, exportToPdf } from "./shared/export";
 import { MasterTable } from "./shared/MasterTable";
 import { MasterToolbar } from "./shared/MasterToolbar";
-import { TicketStatusDrawer, type StatusTicket } from "./TicketStatusDrawer";
-import { columns, exportColumns, type BranchTicket } from "./Columns";
+import { columns, exportColumns } from "./columns";
+import type { CreateTicket } from "./shared/types";
 import { Get } from "@/ApiHelper";
 import { Button } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { DatePicker } from "@/components/shared/form/Datepicker";
 
-// branch/ticket/form-data ka response
-interface BranchFormData {
-  departments: { id: string; label: string }[];
-  categories: { id: string; label: string; departmentId: string }[];
-  statuses: { id: string; label: string }[];
-}
+const mapApiTicket = (r: any): CreateTicket => ({
+  ...r,
+  id: String(r.ticketId ?? r.id),
+});
 
 const EMPTY_FILTERS = {
   departmentId: "",
@@ -36,58 +34,17 @@ const EMPTY_FILTERS = {
   toDate: "",
 };
 
-// Backend sirf file path deta hai -> full URL banao.
-// VITE_API_URL apne project ke file-serving base URL se replace kar lena.
-const FILE_BASE = (import.meta as any).env?.VITE_API_URL || "";
-const toFileUrl = (p?: string | null) =>
-  p
-    ? /^https?:\/\//.test(p)
-      ? p
-      : `${FILE_BASE}/${String(p).replace(/^\/+/, "")}`
-    : "";
-
-const mapApiTicket = (r: any): BranchTicket => ({
-  ...r,
-  id: String(r.ticketId ?? r.id),
-});
-
-export default function BranchTicketPage() {
-  const [data, setData] = useState<BranchTicket[]>([]);
+export default function TicketPage() {
+  const [data, setData] = useState<CreateTicket[]>([]);
   const [loading, setLoading] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-
-  // Status drawer
-  const [statusOpen, setStatusOpen] = useState(false);
-  const [statusTicket, setStatusTicket] = useState<StatusTicket | null>(null);
-
+  
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [formData, setFormData] = useState<BranchFormData | null>(null);
+  const [formData, setFormData] = useState<any | null>(null);
 
-  // --- Handlers ---
-  const openStatusDrawer = (row: any) => {
-    setStatusTicket({
-      id: String(row.id),
-      ticketNumber: row.ticketNumber,
-      ticketNo: row.ticketNo,
-      subject: row.subject,
-      issueDescription: row.issueDescription,
-      employeeName: row.employeeName,
-      employeeCode: row.employeeCode,
-      branchName: row.branchName,
-      contactNumber: row.contactNumber,
-      departmentName: row.departmentName,
-      categoryName: row.categoryName,
-      attachmentUrl: toFileUrl(row.attachment),
-      status: row.status,
-      statusId: String(row.statusId ?? ""),
-    });
-    setStatusOpen(true);
-  };
-
-  // --- Data Fetch ---
+  // Fetch Dropdown Options for filters
   const fetchFormData = async () => {
     try {
       const res: any = await Get("superadmin/ticket/form-data", {}, false);
@@ -129,23 +86,19 @@ export default function BranchTicketPage() {
     fetchAll();
   }, [filters]);
 
-  // --- Table Config ---
   const table = useReactTable({
     data,
     columns,
-    state: { globalFilter, sorting, rowSelection },
-    enableRowSelection: true,
+    state: { globalFilter, sorting },
+    enableRowSelection: false, // Disabled since we removed checkboxes
     getRowId: (row) => row.id,
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
-    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    meta: {
-      openStatusDrawer: (row: any) => openStatusDrawer(row),
-    } as any,
+    // Meta actions removed entirely since navigation is handled directly in columns
   });
 
   const formatDate = (date: Date) => {
@@ -156,24 +109,18 @@ export default function BranchTicketPage() {
   };
 
   return (
-    <Page title="Branch Tickets">
+    <Page title="My Tickets">
       <div className="transition-content w-full pb-5">
-        {/*
-          NOTE: Branch ko ticket create nahi karna. Agar MasterToolbar me
-          createLabel/onCreate required hain to unhe optional bana do
-          (ya Create button conditionally render karo).
-        */}
         <MasterToolbar
-          title="Branch Tickets"
-          searchPlaceholder="Search tickets..."
+          title="My Tickets"
+          searchPlaceholder="Search my tickets..."
           table={table}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters((v) => !v)}
-          onExportExcel={() =>
-            exportToExcel(data, exportColumns, "branch_tickets")
-          }
+          // 👇 Create Ticket button props removed completely
+          onExportExcel={() => exportToExcel(data, exportColumns, "my_tickets")}
           onExportPdf={() =>
-            exportToPdf(data, exportColumns, "Branch Tickets", "branch_tickets")
+            exportToPdf(data, exportColumns, "My Tickets", "my_tickets")
           }
           filterPanel={
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -181,7 +128,7 @@ export default function BranchTicketPage() {
                 data={formData?.departments || []}
                 displayField="label"
                 value={
-                  formData?.departments.find(
+                  formData?.departments?.find(
                     (d: any) => d.id === filters.departmentId,
                   ) || null
                 }
@@ -203,7 +150,7 @@ export default function BranchTicketPage() {
                 )}
                 displayField="label"
                 value={
-                  formData?.categories.find(
+                  formData?.categories?.find(
                     (c: any) => c.id === filters.categoryId,
                   ) || null
                 }
@@ -217,7 +164,7 @@ export default function BranchTicketPage() {
                 data={formData?.statuses || []}
                 displayField="label"
                 value={
-                  formData?.statuses.find(
+                  formData?.statuses?.find(
                     (s: any) => s.id === filters.ticketStatusId,
                   ) || null
                 }
@@ -272,18 +219,13 @@ export default function BranchTicketPage() {
         <MasterTable
           table={table}
           columnCount={columns.length}
-          emptyMessage={loading ? "Loading tickets..." : "No tickets found."}
+          emptyMessage={
+            loading
+              ? "Loading tickets..."
+              : "No tickets found." // Updated message
+          }
         />
       </div>
-
-      {/* Ticket details (read-only) + status manage */}
-      <TicketStatusDrawer
-        isOpen={statusOpen}
-        close={() => setStatusOpen(false)}
-        onSaved={fetchAll}
-        ticket={statusTicket}
-        statuses={formData?.statuses || []}
-      />
     </Page>
   );
 }
