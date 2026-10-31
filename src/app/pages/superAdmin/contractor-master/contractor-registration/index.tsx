@@ -109,6 +109,7 @@ export default function ContractorRegistrationPage() {
               address: contractor.address,
               areaId: contractor.areaId,
               branchId: contractor.branchId,
+              contractorDepartmentId: contractor.contractorDepartmentId, 
               status: newStatus,
             },
             false,

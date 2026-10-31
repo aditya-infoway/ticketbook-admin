@@ -15,7 +15,22 @@ export const branchManagerRoutes: RouteObject[] = [
           ).default,
         }),
       },
-      { path: "my-tickets/list", element: <PlaceholderPage title="My Tickets" /> },
+   {
+  path: "my-ticket/list",
+  lazy: async () => ({
+    Component: (
+      await import("@/app/pages/employee/branchManager/my-ticket/TicketPage")
+    ).default,
+  }),
+},
+{
+  path: "my-ticket/:id", // <- "/" hataya
+  lazy: async () => ({
+    Component: (
+      await import("@/app/pages/employee/branchManager/my-ticket/TicketDetailsPage")
+    ).default,
+  }),
+},
       { path: "my-ticket-history/list", element: <PlaceholderPage title="My Ticket History" /> },
       { path: "notifications/list", element: <PlaceholderPage title="Notifications" /> },
     ],

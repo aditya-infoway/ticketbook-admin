@@ -1,5 +1,9 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import {
+  PencilSquareIcon,
+  UserPlusIcon,
+  EllipsisHorizontalIcon,
+} from "@heroicons/react/24/outline";
 import {
   SelectCell,
   SelectHeader,
@@ -7,6 +11,8 @@ import {
 import { TextCell } from "../shared/tableCells";
 import { ExportColumn } from "../shared/export";
 import type { CreateTicket } from "../shared/types";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 // Branch list me employee ki extra details bhi aati hain
 export type BranchTicket = CreateTicket & {
@@ -19,24 +25,98 @@ export type BranchTicket = CreateTicket & {
   statusId?: string;
 };
 
-// Row action: sirf Manage (details + status ek hi drawer me)
+// Row action: ellipsis dropdown with Edit + Assign
 function BranchRowActions({ row, table }: any) {
   const meta = table.options.meta as any;
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  const toggleMenu = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      // Calculate position (align right edge of menu with right edge of button)
+      const menuWidth = 140; // approximate width (w-36 = 144px)
+      setCoords({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.right + window.scrollX - menuWidth,
+      });
+    }
+    setOpen((v) => !v);
+  };
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
   return (
-    <div className="flex items-center gap-2">
+    <>
       <button
+        ref={buttonRef}
         type="button"
-        title="View / Manage Status"
-        onClick={() => meta?.openStatusDrawer?.(row.original)}
-        className="cursor-pointer rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-amber-600 dark:text-gray-400 dark:hover:bg-gray-700"
+        title="Actions"
+        onClick={toggleMenu}
+        className="cursor-pointer rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
       >
-        <PencilSquareIcon className="size-5" />
+        <EllipsisHorizontalIcon className="size-5" />
       </button>
-    </div>
+
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{ top: coords.top, left: coords.left }}
+            className="fixed z-[100] w-36 rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+          >
+            {/* Edit -> existing status drawer */}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                meta?.openStatusDrawer?.(row.original);
+              }}
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              <PencilSquareIcon className="size-4" />
+              Edit
+            </button>
+
+            {/* Assign -> model not created yet, wire later */}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                // TODO: open assign model here once created
+                meta?.openAssignDrawer?.(row.original);
+              }}
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              <UserPlusIcon className="size-4" />
+              Assign
+            </button>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
 export const columns: ColumnDef<BranchTicket>[] = [
+  // ... (keep your other columns exactly the same)
   {
     id: "select",
     header: SelectHeader,
