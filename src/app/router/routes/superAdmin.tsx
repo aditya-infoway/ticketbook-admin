@@ -20,6 +20,15 @@ export const superAdminRoutes: RouteObject[] = [
   },
 
   {
+    path: "/branch-master/branch-manager",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/branch-master/branch-manager")
+      ).default,
+    }),
+  },
+
+  {
     path: "/branch-master/create-branch",
     element: <PlaceholderPage title="Create Branch" />,
   },
@@ -36,8 +45,10 @@ export const superAdminRoutes: RouteObject[] = [
     element: <PlaceholderPage title="Group Branches" />,
   },
   {
-    path: "/region-master/assign-area-manager",
-    element: <PlaceholderPage title="Assign Area Manager" />,
+    path: "/region-master/area-manager",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/superAdmin/area-manager")).default,
+    }),
   },
   {
     path: "/department-master/create-department",

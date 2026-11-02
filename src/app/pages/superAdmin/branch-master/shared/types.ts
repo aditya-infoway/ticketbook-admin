@@ -15,7 +15,7 @@ export interface Branch {
   contactNumber: number;
   phoneNumber: number;
   branchEmail: string;
-   branchManager: string;
+  branchManager: string;
   areaManager: string;
   branchManagerId?: number | null;
   areaManagerId?: number | null;
@@ -25,3 +25,29 @@ export interface Branch {
   createdBy: string;
   createdAt: string;
 }
+
+export type BranchManager = {
+  id: string;
+  name: string;
+  profilePhoto?: string | null;
+  profilePhotoUrl?: string;
+  gender?: string;
+  status: string;
+  mobileNumber: string;
+  alternateMobile?: string;
+  email: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pinCode?: string;
+  branchManagerId?: number;
+  branchManagerNo?: string;
+  areaId?: string;
+  areaName?: string;
+  branchId?: string;
+  branchName?: string;
+  reportingTo?: string;
+  reportingToName?: string;
+  joiningDate?: string;
+  description?: string;
+};

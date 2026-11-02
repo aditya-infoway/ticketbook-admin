@@ -58,4 +58,4 @@ Thumbs.db
 # Optional
 # ==========================
 coverage/
-.cache/
+.cache/   

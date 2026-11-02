@@ -18,8 +18,8 @@ import { contractorMaster } from "./segments/contractorMaster";
 
 export const superAdminNavigation = [
   dashboards,
-  branchMaster,
   regionMaster,
+  branchMaster,
   departmentMaster,
   employeeMaster,
   contractorMaster,
