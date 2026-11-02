@@ -32,6 +32,8 @@ const prefixForOptions = [
   { id: "TICKET_CATEGORY", label: "Ticket Category Master" },
   { id: "TICKET_STATUS", label: "Ticket Status Master" },
   { id: "CONTRACTOR_DEPARTMENT", label: "Contractor Department" },
+  { id: "AREA_MANAGER", label: "Area Manager" },
+  { id: "BRANCH_MANAGER", label: "Branch Manager" },
 ];
 
 const schema = yup.object({

@@ -199,7 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       events.forEach((e) => window.removeEventListener(e, handleActivity));
     };
   }, [state.isAuthenticated]);
-
+ 
   // STEP 1: login validate — OTP nahi
   const login = async (credentials: {
     email: string;
