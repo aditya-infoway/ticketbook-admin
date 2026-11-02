@@ -14,8 +14,8 @@ export const regionMaster: NavigationTree = {
     {
       id: "regionMaster.assignAreaManager",
       type: "item",
-      path: "/region-master/assign-area-manager",
-      title: "Assign Area Manager",
+      path: "/region-master/area-manager",
+      title: " Area Manager",
       icon: "regionMaster.assignAreaManager",
     },
   ],
