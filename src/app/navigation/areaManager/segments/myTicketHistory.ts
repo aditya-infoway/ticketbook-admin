@@ -8,8 +8,9 @@ export const myTicketHistory: NavigationTree = {
       id: "myTicketHistory.list",
       type: "item",
       path: "/employee/my-ticket-history/list",
-      title: "My Ticket History",
+      title: "Activity History",
       icon: "myTicketHistory.list",
     },
   ],
 };
+  

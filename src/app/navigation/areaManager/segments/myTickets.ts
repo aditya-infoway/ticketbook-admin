@@ -7,8 +7,8 @@ export const myTickets: NavigationTree = {
     {
       id: "myTickets.list",
       type: "item",
-      path: "/employee/area-manager/my-ticket/list",
-      title: "My Tickets",
+      path: "/area-manager/my-ticket/list",
+      title: "Tickets",
       icon: "myTickets.list",
     },
   ],

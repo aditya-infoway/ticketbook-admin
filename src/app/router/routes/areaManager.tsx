@@ -14,6 +14,21 @@ import PlaceholderPage from "../PlaceholderPage";
 
 export const areaManagerRoutes: RouteObject[] = [
   {
+    path: "/area-manager/my-branches",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/areaManager/my-branches/index"))
+        .default,
+    }),
+  },
+  {
+    path: "/area-manager/my-branches/:id",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/areaManager/my-branches/branchdetailspage")
+      ).default,
+    }),
+  },
+  {
     path: "/area-manager/ticket-management/list",
     element: <PlaceholderPage title="Ticket Management" />,
   },
