@@ -6,16 +6,10 @@ import RoleGuard from "./RoleGuard";
 import { superAdminRoutes } from "./routes/superAdmin";
 import { branchRoutes } from "./routes/branch";
 import { employeeRoutes } from "./routes/employee";
+import { areaManagerRoutes } from "./routes/areaManager";
+import { branchManagerRoutes } from "./routes/branchManager";
 
-// ----------------------------------------------------------------------
 
-/**
- * Each role gets a pathless guard route. Users of another role who type the
- * URL are redirected to /dashboards/home.
- *
- * Put `...roleRoutes` inside the children of your protected layout route
- * (the one that renders the sidebar / MainLayout).
- */
 export const roleRoutes: RouteObject[] = [
   {
     id: "super-admin",
@@ -31,5 +25,15 @@ export const roleRoutes: RouteObject[] = [
     id: "employee",
     element: <RoleGuard allow="employee" />,
     children: employeeRoutes,
+  },
+    {
+    id: "area-manager",
+    element: <RoleGuard allow="areaManager" />,
+    children: areaManagerRoutes,
+  },
+  {
+    id: "branch-manager",
+    element: <RoleGuard allow="branchManager" />,
+    children: branchManagerRoutes,
   },
 ];

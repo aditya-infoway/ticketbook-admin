@@ -1,20 +1,28 @@
-
 import { useEffect, useState } from "react";
 import { Get } from "@/ApiHelper";
+import { getCurrentRole } from "@/app/navigation/role";
 
 // ----------------------------------------------------------------------
-// Small shared store for the logged in EMPLOYEE's name + profile photo.
-// Used by the profile popover (avatar) so it shows the same photo as the
-// General settings page, and refreshes when the photo is changed.
+// Small shared store for the logged in user's name + profile photo
+// (employee, area manager, branch manager). Used by the profile popover
+// (avatar) so it shows the same photo as the General settings page, and
+// refreshes when the photo is changed.
 // ----------------------------------------------------------------------
 
-interface EmployeeProfileSummary {
+interface ProfileSummary {
   token: string; // session this data belongs to
   employeeName: string;
   profilePhoto: string;
 }
 
-let cache: EmployeeProfileSummary | null = null;
+// role -> profile GET route
+const PROFILE_API: Record<string, string> = {
+  employee: "employee/profile",
+  areaManager: "area-manager/profile",
+  branchManager: "branch-manager/profile",
+};
+
+let cache: ProfileSummary | null = null;
 let loading = false;
 const listeners = new Set<() => void>();
 
@@ -23,15 +31,20 @@ const currentToken = () => window.localStorage.getItem("authToken") || "";
 
 async function load() {
   if (loading) return;
+
+  const url = PROFILE_API[getCurrentRole() as string];
+  if (!url) return; // superAdmin / branch / unknown role: skip
+
   loading = true;
   try {
-    // TODO: confirm the GET route of getMyProfile (mounted on /employee)
-    const res = await Get("employee/profile", {}, false);
+    const res = await Get(url, {}, false);
     if (res.data?.success) {
+      const d = res.data.data;
       cache = {
         token: currentToken(),
-        employeeName: res.data.data?.employeeName || "",
-        profilePhoto: res.data.data?.profilePhoto || "",
+        // employee -> employeeName, area/branch manager -> name
+        employeeName: d?.employeeName ?? d?.name ?? "",
+        profilePhoto: d?.profilePhoto || "",
       };
       notify();
     }
@@ -48,7 +61,7 @@ async function load() {
  */
 export const refreshEmployeeProfile = () => load();
 
-/** `enabled` = only the employee role needs it (super admin has no employee profile). */
+/** `enabled` = true for employee, areaManager and branchManager roles. */
 export function useEmployeeProfile(enabled: boolean) {
   const [, forceRender] = useState(0);
 

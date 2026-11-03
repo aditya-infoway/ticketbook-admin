@@ -19,6 +19,12 @@ const EmployeeDashboard = lazy(
 const BranchDashboard = lazy(
   () => import("@/app/pages/branch/dashboards/home/crm-analytics"),
 );
+const AreaManagerDashboard = lazy(
+  () => import("@/app/pages/areaManager/dashboards/home/crm-analytics"),
+);
+const BranchManagerDashboard = lazy(
+  () => import("@/app/pages/branchManager/dashboards/home/crm-analytics"),
+);
 /**
  * /dashboards/home is shared by all roles, so this picks the dashboard
  * by role. When the branch dashboard is ready, replace the placeholder
@@ -38,6 +44,20 @@ export default function DashboardByRole() {
     return (
       <Suspense fallback={null}>
         <EmployeeDashboard />
+      </Suspense>
+    );
+  }
+  if (role === "areaManager") {
+    return (
+      <Suspense fallback={null}>
+        <AreaManagerDashboard />
+      </Suspense>
+    );
+  }
+  if (role === "branchManager") {
+    return (
+      <Suspense fallback={null}>
+        <BranchManagerDashboard />
       </Suspense>
     );
   }

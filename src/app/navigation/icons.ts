@@ -35,6 +35,9 @@ export const navigationIcons: Record<string, ElementType> = {
   branchMaster: BuildingStorefrontIcon,
   "branchMaster.list": BuildingStorefrontIcon,
 
+  myBranches: BuildingStorefrontIcon,
+  "myBranches.list": BuildingStorefrontIcon,
+
   regionMaster: ShareIcon,
   "regionMaster.list": ShareIcon,
 
@@ -70,10 +73,10 @@ export const navigationIcons: Record<string, ElementType> = {
 
   contractorworkreview: ChartBarIcon,
   "contractorworkreview.list": ChartBarIcon,
- reportsAnalytics: ChartBarIcon,
+
+  reportsAnalytics: ChartBarIcon,
   "reportsAnalytics.list": ChartBarIcon,
 
-  
   ticketHistoryAudit: DocumentMagnifyingGlassIcon,
   "ticketHistoryAudit.list": DocumentMagnifyingGlassIcon,
 
