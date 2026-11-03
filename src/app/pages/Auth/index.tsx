@@ -18,6 +18,8 @@ const roles = [
   { id: 1, name: "Super Admin" },
   { id: 2, name: "Employee" },
   { id: 3, name: "Branch" },
+  { id: 4, name: "Area Manager" },
+  { id: 5, name: "Branch Manager" },
 ];
 
 export default function SignIn() {
@@ -41,28 +43,28 @@ export default function SignIn() {
     },
   });
 
+  const onSubmit = async (data: AuthFormValues) => {
+    try {
+      const roleById = {
+        1: "superAdmin",
+        2: "employee",
+        3: "branch",
+        4: "areaManager",
+        5: "branchManager",
+      } as const;
+      const role = roleById[selectedRole.id as 1 | 2 | 3 | 4 | 5];
 
-const onSubmit = async (data: AuthFormValues) => {
-  try {
-    const role =
-      selectedRole.id === 2
-        ? "employee"
-        : selectedRole.id === 3
-          ? "branch"
-          : "superAdmin";
+      await login({
+        email: data.email,
+        password: data.password,
+        role,
+      });
 
-    await login({
-      email: data.email,
-      password: data.password,
-      role,
-    });
-
-    navigate("/select-company");
-  } catch {
-    // Error is already handled by the context.
-  }
-};
-
+      navigate("/select-company");
+    } catch {
+      // Error is already handled by the context.
+    }
+  };
 
   return (
     <Page title="Login">

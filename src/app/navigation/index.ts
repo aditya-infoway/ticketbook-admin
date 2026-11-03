@@ -3,6 +3,8 @@ import { superAdminNavigation } from "./superAdmin";
 import { branchNavigation } from "./branch";
 import { getEmployeeNavigation } from "./employee";
 import { getCurrentRole, getCurrentEmployeeSubRole, UserRole } from "./role";
+import { areaManagerNavigation } from "./areaManager";
+import { branchManagerNavigation } from "./branchManager";
 
 export type { UserRole } from "./role";
 
@@ -10,6 +12,10 @@ export const getNavigation = (role: UserRole): NavigationTree[] => {
   switch (role) {
     case "branch":
       return branchNavigation;
+    case "areamanager":
+      return areaManagerNavigation;
+    case "branchmanager":
+      return branchManagerNavigation;
     case "employee":
       return getEmployeeNavigation(getCurrentEmployeeSubRole());
     default:

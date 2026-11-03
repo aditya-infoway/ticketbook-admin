@@ -1,44 +1,53 @@
-export type UserRole = "superAdmin" | "branch" | "employee";
+export type UserRole =
+  | "superAdmin"
+  | "branch"
+  | "employee"
+  | "areaManager"
+  | "branchManager";
+
+const PANEL_ROLES: UserRole[] = [
+  "branch",
+  "employee",
+  "areaManager",
+  "branchManager",
+];
+
+// Normalize whatever is stored in localStorage to the exact UserRole strings
+function normalizeRole(value: string | null): UserRole | null {
+  if (!value) return null;
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ""); // remove spaces, underscores, hyphens
+
+  switch (normalized) {
+    case "superadmin":
+      return "superAdmin";
+    case "branch":
+      return "branch";
+    case "employee":
+      return "employee";
+    case "areamanager":
+      return "areaManager";
+    case "branchmanager":
+      return "branchManager";
+    default:
+      return null;
+  }
+}
 
 /**
- * TODO: replace with your real auth source (auth context / token decode).
- * It only has to return one of: "superAdmin" | "branch" | "employee".
+ * Returns one of the exact UserRole values.
  */
 export function getCurrentRole(): UserRole {
   const stored = localStorage.getItem("role");
-  if (stored === "branch" || stored === "employee") return stored;
+  const role = normalizeRole(stored);
+
+  if (role && PANEL_ROLES.includes(role)) {
+    return role;
+  }
+
+  // Fallback
   return "superAdmin";
-}
-/** Employee ke andar ke sub-roles */
-export type EmployeeSubRole =
-  | "branch_manager"
-  | "area_manager"
-  | "contractor";
-
-// "Branch Manager" -> "branch_manager"
-const normalize = (v: unknown) =>
-  String(v ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_");
-
-export function getCurrentEmployeeSubRole(): EmployeeSubRole | null {
-  let raw: unknown = localStorage.getItem("employeeRole"); // testing override
-  if (!raw) {
-    try {
-      raw = JSON.parse(localStorage.getItem("user") || "{}").roleName;
-    } catch {
-      raw = null;
-    }
-  }
-
-  const value = normalize(raw);
-  if (
-    value === "branch_manager" ||
-    value === "area_manager" ||
-    value === "contractor"
-  ) {
-    return value;
-  }
-  return null;
 }
