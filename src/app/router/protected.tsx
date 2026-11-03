@@ -7,6 +7,8 @@ import {
   superAdminSettings,
   branchSettings,
   employeeSettings,
+  areaManagerSettings,
+  branchManagerSettings,
 } from "./settingsRoutes";
 import { roleRoutes } from "./roleRoutes";
 
@@ -39,9 +41,12 @@ const protectedRoutes: RouteObject = {
         ...roleRoutes,
 
         // SETTINGS (separate per role)
+              // SETTINGS (separate per role)
         superAdminSettings,
         branchSettings,
         employeeSettings,
+        areaManagerSettings,
+        branchManagerSettings,
       ],
     },
   ],

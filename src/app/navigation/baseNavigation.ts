@@ -2,6 +2,8 @@ import { NavigationTree } from "@/@types/navigation";
 import * as superAdmin from "./superAdmin/baseNavigation";
 import * as branch from "./branch/baseNavigation";
 import * as employee from "./employee/baseNavigation";
+import * as areaManager from "./areaManager/baseNavigation";
+import * as branchManager from "./branchManager/baseNavigationObj";
 import { getCurrentRole, UserRole } from "./role";
 
 export const getBaseNavigationObj = (
@@ -12,6 +14,10 @@ export const getBaseNavigationObj = (
       return branch.baseNavigationObj;
     case "employee":
       return employee.baseNavigationObj;
+    case "areaManager":
+      return areaManager.baseNavigationObj;
+    case "branchManager":
+      return branchManager.baseNavigationObj;
     default:
       return superAdmin.baseNavigationObj;
   }

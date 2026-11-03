@@ -10,7 +10,10 @@ import PlaceholderPage from "../PlaceholderPage";
 //   { path: "...", lazy: async () => ({ Component: (await import("@/app/pages/branch/...")).default }) }
 
 export const branchRoutes: RouteObject[] = [
-  { path: "/branch/employee-master/list", element: <PlaceholderPage title="Employee Master" /> },
+  {
+    path: "/branch/employee-master/list",
+    element: <PlaceholderPage title="Employee Master" />,
+  },
   {
     path: "/branch/ticket-management/list",
     lazy: async () => ({
@@ -20,10 +23,12 @@ export const branchRoutes: RouteObject[] = [
   {
     path: "/branch/contractor-work-review/list",
     lazy: async () => ({
-      Component: (
-        await import("@/app/pages/branch/contractor-work-review")
-      ).default,
+      Component: (await import("@/app/pages/branch/contractor-work-review"))
+        .default,
     }),
   },
-  { path: "/branch/ticket-history-audit/list", element: <PlaceholderPage title="Ticket History & Audit" /> },
+  {
+    path: "/branch/ticket-history-audit/list",
+    element: <PlaceholderPage title="Ticket History & Audit" />,
+  },
 ];

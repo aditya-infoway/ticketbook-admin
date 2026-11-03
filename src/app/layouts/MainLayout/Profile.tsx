@@ -161,16 +161,23 @@ export function Profile() {
   // Super admin -> company name / "Company Profile"
   // Employee    -> own name / company name
   // Branch      -> branch name / company name
-  const ownName = isBranch
-    ? branchProfile?.branchName || sessionUser?.branchName
-    : employeeProfile?.employeeName || sessionUser?.employeeName;
+const ownName = isBranch
+  ? branchProfile?.branchName || sessionUser?.branchName
+  : employeeProfile?.employeeName ||
+    sessionUser?.employeeName ||
+    sessionUser?.name;
 
   const displayName = isSuperAdmin
     ? companyName || "Company Name"
     : ownName || "My Profile";
-  const subtitle = isSuperAdmin
-    ? "Company Profile"
-    : sessionUser?.companyName || companyName;
+const ROLE_LABEL: Record<string, string> = {
+  areaManager: "Area Manager",
+  branchManager: "Branch Manager",
+};
+
+const subtitle = isSuperAdmin
+  ? "Company Profile"
+  : ROLE_LABEL[role as string] || sessionUser?.companyName || companyName;
 
   return (
     <Popover className="relative">

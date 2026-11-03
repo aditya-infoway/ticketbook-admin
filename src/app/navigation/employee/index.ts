@@ -1,13 +1,13 @@
-import { areaManagerNavigation } from "./areaManager";
-import { branchManagerNavigation } from "./branchManager";
+import { NavigationTree } from "@/@types/navigation";
 import { contractorNavigation } from "./contractor";
 import { EmployeeSubRole } from "../role";
 
-const navigationBySubRole = {
-  branch_manager: branchManagerNavigation,
-  area_manager: areaManagerNavigation,
+// Record<EmployeeSubRole, ...> hone se: role.ts me naya sub-role add karoge aur yaha
+// uska navigation bhoologe to TypeScript error dikha dega.
+const navigationBySubRole: Record<EmployeeSubRole, NavigationTree[]> = {
   contractor: contractorNavigation,
 };
 
-export const getEmployeeNavigation = (subRole: EmployeeSubRole | null) =>
-  subRole ? navigationBySubRole[subRole] : [];
+export const getEmployeeNavigation = (
+  subRole: EmployeeSubRole | null,
+): NavigationTree[] => (subRole ? (navigationBySubRole[subRole] ?? []) : []);

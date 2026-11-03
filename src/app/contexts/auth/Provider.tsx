@@ -199,23 +199,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       events.forEach((e) => window.removeEventListener(e, handleActivity));
     };
   }, [state.isAuthenticated]);
- 
+
   // STEP 1: login validate — OTP nahi
   const login = async (credentials: {
     email: string;
     password: string;
-    role?: "superAdmin" | "employee" | "branch";
+    role?:
+      | "superAdmin"
+      | "employee"
+      | "branch"
+      | "areaManager"
+      | "branchManager";
   }) => {
     dispatch({ type: "LOGIN_REQUEST" });
     try {
-      const isStaff =
-        credentials.role === "employee" || credentials.role === "branch";
+      const LOGIN_ENDPOINTS = {
+        superAdmin: "superadmin/login",
+        employee: "employee/login",
+        branch: "branch/login",
+        areaManager: "area-manager/login",
+        branchManager: "branch-manager/login",
+      } as const;
+      const isStaff = !!credentials.role && credentials.role !== "superAdmin";
       const response = await Post(
-        credentials.role === "employee"
-          ? "employee/login"
-          : credentials.role === "branch"
-            ? "branch/login"
-            : "superadmin/login",
+        LOGIN_ENDPOINTS[credentials.role ?? "superAdmin"],
         { email: credentials.email, password: credentials.password },
         false,
       );
@@ -230,7 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { token, ...profile } = result.data;
 
         // Use role coming from backend (employee or contractor)
-     const finalRole = credentials.role;
+        const finalRole = credentials.role;
 
         const user = { ...profile, role: finalRole } as unknown as User;
 
@@ -309,7 +316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const logout = async () => {
+  async function logout() {
     setSession(null);
     window.localStorage.removeItem("authToken");
     window.localStorage.removeItem(COMPANY_ID_KEY);
@@ -320,7 +327,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.localStorage.removeItem(EXPIRES_AT_KEY); // add alongside the other removeItem calls
     window.localStorage.removeItem(ROLE_KEY);
     dispatch({ type: "LOGOUT" });
-  };
+  }
 
   if (!children) return null;
 

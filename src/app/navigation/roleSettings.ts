@@ -6,12 +6,16 @@ const SETTINGS_PREFIX: Record<UserRole, string> = {
   superAdmin: "/settings",
   branch: "/branch/settings",
   employee: "/employee/settings",
+  areaManager: "/area-manager/settings",
+  branchManager: "/branch-manager/settings",
 };
 
 const SETTINGS_ACCESS: Record<UserRole, string[] | "all"> = {
   superAdmin: "all",
   branch: ["general", "appearance"],
   employee: ["general", "appearance"],
+  areaManager: ["general", "appearance"],
+  branchManager: ["general", "appearance"],
 };
 
 const rewritePath = (path: string | undefined, prefix: string) =>
@@ -21,14 +25,26 @@ export const getSettings = (role: UserRole): NavigationTree => {
   const prefix = SETTINGS_PREFIX[role];
   const allowed = SETTINGS_ACCESS[role];
 
+  // Extra safety (should never hit now)
+  if (!allowed) {
+    console.error("[getSettings] Missing config for role:", role);
+    return { ...settings, path: "/settings", childs: [] } as NavigationTree;
+  }
+
   const childs = (settings.childs ?? [])
     .filter((child) => {
       if (allowed === "all") return true;
       const last = child.path?.split("/").filter(Boolean).pop();
       return !!last && allowed.includes(last);
     })
-    .map((child) => ({ ...child, path: rewritePath(child.path, prefix) }));
+    .map((child) => ({
+      ...child,
+      path: rewritePath(child.path, prefix),
+    }));
 
-  // root path bhi rewrite hona chahiye, taaki isRouteActive(/employee/settings/general) match kare
-return { ...settings, path: rewritePath(settings.path, prefix), childs } as NavigationTree;
+  return {
+    ...settings,
+    path: rewritePath(settings.path, prefix),
+    childs,
+  } as NavigationTree;
 };

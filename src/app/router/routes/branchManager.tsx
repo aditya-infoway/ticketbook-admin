@@ -1,38 +1,21 @@
+// Branch Manager ab alag login (/branch-manager/login) hai, isliye sab routes "/branch-manager/..." ke neeche.
 import { RouteObject } from "react-router";
 import PlaceholderPage from "../PlaceholderPage";
-import SubRoleGuard from "../SubRoleGuard";
+
+// ----------------------------------------------------------------------
+// Paths navigation/branchManager/segments/* ke paths se EXACT match hone chahiye.
+// Page ready hone par PlaceholderPage ki jagah:
+//   {
+//     path: "/branch-manager/ticket-management/list",
+//     lazy: async () => ({
+//       Component: (await import("@/app/pages/branchManager/ticketManagement")).default,
+//     }),
+//   },
 
 export const branchManagerRoutes: RouteObject[] = [
   {
-    path: "/employee/branch-manager",
-    element: <SubRoleGuard allow="branch_manager" />,
-    children: [
-      {
-        path: "raise-ticket/create-ticket",
-        lazy: async () => ({
-          Component: (
-            await import("@/app/pages/employee/branchManager/raise-ticket/create-ticket")
-          ).default,
-        }),
-      },
-   {
-  path: "my-ticket/list",
-  lazy: async () => ({
-    Component: (
-      await import("@/app/pages/employee/branchManager/my-ticket/TicketPage")
-    ).default,
-  }),
-},
-{
-  path: "my-ticket/:id", // <- "/" hataya
-  lazy: async () => ({
-    Component: (
-      await import("@/app/pages/employee/branchManager/my-ticket/TicketDetailsPage")
-    ).default,
-  }),
-},
-      { path: "my-ticket-history/list", element: <PlaceholderPage title="My Ticket History" /> },
-      { path: "notifications/list", element: <PlaceholderPage title="Notifications" /> },
-    ],
+    path: "/branch-manager/ticket-management/list",
+    element: <PlaceholderPage title="Ticket Management" />,
   },
+  // apne navigation ke baaki paths yaha add karo
 ];

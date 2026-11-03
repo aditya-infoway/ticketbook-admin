@@ -30,7 +30,8 @@ function formatCompanyDateRange(startDate: string, endDate: string) {
 
 export default function SelectCompany() {
   const { user, completeAuth } = useAuthContext();
-const isEmployee = ["employee", "branch"].includes((user as any)?.role);
+const isEmployee =
+  !!(user as any)?.role && (user as any).role !== "superAdmin";
   const navigate = useNavigate();
   const [financialYears, setFinancialYears] = useState<FinancialYearRow[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
