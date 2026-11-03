@@ -12,9 +12,9 @@ export const getNavigation = (role: UserRole): NavigationTree[] => {
   switch (role) {
     case "branch":
       return branchNavigation;
-    case "areamanager":
+    case "areaManager": // pehle "areamanager" (lowercase) tha, jo UserRole se match nahi karta tha
       return areaManagerNavigation;
-    case "branchmanager":
+    case "branchManager":
       return branchManagerNavigation;
     case "employee":
       return getEmployeeNavigation(getCurrentEmployeeSubRole());

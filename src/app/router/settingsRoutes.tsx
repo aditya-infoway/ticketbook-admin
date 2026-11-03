@@ -64,3 +64,36 @@ export const employeeSettings: RouteObject = {
     },
   ],
 };
+
+
+// ---------- areaManager ----------
+export const areaManagerSettings: RouteObject = {
+  path: "area-manager/settings",
+  element: <RoleGuard allow="areaManager" />,
+  children: [
+    {
+      lazy: lazyPage(() => import("@/app/pages/areaManager/settings/Layout")),
+      children: [
+        { index: true, element: <Navigate to="general" replace /> },
+        { path: "general", lazy: lazyPage(() => import("@/app/pages/areaManager/settings/sections/General")) },
+        { path: "appearance", lazy: lazyPage(() => import("@/app/pages/areaManager/settings/sections/Appearance")) },
+      ],
+    },
+  ],
+};
+
+// ---------- branchManager ----------
+export const branchManagerSettings: RouteObject = {
+  path: "branch-manager/settings",
+  element: <RoleGuard allow="branchManager" />,
+  children: [
+    {
+      lazy: lazyPage(() => import("@/app/pages/branchManager/settings/Layout")),
+      children: [
+        { index: true, element: <Navigate to="general" replace /> },
+        { path: "general", lazy: lazyPage(() => import("@/app/pages/branchManager/settings/sections/General")) },
+        { path: "appearance", lazy: lazyPage(() => import("@/app/pages/branchManager/settings/sections/Appearance")) },
+      ],
+    },
+  ],
+};
