@@ -168,10 +168,28 @@ export function BranchDataDrawer({
         const rows = res?.data?.data ?? [];
 
         setBranchManagers(
-          rows.map((item: any) => ({
-            id: String(item.branchManagerId ?? ""),
-            label: item.branchManagerName ?? item.name ?? "",
-          })),
+          rows
+            // 1. Filter out managers who already have a branch assigned
+            // 2. Allow them IF they are the currently assigned manager for the branch being edited
+            .filter((item: any) => {
+              const isAssigned = item.branchId || item.assignedBranchId; // Check your API's actual field name
+              const currentEditBranchId = editBranch?.id;
+
+              // Keep if not assigned to any branch
+              if (!isAssigned) return true;
+
+              // Keep if assigned to the branch we are currently editing
+              if (currentEditBranchId && String(isAssigned) === String(currentEditBranchId)) {
+                return true;
+              }
+
+              // Hide if assigned to a different branch
+              return false;
+            })
+            .map((item: any) => ({
+              id: String(item.branchManagerId ?? ""),
+              label: item.branchManagerName ?? item.name ?? "",
+            })),
         );
       } catch (error: any) {
         console.error("Branch Manager API ERROR:", error);
@@ -180,7 +198,8 @@ export function BranchDataDrawer({
     };
 
     fetchBranchManagers();
-  }, [isOpen]);
+  }, [isOpen, editBranch]); // <-- Added editBranch to dependency array so it updates when editing
+  
   useEffect(() => {
     if (!isOpen) return;
 
