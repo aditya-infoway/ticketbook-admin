@@ -2,12 +2,30 @@ import { NavigationTree } from "@/@types/navigation";
 import { contractorNavigation } from "./contractor";
 import { EmployeeSubRole } from "../role";
 
-// Record<EmployeeSubRole, ...> hone se: role.ts me naya sub-role add karoge aur yaha
-// uska navigation bhoologe to TypeScript error dikha dega.
-const navigationBySubRole: Record<EmployeeSubRole, NavigationTree[]> = {
-  contractor: contractorNavigation,
-};
+// Import all employee segments
+import { dashboards } from "./segments/dashboards";
+import { raiseTicket } from "./segments/raiseTicket";
+import { myTickets } from "./segments/myTickets";
+import { myTicketHistory } from "./segments/myTicketHistory";
+import { myNotifications } from "./segments/myNotifications";
+import { logout } from "./segments/logout";
+
+const employeeNavigation: NavigationTree[] = [
+  dashboards,
+  raiseTicket,
+  myTickets,
+  myTicketHistory,
+  myNotifications,
+  logout,
+];
 
 export const getEmployeeNavigation = (
   subRole: EmployeeSubRole | null,
-): NavigationTree[] => (subRole ? (navigationBySubRole[subRole] ?? []) : []);
+): NavigationTree[] => {
+  if (subRole === "contractor") {
+    return contractorNavigation;
+  }
+
+  // Normal employee → use the properly composed menu
+  return employeeNavigation;
+};

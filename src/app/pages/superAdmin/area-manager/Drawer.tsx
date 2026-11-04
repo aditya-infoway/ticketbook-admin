@@ -84,7 +84,6 @@ function getInitialForm(manager: AreaManager | null) {
       areaId: manager.areaId || "",
       description: manager.description || "",
       joiningDate: manager.joiningDate || "",
-      username: manager.username || "",
       password: "",
       confirmPassword: "",
     };
@@ -104,9 +103,8 @@ function getInitialForm(manager: AreaManager | null) {
     pinCode: "",
     areaManagerId: "",
     areaId: "",
-    description: "", // <-- Changed from designation to description
+    description: "", 
     joiningDate: "",
-    username: "",
     password: "",
     confirmPassword: "",
   };
@@ -153,6 +151,7 @@ export function AreaManagerDrawer({
   const profilePhoto = watch("profilePhoto");
 
   const [nextNo, setNextNo] = useState("");
+  const [assignedAreaIds, setAssignedAreaIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isOpen || isEdit) return;
@@ -169,6 +168,22 @@ export function AreaManagerDrawer({
       }
     })();
   }, [isOpen, isEdit]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      try {
+        const res: any = await Get("superadmin/area-manager/list", {}, false);
+        const rows = res?.data?.data ?? [];
+        const takenAreas = rows
+          .filter((r: any) => r.status === "Active" && r.areaId)
+          .map((r: any) => String(r.areaId));
+        setAssignedAreaIds(takenAreas);
+      } catch (err) {
+        console.error("Failed to load area managers for filtering", err);
+      }
+    })();
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -205,7 +220,6 @@ export function AreaManagerDrawer({
         areaId: values.areaId,
         description: values.description,
         joiningDate: values.joiningDate,
-        username: values.username,
         password: values.password,
         confirmPassword: values.confirmPassword,
       };
@@ -243,6 +257,17 @@ export function AreaManagerDrawer({
       setSubmitting(false);
     }
   };
+
+  const availableAreas = areas.filter((area) => {
+    if (assignedAreaIds.includes(area.id)) {
+      // Keep the area if we are editing the manager who already has it
+      if (isEdit && manager && String(manager.areaId) === area.id) {
+        return true;
+      }
+      return false; // Hide it otherwise
+    }
+    return true;
+  });
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -550,10 +575,12 @@ export function AreaManagerDrawer({
                         rules={{ required: "Area is required" }}
                         render={({ field }) => (
                           <Combobox
-                            data={areas}
+                            data={availableAreas}
                             displayField="label"
                             value={
-                              areas.find((a) => a.id === field.value) || null
+                              availableAreas.find(
+                                (a) => a.id === field.value,
+                              ) || null
                             }
                             onChange={(v: any) => field.onChange(v?.id || "")}
                             placeholder="Select Area"
@@ -621,7 +648,8 @@ export function AreaManagerDrawer({
                         {...register("password", {
                           validate: (v) => {
                             if (!isEdit && !v) return "Password is required";
-                            if (v && String(v).length < 4) return "Min 4 characters";
+                            if (v && String(v).length < 4)
+                              return "Min 4 characters";
                             return true;
                           },
                         })}
@@ -675,8 +703,6 @@ export function AreaManagerDrawer({
                         error={errors.confirmPassword?.message}
                       />
                     </div>
-
-                  
                   </div>
                 </div>
               </div>

@@ -40,19 +40,7 @@ export const columns: ColumnDef<Branch>[] = [
     id: "branchManager",
     accessorKey: "branchManager",
     header: "Branch Manager",
-    cell: ({ getValue }) => {
-      const name = String(getValue() ?? "—");
-      return (
-        <div className="flex items-center gap-2.5">
-          <div className="from-primary-500 flex size-8 items-center justify-center rounded-full bg-gradient-to-br to-violet-600 text-xs font-semibold text-white">
-            {name.charAt(0).toUpperCase()}
-          </div>
-          <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-            {name}
-          </span>
-        </div>
-      );
-    },
+    cell: TextCell,
   },
   {
     id: "contactNumber",
@@ -66,7 +54,7 @@ export const columns: ColumnDef<Branch>[] = [
     cell: ({ row }) => (
       <div className="flex items-center justify-start">
         <Link
-          to={`/branch-master/${row.original.id}`}
+          to={`/area-manager/my-branches/${row.original.id}`}
           className="text-primary-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 flex items-center justify-center rounded-md p-1.5 transition-colors"
           title="View Details"
         >

@@ -135,13 +135,17 @@ const { register, handleSubmit, control, reset, watch, setValue, getValues, clea
 
   // Dependent dropdown state
   const [areas, setAreas] = useState<{ id: string; label: string }[]>([]);
-  const [allBranches, setAllBranches] = useState<{ id: string; label: string; areaId: string }[]>([]);
   const [areaManagers, setAreaManagers] = useState<{ id: string; label: string; areaId: string }[]>([]);
 
   const profilePhoto = watch("profilePhoto");
   const selectedAreaId = watch("areaId");
 
    const [nextNo, setNextNo] = useState("");
+
+  // Add a state to track if it's the initial load to avoid breaking edit mode
+  const [allBranches, setAllBranches] = useState<
+    { id: string; label: string; areaId: string }[]
+  >([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -161,17 +165,38 @@ const { register, handleSubmit, control, reset, watch, setValue, getValues, clea
             )
             .map((r) => ({ id: String(r.regionId), label: r.regionName })),
         );
+
+        // --- UPDATED BRANCH FILTERING LOGIC ---
         setAllBranches(
           rows(branchRes)
-            .filter(
-              (r) => r.status === "Active" || String(r.branchId) === manager?.branchId,
-            )
+            .filter((r) => {
+              // 1. Must be active OR currently assigned to the manager being edited
+              const isActiveOrCurrent =
+                r.status === "Active" || String(r.branchId) === manager?.branchId;
+              if (!isActiveOrCurrent) return false;
+
+              // 2. Check if it already has a manager assigned
+              const hasManager = !!r.branchManagerId;
+
+              // 3. If it has no manager, show it.
+              if (!hasManager) return true;
+
+              // 4. If it HAS a manager, only show it if we are editing THIS specific manager
+              // (so they don't lose their current branch when editing their profile)
+              if (manager && String(r.branchManagerId) === String(manager.id)) {
+                return true;
+              }
+
+              // 5. Otherwise, hide it (it's taken by someone else)
+              return false;
+            })
             .map((r) => ({
               id: String(r.branchId),
               label: r.branchName,
               areaId: String(r.regionId ?? ""),
             })),
         );
+
         setAreaManagers(
           rows(managerRes)
             .filter(
