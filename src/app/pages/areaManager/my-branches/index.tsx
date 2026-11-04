@@ -60,7 +60,7 @@ export default function BranchPage() {
 
   const fetchFormData = async () => {
     try {
-      const res: any = await Get("branch-master/form-data", {}, false);
+      const res: any = await Get("area-manager/branch/form-data", {}, false);
       if (res?.data?.success) setFormData(res.data.data);
     } catch (err: any) {
       // silent
@@ -74,7 +74,7 @@ export default function BranchPage() {
       Object.entries(filters).forEach(([k, v]) => v && params.set(k, v));
       const qs = params.toString();
       const res: any = await Get(
-        `branch-master/list${qs ? `?${qs}` : ""}`,
+        `area-manager/branch/list${qs ? `?${qs}` : ""}`,
         {},
         false,
       );

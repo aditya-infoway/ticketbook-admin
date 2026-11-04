@@ -66,7 +66,7 @@ export const columns: ColumnDef<Branch>[] = [
     cell: ({ row }) => (
       <div className="flex items-center justify-start">
         <Link
-          to={`/branch-master/${row.original.id}`}
+          to={`/area-manager/my-branches/${row.original.id}`}
           className="text-primary-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 flex items-center justify-center rounded-md p-1.5 transition-colors"
           title="View Details"
         >

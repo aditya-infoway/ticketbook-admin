@@ -155,37 +155,55 @@ export function BranchDataDrawer({
 
   const [regionOptions, setRegionOptions] = useState<Opt[]>([]);
   const [nextNo, setNextNo] = useState("");
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [branchManagers, setBranchManagers] = useState<Opt[]>([]);
+  const [areaManagers, setAreaManagers] = useState<Opt[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
-    (async () => {
+
+    const fetchBranchManagers = async () => {
       try {
-        const res: any = await Get("superadmin/employee/list", {}, false);
-        setEmployees(res?.data?.data ?? []);
-      } catch {
-        toast.error("Failed to load employees");
+        const res: any = await Get("superadmin/branch-manager/list", {}, false);
+
+        const rows = res?.data?.data ?? [];
+
+        setBranchManagers(
+          rows.map((item: any) => ({
+            id: String(item.branchManagerId ?? ""),
+            label: item.branchManagerName ?? item.name ?? "",
+          })),
+        );
+      } catch (error: any) {
+        console.error("Branch Manager API ERROR:", error);
+        toast.error("Failed to load branch managers");
       }
-    })();
+    };
+
+    fetchBranchManagers();
   }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen) return;
 
-  const toOptions = (list: any[], roleName: string): Opt[] =>
-    list
-      .filter(
-        (e) =>
-          e.employmentStatus === "Active" &&
-          e.roleName?.trim().toLowerCase() === roleName.toLowerCase(),
-      )
-      .map((e) => ({ id: String(e.employeeId), label: e.employeeName }));
+    const fetchAreaManagers = async () => {
+      try {
+        const res: any = await Get("superadmin/area-manager/list", {}, false);
 
-  const branchManagers = useMemo(
-    () => toOptions(employees, "Branch Manager"),
-    [employees],
-  );
-  const areaManagers = useMemo(
-    () => toOptions(employees, "Area Manager"),
-    [employees],
-  );
+        const rows = res?.data?.data ?? [];
+
+        setAreaManagers(
+          rows.map((item: any) => ({
+            id: String(item.areaManagerId ?? ""),
+            label: item.areaManagerName ?? item.name ?? "",
+          })),
+        );
+      } catch (error: any) {
+        console.error("Area Manager API ERROR:", error);
+        toast.error("Failed to load area managers");
+      }
+    };
+
+    fetchAreaManagers();
+  }, [isOpen]);
 
   // Region / Area dropdown from DB
   useEffect(() => {
