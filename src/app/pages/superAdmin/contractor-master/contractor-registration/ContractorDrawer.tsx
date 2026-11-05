@@ -21,6 +21,7 @@ import { Button, Input, Textarea } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
 import type { Contractor } from "../shared/types";
+import { MultiSelect } from "@/components/shared/form/MultiSelect";
 
 interface ContractorDrawerProps {
   isOpen: boolean;
@@ -69,10 +70,16 @@ function getInitialForm(editContractor: Contractor | null) {
       address: editContractor.address || "",
       areaId: editContractor.areaId || "",
       branchId: editContractor.branchId || "",
-   contractorDepartmentId: String(
-  editContractor.contractorDepartmentId ?? ""
-),
-                                           // naye wale me
+      branchIds: (editContractor.branchIds?.length
+        ? editContractor.branchIds
+        : editContractor.branchId
+          ? [editContractor.branchId]
+          : []
+      ).map((id) => ({ id: String(id), name: "" })),
+      contractorDepartmentId: String(
+        editContractor.contractorDepartmentId ?? "",
+      ),
+      // naye wale me
       status: editContractor.status || "Active",
       password: "",
       confirmPassword: "",
@@ -88,7 +95,8 @@ function getInitialForm(editContractor: Contractor | null) {
     address: "",
     areaId: "",
     branchId: "",
-    contractorDepartmentId: "", 
+    branchIds: [] as { id: string; name: string }[],
+    contractorDepartmentId: "",
     status: "Active",
     password: "",
     confirmPassword: "",
@@ -127,7 +135,7 @@ export function ContractorDrawer({
   // Dropdowns
   const [areas, setAreas] = useState<Opt[]>([]);
   const [branches, setBranches] = useState<Opt[]>([]);
-const [departments, setDepartments] = useState<Opt[]>([]);
+  const [departments, setDepartments] = useState<Opt[]>([]);
   // Files
   const [files, setFiles] = useState<File[]>([]);
   const [existingDocs, setExistingDocs] = useState<string[]>(
@@ -139,10 +147,10 @@ const [departments, setDepartments] = useState<Opt[]>([]);
     if (!isOpen) return;
     (async () => {
       try {
-        const [areaRes, branchRes,deptRes]: any[] = await Promise.all([
+        const [areaRes, branchRes, deptRes]: any[] = await Promise.all([
           Get("superadmin/region/list", {}, false),
           Get("superadmin/branch/list", {}, false),
-            Get("superadmin/contractor-department/list", {}, false),
+          Get("superadmin/contractor-department/list", {}, false),
         ]);
 
         const rows = (res: any): any[] => res?.data?.data ?? [];
@@ -170,23 +178,37 @@ const [departments, setDepartments] = useState<Opt[]>([]);
             })),
         );
         setDepartments(
-  rows(deptRes)
-    .filter(
-      (r) =>
-        r.status === "Active" ||
-        String(r.contractorDepartmentId) === initial.contractorDepartmentId,
-    )
-    .map((r) => ({
-      id: String(r.contractorDepartmentId),
-      label: r.departmentName,
-    })),
-);
+          rows(deptRes)
+            .filter(
+              (r) =>
+                r.status === "Active" ||
+                String(r.contractorDepartmentId) ===
+                  initial.contractorDepartmentId,
+            )
+            .map((r) => ({
+              id: String(r.contractorDepartmentId),
+              label: r.departmentName,
+            })),
+        );
       } catch (error) {
         console.error("Dropdown error:", error);
         toast.error("Failed to load dropdown data");
       }
     })();
   }, [isOpen, initial]);
+
+  useEffect(() => {
+    if (!branches.length) return;
+    const current = getValues("branchIds") || [];
+    if (!current.some((b) => !b.name)) return;
+    setValue(
+      "branchIds",
+      current.map((b) => ({
+        id: String(b.id),
+        name: branches.find((x) => x.id === String(b.id))?.label || b.name,
+      })),
+    );
+  }, [branches, getValues, setValue]);
 
   const handleClose = () => {
     reset();
@@ -213,8 +235,24 @@ const [departments, setDepartments] = useState<Opt[]>([]);
       const fd = new FormData();
 
       Object.entries(values).forEach(([k, v]) => {
+        if (k === "branchIds" || k === "branchId") return;
         if (v !== null && v !== undefined && v !== "") fd.append(k, String(v));
       });
+
+      // Branch – multi
+      const selectedBranchIds = Array.from(
+        new Set(
+          (values.branchIds || [])
+            .map((b) => String(b?.id ?? ""))
+            .filter((id) => /^\d+$/.test(id)),
+        ),
+      );
+      if (selectedBranchIds.length > 0) {
+        // keep existing single-field contract working
+        fd.append("branchId", selectedBranchIds[0]);
+        // also send the full list (for future / if you update backend)
+        fd.append("branchIds", JSON.stringify(selectedBranchIds));
+      }
 
       files.forEach((file) => fd.append("documents", file));
       if (!editContractor) {
@@ -399,7 +437,7 @@ const [departments, setDepartments] = useState<Opt[]>([]);
                         value={areas.find((a) => a.id === field.value) || null}
                         onChange={(v: any) => {
                           field.onChange(v?.id || "");
-                          setValue("branchId", "");
+                          setValue("branchIds", []);
                         }}
                         placeholder="Select area"
                         searchFields={["label"]}
@@ -413,40 +451,52 @@ const [departments, setDepartments] = useState<Opt[]>([]);
                   <FieldLabel required>Branch</FieldLabel>
                   <Controller
                     control={control}
-                    name="branchId"
-                    rules={{ required: "Branch is required" }}
+                    name="branchIds"
+                    rules={{
+                      validate: (v) =>
+                        (Array.isArray(v) && v.length > 0) ||
+                        "At least one branch is required",
+                    }}
+                    render={({ field }) => (
+                      <MultiSelect
+                        data={branchOptions.map((b) => ({
+                          id: b.id,
+                          name: b.label, // MultiSelect uses `name` by default
+                        }))}
+                        displayField="name"
+                        value={field.value || []}
+                        onChange={(selected) => field.onChange(selected)}
+                        placeholder="Select branch(es)"
+                        searchFields={["name"]}
+                        className={errors.branchIds ? "border-red-500" : ""}
+                      />
+                    )}
+                  />
+                  {errors.branchIds && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.branchIds.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <FieldLabel>Contractor Department</FieldLabel>
+                  <Controller
+                    control={control}
+                    name="contractorDepartmentId"
                     render={({ field }) => (
                       <Combobox
-                        data={branchOptions}
+                        data={departments}
                         displayField="label"
                         value={
-                          branches.find((b) => b.id === field.value) || null
+                          departments.find((d) => d.id === field.value) || null
                         }
                         onChange={(v: any) => field.onChange(v?.id || "")}
-                        placeholder="Select branch"
+                        placeholder="Select department"
                         searchFields={["label"]}
-                        error={errors.branchId?.message}
                       />
                     )}
                   />
                 </div>
-<div>
-  <FieldLabel>Contractor Department</FieldLabel>
-  <Controller
-    control={control}
-    name="contractorDepartmentId"
-    render={({ field }) => (
-      <Combobox
-        data={departments}
-        displayField="label"
-        value={departments.find((d) => d.id === field.value) || null}
-        onChange={(v: any) => field.onChange(v?.id || "")}
-        placeholder="Select department"
-        searchFields={["label"]}
-      />
-    )}
-  />
-</div>
                 {/* 👇 PASSWORD FIELDS WITH ICONS ONLY */}
                 <div>
                   <FieldLabel required={!editContractor}>Password</FieldLabel>

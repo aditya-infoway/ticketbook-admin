@@ -29,6 +29,13 @@ export const areaManagerRoutes: RouteObject[] = [
     }),
   },
   {
+    path: "/area-manager/my-ticket/list",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/areaManager/my-ticket"))
+        .default,
+    }),
+  },
+  {
     path: "/area-manager/ticket-management/list",
     element: <PlaceholderPage title="Ticket Management" />,
   },

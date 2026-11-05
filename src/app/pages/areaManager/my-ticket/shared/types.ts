@@ -1,3 +1,4 @@
+// src/app/pages/area-manager/tickets/shared/types.ts
 export interface CreateTicket {
   id: string;
   ticketNumber: string;
@@ -5,7 +6,9 @@ export interface CreateTicket {
   employeeId: string;
   employeeName: string;
   employeeCode: string;
+  branchId?: string;
   branchName: string;
+  branchCode?: string;
   departmentId: string;
   departmentName: string;
   categoryId: string;

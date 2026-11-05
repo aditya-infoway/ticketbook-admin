@@ -1,4 +1,4 @@
-// src/app/pages/employee/my-ticket/TicketPage.tsx
+// src/app/pages/area-manager/tickets/TicketPage.tsx
 import {
   getCoreRowModel,
   getFilteredRowModel,
@@ -27,6 +27,7 @@ const mapApiTicket = (r: any): CreateTicket => ({
 });
 
 const EMPTY_FILTERS = {
+  branchId: "",
   departmentId: "",
   categoryId: "",
   ticketStatusId: "",
@@ -34,20 +35,21 @@ const EMPTY_FILTERS = {
   toDate: "",
 };
 
-export default function TicketPage() {
+export default function AreaManagerTicketPage() {
   const [data, setData] = useState<CreateTicket[]>([]);
   const [loading, setLoading] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
-  
+
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [formData, setFormData] = useState<any | null>(null);
 
-  // Fetch Dropdown Options for filters
+  // Fetch Dropdown Options for filters (Branches, Departments, etc.)
   const fetchFormData = async () => {
     try {
-      const res: any = await Get("employee/ticket/form-data", {}, false);
+      // Assuming you have an endpoint to get area-manager specific form data
+      const res: any = await Get("area-manager/ticket/form-data", {}, false);
       if (res?.data?.success) setFormData(res.data.data);
       else toast.error(res?.data?.message || "Failed to load form data");
     } catch (err: any) {
@@ -61,8 +63,10 @@ export default function TicketPage() {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([k, v]) => v && params.set(k, v));
       const qs = params.toString();
+
+      // Area manager endpoint to get all tickets for their branches
       const res: any = await Get(
-        `employee/ticket/list${qs ? `?${qs}` : ""}`,
+        `area-manager/ticket/list${qs ? `?${qs}` : ""}`,
         {},
         false,
       );
@@ -90,7 +94,7 @@ export default function TicketPage() {
     data,
     columns,
     state: { globalFilter, sorting },
-    enableRowSelection: false, // Disabled since we removed checkboxes
+    enableRowSelection: false,
     getRowId: (row) => row.id,
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
@@ -98,7 +102,6 @@ export default function TicketPage() {
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    // Meta actions removed entirely since navigation is handled directly in columns
   });
 
   const formatDate = (date: Date) => {
@@ -109,24 +112,48 @@ export default function TicketPage() {
   };
 
   return (
-    <Page title="My Tickets">
+    <Page title="All Tickets">
       <div className="transition-content w-full pb-5">
         <MasterToolbar
-          title="My Tickets"
-          searchPlaceholder="Search my tickets..."
+          title="All Tickets"
+          searchPlaceholder="Search tickets..."
           table={table}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters((v) => !v)}
-          // 👇 Create Ticket button props removed completely
-          onExportExcel={() => exportToExcel(data, exportColumns, "my_tickets")}
+          onExportExcel={() =>
+            exportToExcel(data, exportColumns, "area_manager_tickets")
+          }
           onExportPdf={() =>
-            exportToPdf(data, exportColumns, "My Tickets", "my_tickets")
+            exportToPdf(
+              data,
+              exportColumns,
+              "All Tickets",
+              "area_manager_tickets",
+            )
           }
           filterPanel={
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {/* Branch Filter */}
+              <Combobox
+                data={formData?.branches || []}
+                displayField="label"
+                label="Branch"
+                value={
+                  formData?.branches?.find(
+                    (b: any) => b.id === filters.branchId,
+                  ) || null
+                }
+                onChange={(v: any) =>
+                  setFilters((f) => ({ ...f, branchId: v?.id || "" }))
+                }
+                placeholder="Branch"
+                searchFields={["label"]}
+              />
+
               <Combobox
                 data={formData?.departments || []}
                 displayField="label"
+                label="Department"
                 value={
                   formData?.departments?.find(
                     (d: any) => d.id === filters.departmentId,
@@ -149,6 +176,7 @@ export default function TicketPage() {
                     c.departmentId === filters.departmentId,
                 )}
                 displayField="label"
+                label="Category"
                 value={
                   formData?.categories?.find(
                     (c: any) => c.id === filters.categoryId,
@@ -163,6 +191,7 @@ export default function TicketPage() {
               <Combobox
                 data={formData?.statuses || []}
                 displayField="label"
+                label="Status"
                 value={
                   formData?.statuses?.find(
                     (s: any) => s.id === filters.ticketStatusId,
@@ -177,6 +206,7 @@ export default function TicketPage() {
 
               <div className="min-w-[200px]">
                 <DatePicker
+                  label="Date Range"
                   options={{
                     mode: "range",
                     dateFormat: "Y-m-d",
@@ -199,7 +229,7 @@ export default function TicketPage() {
                 />
               </div>
 
-              <div className="mt-2 sm:col-span-2 lg:col-span-4">
+              <div className="mt-2 sm:col-span-2 lg:col-span-4 xl:col-span-5">
                 <Button
                   variant="outlined"
                   color="secondary"
@@ -219,11 +249,7 @@ export default function TicketPage() {
         <MasterTable
           table={table}
           columnCount={columns.length}
-          emptyMessage={
-            loading
-              ? "Loading tickets..."
-              : "No tickets found." // Updated message
-          }
+          emptyMessage={loading ? "Loading tickets..." : "No tickets found."}
         />
       </div>
     </Page>
