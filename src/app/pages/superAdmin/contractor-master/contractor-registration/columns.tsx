@@ -31,6 +31,12 @@ export const columns: ColumnDef<Contractor>[] = [
     cell: TextCell,
   },
   {
+    id: "email",
+    accessorKey: "email",
+    header: "Email",
+    cell: TextCell,
+  },
+  {
     id: "mobileNumber",
     accessorKey: "mobileNumber",
     header: "Mobile",
@@ -46,21 +52,35 @@ export const columns: ColumnDef<Contractor>[] = [
     id: "branchName",
     accessorKey: "branchName",
     header: "Branch",
-    cell: TextCell,
+    cell: ({ row }) => {
+      const names = row.original.branchNames ?? [];
+      if (!names.length) return <span>—</span>;
+      return (
+        <span title={names.join(", ")}>
+          {names[0]}
+          {names.length > 1 && (
+            <span className="text-primary-500 ml-1 text-xs font-semibold">
+              +{names.length - 1}
+            </span>
+          )}
+        </span>
+      );
+    },
   },
   {
-  id: "departmentName",
-  accessorKey: "departmentName",
-  header: "Department",
-  cell: TextCell,
-},
+    id: "departmentName",
+    accessorKey: "departmentName",
+    header: "Department",
+    cell: TextCell,
+  },
   {
     id: "status",
     accessorKey: "status",
     header: "Status",
     cell: ({ row, table }) => {
       const statusStr = String(row.original.status || "").toLowerCase();
-      const isActive = statusStr === "active" || statusStr === "1" || statusStr === "true";
+      const isActive =
+        statusStr === "active" || statusStr === "1" || statusStr === "true";
 
       const handleToggle = () => {
         (table.options.meta as any)?.toggleStatus?.(row.original);
@@ -71,7 +91,7 @@ export const columns: ColumnDef<Contractor>[] = [
           type="button"
           onClick={handleToggle}
           className={`focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-            isActive ? "bg-primary-500" : "bg-gray-300 dark:bg-dark-600"
+            isActive ? "bg-primary-500" : "dark:bg-dark-600 bg-gray-300"
           }`}
           title={`Mark as ${isActive ? "Inactive" : "Active"}`}
         >

@@ -45,12 +45,14 @@ const EMPTY_FILTERS = {
 const buildEditTicket = (row: any): EditTicket => ({
   id: String(row.id ?? row.ticketId ?? ""),
   ticketNo: row.ticketNo ?? "",
-  ticketCode: row.ticketNumber ?? "",
+  ticketCode: row.ticketNumber ?? row.ticketCode ?? "",
   departmentId: String(row.departmentId ?? row.departmentid ?? ""),
   categoryId: String(row.categoryId ?? row.categoryid ?? ""),
   subject: row.subject ?? "",
   issueDescription: row.issueDescription ?? row.description ?? "",
   attachmentUrl: row.attachmentUrl ?? row.attachment ?? "",
+  statusId: String(row.statusId ?? row.ticketStatusId ?? ""),
+  status: row.status ?? "",
 });
 
 export default function TicketPage() {
@@ -83,12 +85,13 @@ export default function TicketPage() {
     setDrawerKey((k) => k + 1);
     setDrawerOpen(true);
   };
-
   const openEditDrawer = (row: any) => {
-    if (row.status !== "Open") {
-      toast.info("Only tickets with status Open can be edited.");
+    const status = (row.status || "").trim().toLowerCase();
+    if (status === "closed") {
+      toast.error("Closed tickets cannot be edited.");
       return;
     }
+    // Open + Assigned (and any other non-closed) → open drawer in edit mode
     openWithDetail(row, "edit");
   };
 

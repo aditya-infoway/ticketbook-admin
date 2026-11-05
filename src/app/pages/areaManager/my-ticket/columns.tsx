@@ -1,13 +1,10 @@
-// src/app/pages/employee/my-ticket/columns.tsx
+// src/app/pages/area-manager/tickets/columns.tsx
 import { ColumnDef } from "@tanstack/react-table";
-import { Link } from "react-router"; // Or "react-router-dom" depending on your setup
-import { EyeIcon } from "@heroicons/react/24/outline"; // Import an icon
 import { TextCell } from "./shared/tableCells";
 import { ExportColumn } from "./shared/export";
 import type { CreateTicket } from "./shared/types";
 
 export const columns: ColumnDef<CreateTicket>[] = [
-  // Removed the 'select' checkbox column
   {
     id: "ticketNumber",
     accessorKey: "ticketNumber",
@@ -15,15 +12,40 @@ export const columns: ColumnDef<CreateTicket>[] = [
     cell: TextCell,
   },
   {
-    id: "subject",
-    accessorKey: "subject",
-    header: "Subject",
-    cell: TextCell,
+    id: "branchName",
+    accessorKey: "branchName",
+    header: "Branch",
+    // 👇 Show Branch Name and Branch Code
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {row.original.branchName || "—"}
+        </span>
+        <span className="text-xs text-gray-500">
+          {row.original.branchCode || ""}
+        </span>
+      </div>
+    ),
   },
   {
-    id: "categoryName",
-    accessorKey: "categoryName",
-    header: "Category",
+    id: "employeeName",
+    accessorKey: "employeeName",
+    header: "Employee",
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {row.original.employeeName || "—"}
+        </span>
+        <span className="text-xs text-gray-500">
+          {row.original.employeeCode || "—"}
+        </span>
+      </div>
+    ),
+  },
+  {
+    id: "contactNumber",
+    accessorKey: "contactNumber",
+    header: "Contact",
     cell: TextCell,
   },
   {
@@ -33,10 +55,49 @@ export const columns: ColumnDef<CreateTicket>[] = [
     cell: TextCell,
   },
   {
+    id: "categoryName",
+    accessorKey: "categoryName",
+    header: "Category",
+    cell: TextCell,
+  },
+  {
+    id: "subject",
+    accessorKey: "subject",
+    header: "Subject",
+    cell: TextCell,
+  },
+  {
     id: "createdAt",
     accessorKey: "createdAt",
     header: "Created Date",
-    cell: TextCell,
+    // 👇 Format Date to DD-MM-YYYY
+    cell: ({ row }) => {
+      const rawDate = row.original.createdAt;
+      if (!rawDate) return <span>—</span>;
+
+      try {
+        const dateObj = new Date(rawDate);
+        const dd = String(dateObj.getDate()).padStart(2, "0");
+        const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const yyyy = dateObj.getFullYear();
+
+        // Optional: Time format
+        const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+        const ampm = dateObj.getHours() >= 12 ? "PM" : "AM";
+        const formattedTime = `${dateObj.getHours() % 12 || 12}:${minutes} ${ampm}`;
+
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium text-gray-900 dark:text-gray-100">
+              {`${dd}-${mm}-${yyyy}`}
+            </span>
+            <span className="text-xs text-gray-500">{formattedTime}</span>
+          </div>
+        );
+      } catch {
+        return <span>{rawDate}</span>;
+      }
+    },
   },
   {
     id: "status",
@@ -69,33 +130,17 @@ export const columns: ColumnDef<CreateTicket>[] = [
     },
     enableSorting: false,
   },
-   {
-    id: "actions",
-    header: "Action",
-    cell: ({ row }) => {
-      return (
-        // 👇 Changed to justify-start so it aligns to the left of its cell
-        <div className="flex items-center justify-start">
-          <Link
-            to={`/employee/area-manager/my-ticket/${row.original.id}`}
-            className="text-primary-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 flex items-center justify-center rounded-md p-1.5 transition-colors"
-            title="View Details"
-          >
-            <EyeIcon className="size-5" />
-          </Link>
-        </div>
-      );
-    },
-
-    enableSorting: false,
-  },
 ];
 
 export const exportColumns: ExportColumn<CreateTicket>[] = [
   { key: "ticketNumber", header: "Ticket No." },
-  { key: "subject", header: "Subject" },
-  { key: "categoryName", header: "Category" },
+  { key: "branchName", header: "Branch" },
+  { key: "employeeName", header: "Employee" },
+  { key: "employeeCode", header: "Employee Code" },
+  { key: "contactNumber", header: "Contact" },
   { key: "departmentName", header: "Department" },
+  { key: "categoryName", header: "Category" },
+  { key: "subject", header: "Subject" },
   { key: "createdAt", header: "Created Date" },
   { key: "status", header: "Status" },
 ];

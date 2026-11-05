@@ -17,6 +17,7 @@ export interface TicketFormData {
     employeeName: string;
     employeeCode: string;
     branchName: string;
+    branchCode?: string;
     contactNumber: string;
   };
   departments: { id: string; label: string }[];
@@ -33,6 +34,8 @@ export interface EditTicket {
   subject: string;
   issueDescription: string;
   attachmentUrl?: string;
+  statusId?: string;
+  status?: string;
 }
 
 type DrawerMode = "create" | "edit" | "view";
@@ -74,7 +77,11 @@ export function TicketDataDrawer({
 }: TicketDrawerProps) {
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
-  const isReadOnly = isViewMode;
+  const currentStatus = (ticket?.status || "").trim().toLowerCase();
+  const isFullyEditable = isEditMode && currentStatus === "open";
+  const isCloseOnly =
+    isEditMode && currentStatus !== "open" && currentStatus !== "closed";
+  const isReadOnly = isViewMode || isCloseOnly; // fields locked when Assigned
 
   const [form, setForm] = useState({
     departmentId: ticket?.departmentId || "",
@@ -85,6 +92,7 @@ export function TicketDataDrawer({
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [statusId, setStatusId] = useState(ticket?.statusId || "");
 
   const [preview, setPreview] = useState({ ticketNo: "", ticketCode: "" });
 
@@ -98,6 +106,7 @@ export function TicketDataDrawer({
         subject: ticket.subject || "",
         issueDescription: ticket.issueDescription || "",
       });
+      setStatusId(ticket.statusId || "");
       setPreview({
         ticketNo: ticket.ticketNo || "",
         ticketCode: ticket.ticketCode || "",
@@ -163,12 +172,21 @@ export function TicketDataDrawer({
 
   const validate = () => {
     const next: Record<string, string> = {};
-    if (!form.departmentId) next.departmentId = "Department is required";
-    if (!form.categoryId) next.categoryId = "Category is required";
-    if (!form.subject.trim()) next.subject = "Subject is required";
-    if (!form.issueDescription.trim())
-      next.issueDescription = "Description is required";
-
+    if (isFullyEditable) {
+      if (!form.departmentId) next.departmentId = "Department is required";
+      if (!form.categoryId) next.categoryId = "Category is required";
+      if (!form.subject.trim()) next.subject = "Subject is required";
+      if (!form.issueDescription.trim())
+        next.issueDescription = "Description is required";
+    }
+    if (isCloseOnly) {
+      const closed = formData?.statuses?.find(
+        (s) => s.label.trim().toLowerCase() === "closed",
+      );
+      if (!statusId || statusId !== closed?.id) {
+        next.statusId = "Please set status to Closed to update this ticket.";
+      }
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -186,8 +204,11 @@ export function TicketDataDrawer({
       fd.append("subject", form.subject.trim());
       fd.append("issueDescription", form.issueDescription.trim());
       if (file) fd.append("attachment", file);
-      if (isEditMode && ticket) fd.append("ticketId", ticket.id);
-
+      if (isEditMode && ticket) {
+        fd.append("ticketId", ticket.id);
+        // Always send status when closing from Assigned (or when user picks Closed)
+        if (statusId) fd.append("ticketStatusId", statusId);
+      }
       const endpoint = isEditMode
         ? "employee/ticket/update"
         : "employee/ticket/create";
@@ -222,6 +243,32 @@ export function TicketDataDrawer({
       setSubmitting(false);
     }
   };
+
+  const closedStatus = useMemo(
+    () =>
+      (formData?.statuses || []).find(
+        (s) => s.label.trim().toLowerCase() === "closed",
+      ),
+    [formData],
+  );
+
+  const statusOptions = useMemo(() => {
+    if (!isEditMode || !formData?.statuses) return [];
+    const closed = formData.statuses.find(
+      (s) => s.label.trim().toLowerCase() === "closed",
+    );
+    const current = formData.statuses.find((s) => s.id === statusId);
+    const list = [current, closed].filter(Boolean) as {
+      id: string;
+      label: string;
+    }[];
+    const seen = new Set<string>();
+    return list.filter((s) => {
+      if (seen.has(s.id)) return false;
+      seen.add(s.id);
+      return true;
+    });
+  }, [isEditMode, formData, statusId]);
 
   const headerTitle = isViewMode
     ? "View Ticket"
@@ -310,7 +357,9 @@ export function TicketDataDrawer({
                   <div>
                     <span className="block text-xs text-gray-400">Branch</span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {emp?.branchName || "-"}
+                      {emp?.branchCode
+                        ? `${emp.branchName || "-"} (${emp.branchCode})`
+                        : emp?.branchName || "-"}
                     </span>
                   </div>
                   <div>
@@ -462,6 +511,29 @@ export function TicketDataDrawer({
                       <PaperClipIcon className="size-4" />
                       View Attachment
                     </a>
+                  </div>
+                )}
+
+                {isEditMode && (
+                  <div>
+                    <FieldLabel required={isCloseOnly}>Status</FieldLabel>
+                    <Combobox
+                      data={statusOptions} // current + Closed only
+                      displayField="label"
+                      value={
+                        statusOptions.find((s) => s.id === statusId) || null
+                      }
+                      onChange={(v: any) => setStatusId(v?.id || "")}
+                      placeholder="Select status"
+                      searchFields={["label"]}
+                      disabled={isViewMode}
+                    />
+                    {isCloseOnly && (
+                      <p className="mt-1 text-xs text-amber-500">
+                        This ticket is {ticket?.status}. You can only change
+                        status to Closed.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
