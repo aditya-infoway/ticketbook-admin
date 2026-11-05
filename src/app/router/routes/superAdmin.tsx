@@ -51,6 +51,18 @@ export const superAdminRoutes: RouteObject[] = [
     }),
   },
   {
+    path: "/region-master/region-type",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/superAdmin/region-type")).default,
+    }),
+  },
+  {
+    path: "/region-master/area-master",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/superAdmin/area-master")).default,
+    }),
+  },
+  {
     path: "/department-master/create-department",
     lazy: async () => ({
       Component: (
@@ -88,18 +100,6 @@ export const superAdminRoutes: RouteObject[] = [
       Component: (
         await import("@/app/pages/superAdmin/department-master/role-master/role")
       ).default,
-    }),
-  },
-  {
-    path: "/branch-master/region-type",
-    lazy: async () => ({
-      Component: (await import("@/app/pages/superAdmin/region-type")).default,
-    }),
-  },
-  {
-    path: "/branch-master/area-master",
-    lazy: async () => ({
-      Component: (await import("@/app/pages/superAdmin/area-master")).default,
     }),
   },
 

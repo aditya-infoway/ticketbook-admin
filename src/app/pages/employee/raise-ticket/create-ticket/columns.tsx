@@ -25,6 +25,12 @@ export const columns: ColumnDef<CreateTicket>[] = [
     cell: TextCell,
   },
   {
+    id: "branchDisplay",
+    accessorKey: "branchDisplay",
+    header: "Branch",
+    cell: TextCell,
+  },
+  {
     id: "subject",
     accessorKey: "subject",
     header: "Subject",

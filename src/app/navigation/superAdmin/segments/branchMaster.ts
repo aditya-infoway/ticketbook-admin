@@ -18,27 +18,6 @@ export const branchMaster: NavigationTree = {
       title: "Branch Manager",
       icon: "branchMaster.branchManager",
     },
-    {
-      id: "branchMaster.region",
-      type: "collapse",
-      path: "/branch-master/region",
-      title: "Region",
-      transKey: "Region",
-      icon: "branchMaster.region",
-      childs: [
-        {
-          id: "branchMaster.region.list",
-          type: "item",
-          path: "/branch-master/area-master",
-          title: "Area Master ",
-        },
-        {
-          id: "branchMaster.region.create",
-          type: "item",
-          path: "/branch-master/region-type",
-          title: " Area Type Master",
-        },
-      ],
-    },
+    
   ],
 };

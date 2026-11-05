@@ -8,8 +8,6 @@ export interface ContractorDepartment {
   createdAt?: string;
 }
 
-
-
 export interface Contractor {
   id: string;
   contractorNo: string;
@@ -23,9 +21,11 @@ export interface Contractor {
   areaName?: string;
   branchId: string;
   branchName?: string;
+  branchIds?: string[];
+  branchNames?: string[];
   contractorDepartmentId?: string;
-departmentName?: string;
+  departmentName?: string;
   registrationDate: string;
   status: "Active" | "Inactive";
-  documents?: string[]; 
+  documents?: string[];
 }
