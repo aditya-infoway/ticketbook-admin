@@ -14,6 +14,22 @@ import PlaceholderPage from "../PlaceholderPage";
 
 export const branchManagerRoutes: RouteObject[] = [
   {
+    path: "/branch-manager/raise-ticket/create-ticket",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/branchManager/raise-ticket/create-ticket")
+      ).default,
+    }),
+  },
+   {
+    path: "/branch-manager/my-ticket/list",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/branchManager/my-ticket/TicketPage")
+      ).default,
+    }),
+  },
+  {
     path: "/branch-manager/ticket-management/list",
     element: <PlaceholderPage title="Ticket Management" />,
   },

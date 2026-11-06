@@ -12,7 +12,9 @@ import PlaceholderPage from "../PlaceholderPage";
 export const branchRoutes: RouteObject[] = [
   {
     path: "/branch/employee-master/list",
-    element: <PlaceholderPage title="Employee Master" />,
+    lazy: async () => ({
+      Component: (await import("@/app/pages/branch/employee-master")).default,
+    }),
   },
   {
     path: "/branch/ticket-management/list",
