@@ -7,7 +7,7 @@ export const raiseTicket: NavigationTree = {
     {
       id: "raiseTicket.createticket",
       type: "item",
-      path: "/employee/branch-manager/raise-ticket/create-ticket",
+      path: "/branch-manager/raise-ticket/create-ticket",
       title: "Create Ticket",
       icon: "raiseTicket.list",
     },
