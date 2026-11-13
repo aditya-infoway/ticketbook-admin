@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
-    <string name="app_name">Amaar</string>
-    <string name="custom_url_scheme">com.amaar.app</string>
-    <string name="package_name">com.amaar.app</string>
-    <string name="title_activity_main">Amaar</string>
+    <string name="app_name">TicketBook</string>
+    <string name="custom_url_scheme">com.ticketbook.admin</string>
+    <string name="package_name">com.ticketbook.admin</string>
+    <string name="title_activity_main">TicketBook</string>
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         
         <item name="colorPrimary">@color/colorPrimary</item>

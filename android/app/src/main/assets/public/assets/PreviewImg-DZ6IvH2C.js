@@ -1,1 +1,0 @@
-import{r as o,j as a}from"./index-No8PGf7E.js";function U({file:e,src:s,alt:c,...n}){const[r,t]=o.useState(null);return o.useEffect(()=>{if(!e){t(null);return}try{t(URL.createObjectURL(e))}catch(u){console.error(u),t(null)}return()=>{r&&URL.revokeObjectURL(r)}},[e]),a.jsx("img",{src:r||s,onLoad:()=>{r&&URL.revokeObjectURL(r)},alt:c,...n})}export{U as P};
