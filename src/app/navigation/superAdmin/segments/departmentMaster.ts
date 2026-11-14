@@ -4,13 +4,13 @@ import { baseNavigationObj } from "../baseNavigation";
 export const departmentMaster: NavigationTree = {
   ...baseNavigationObj.departmentMaster,
   childs: [
-    {
-      id: "departmentMaster.createDepartment",
-      type: "item",
-      path: "/department-master/create-department",
-      title: "Create Department",
-      icon: "departmentMaster.createDepartment",
-    },
+    // {
+    //   id: "departmentMaster.createDepartment",
+    //   type: "item",
+    //   path: "/department-master/create-department",
+    //   title: "Create Department",
+    //   icon: "departmentMaster.createDepartment",
+    // },
     {
       id: "departmentMaster.resolverTeam",
       type: "item",
