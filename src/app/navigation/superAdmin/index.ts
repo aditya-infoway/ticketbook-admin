@@ -1,6 +1,5 @@
 import { dashboards } from "./segments/dashboards";
 import { branchMaster } from "./segments/branchMaster";
-import { regionMaster } from "./segments/regionMaster";
 import { departmentMaster } from "./segments/departmentMaster";
 import { employeeMaster } from "./segments/employeeMaster";
 // import { rolePermissionMaster } from "./segments/rolePermissionMaster";
@@ -15,10 +14,11 @@ import { ticketHistoryAudit } from "./segments/ticketHistoryAudit";
 // import { companySettings } from "./segments/companySettings";
 import { logout } from "./segments/logout";
 import { contractorMaster } from "./segments/contractorMaster";
+import { master } from "./segments/master";
 
 export const superAdminNavigation = [
   dashboards,
-  regionMaster,
+  master,
   branchMaster,
   departmentMaster,
   employeeMaster,

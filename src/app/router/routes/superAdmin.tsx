@@ -10,11 +10,48 @@ import PlaceholderPage from "../PlaceholderPage";
 //   { path: "...", lazy: async () => ({ Component: (await import("@/app/pages/superAdmin/...")).default }) }
 
 export const superAdminRoutes: RouteObject[] = [
-  {
-    path: "/branch-master/create-branch",
+
+
+   {
+    path: "/master/area-master",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/superAdmin/master/area-master")).default,
+    }),
+  },
+
+   {
+    path: "/master/create-branch",
     lazy: async () => ({
       Component: (
-        await import("@/app/pages/superAdmin/branch-master/create-branch")
+        await import("@/app/pages/superAdmin/master/create-branch")
+      ).default,
+    }),
+  },
+
+  {
+    path: "/master/area-manager",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/master/area-manager")
+      ).default,
+    }),
+  },
+
+  {
+    path: "/master/employee-list",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/master/employee-list")
+      ).default,
+    }),
+  },
+
+
+   {
+    path: "/master/create-department",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/master/create-department")
       ).default,
     }),
   },
@@ -45,31 +82,13 @@ export const superAdminRoutes: RouteObject[] = [
     element: <PlaceholderPage title="Group Branches" />,
   },
   {
-    path: "/region-master/area-manager",
-    lazy: async () => ({
-      Component: (await import("@/app/pages/superAdmin/area-manager")).default,
-    }),
-  },
-  {
     path: "/region-master/region-type",
     lazy: async () => ({
       Component: (await import("@/app/pages/superAdmin/region-type")).default,
     }),
   },
-  {
-    path: "/region-master/area-master",
-    lazy: async () => ({
-      Component: (await import("@/app/pages/superAdmin/area-master")).default,
-    }),
-  },
-  {
-    path: "/department-master/create-department",
-    lazy: async () => ({
-      Component: (
-        await import("@/app/pages/superAdmin/department-master/create-department")
-      ).default,
-    }),
-  },
+ 
+ 
   {
     path: "/department-master/create-type",
     lazy: async () => ({
@@ -123,14 +142,7 @@ export const superAdminRoutes: RouteObject[] = [
       ).default,
     }),
   },
-  {
-    path: "/employee-master/employee-list",
-    lazy: async () => ({
-      Component: (
-        await import("@/app/pages/superAdmin/employee-master/employee-list")
-      ).default,
-    }),
-  },
+  
   {
     path: "/contractor-master/contractor-registration",
     lazy: async () => ({
