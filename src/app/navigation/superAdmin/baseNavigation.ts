@@ -13,14 +13,14 @@ export const baseNavigationObj: Record<string, NavigationTree> = {
     icon: "dashboards",
   },
 
-
-    regionMaster: {
-    id: "regionMaster",
+  master: {
+    id: "master",
     type: "collapse",
-    path: "/region-master",
-    title: "Region / Area Master",
-    icon: "regionMaster",
+    path: "/master",
+    title: "Master",
+    icon: "managerAssignment",
   },
+
 
   branchMaster: {
     id: "branchMaster",

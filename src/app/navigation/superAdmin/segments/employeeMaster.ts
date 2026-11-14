@@ -4,13 +4,13 @@ import { baseNavigationObj } from "../baseNavigation";
 export const employeeMaster: NavigationTree = {
   ...baseNavigationObj.employeeMaster,
   childs: [
-    {
-      id: "employeeMaster.list",
-      type: "item",
-      path: "/employee-master/employee-list",
-      title: "Employee List",
-      icon: "employeeMaster.list",
-    },
+    // {
+    //   id: "employeeMaster.list",
+    //   type: "item",
+    //   path: "/employee-master/employee-list",
+    //   title: "Employee List",
+    //   icon: "employeeMaster.list",
+    // },
      {
       id: "employeeMaster.typemaster",
       type: "item",

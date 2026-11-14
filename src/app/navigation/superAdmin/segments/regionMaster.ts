@@ -4,13 +4,13 @@ import { baseNavigationObj } from "../baseNavigation";
 export const regionMaster: NavigationTree = {
   ...baseNavigationObj.regionMaster,
   childs: [
-    {
-      id: "regionMaster.assignAreaManager",
-      type: "item",
-      path: "/region-master/area-manager",
-      title: " Area Manager",
-      icon: "regionMaster.assignAreaManager",
-    },
+    // {
+    //   id: "regionMaster.assignAreaManager",
+    //   type: "item",
+    //   path: "/region-master/area-manager",
+    //   title: " Area Manager",
+    //   icon: "regionMaster.assignAreaManager",
+    // },
     {
       id: "regionMaster.region",
       type: "collapse",
