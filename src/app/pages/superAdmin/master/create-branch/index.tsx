@@ -129,8 +129,6 @@ export default function BranchPage() {
               branchEmail: branch.branchEmail,
               branchManagerId: (branch as any).branchManagerId || null,
               areaManagerId: (branch as any).areaManagerId || null,
-              openingDate: branch.openingDate,
-              workingHours: branch.workingHours,
               status: newStatus,
             },
             false,

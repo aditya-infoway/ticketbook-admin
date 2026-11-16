@@ -106,7 +106,6 @@ export const exportColumns: ExportColumn<CreateTicket>[] = [
   { key: "subject", header: "Subject" },
   { key: "categoryName", header: "Category" },
   { key: "departmentName", header: "Department" },
-  { key: "contractorName", header: "Contractor" },
   { key: "createdAt", header: "Created Date" },
   { key: "status", header: "Status" },
 ];

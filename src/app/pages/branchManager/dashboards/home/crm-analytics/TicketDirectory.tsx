@@ -5,6 +5,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type SortingState,
 } from "@tanstack/react-table";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
@@ -18,7 +19,7 @@ import { Ticket, initialTickets } from "./data";
 export function TicketDirectory() {
   const [data, setData] = useState<Ticket[]>(initialTickets);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
     data,

@@ -6,27 +6,17 @@ import {
 } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { Controller, useForm } from "react-hook-form";
-import { Fragment, useMemo } from "react";
-
+import { Fragment,} from "react";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
-import {
-  MultiSelect,
-  MultiSelectOption,
-} from "@/components/shared/form/MultiSelect";
-import { Button, Input, Textarea } from "@/components/ui";
+import { Button, Input} from "@/components/ui";
 import { Role } from "./data";
 import {
-  dataScopeOptions,
-  departmentRestrictionOptions,
   roleStatusOptions,
 } from "./Options";
 
 export type DrawerMode = "create" | "edit" | "view";
 
-interface Option {
-  id: string;
-  label: string;
-}
+
 
 interface RoleDrawerProps {
   isOpen: boolean;
@@ -36,9 +26,7 @@ interface RoleDrawerProps {
   /** saare roles (unique Code check ke liye) */
   roles: Role[];
   /** dynamic: Role Category dropdown */
-  categories: Option[];
-  /** dynamic: Department multi-select */
-  departments: Option[];
+  nextRoleNo?: string;
   onSave: (role: Role) => void;
 }
 
@@ -53,34 +41,24 @@ export function RoleDrawer({
   close,
   mode,
   role,
-  roles,
-  categories,
-  departments,
+  nextRoleNo,
   onSave,
 }: RoleDrawerProps) {
   const isView = mode === "view";
   const isEditing = mode === "edit";
+  const displayRoleNo =
+    mode === "create" ? (nextRoleNo ?? "") : (role?.roleNo ?? "");
 
   const {
     register,
     handleSubmit,
     control,
     reset,
-    watch,
-    setError,
     clearErrors,
     formState: { errors },
   } = useForm<Role>({
     values: role ?? undefined,
   });
-
-  const restriction = watch("departmentRestriction");
-
-  // MultiSelect ko { id, name } format chahiye
-  const departmentSelectOptions: MultiSelectOption[] = useMemo(
-    () => departments.map((d) => ({ id: d.id, name: d.label })),
-    [departments],
-  );
 
   const handleClose = () => {
     reset();
@@ -90,38 +68,11 @@ export function RoleDrawer({
 
   const onSubmit = (data: Role) => {
     // Role Code unique hona chahiye
-    const codeTaken = roles.some(
-      (r) =>
-        r.roleCode.trim().toLowerCase() === data.roleCode.trim().toLowerCase() &&
-        r.id !== (role?.id || ""),
-    );
-    if (codeTaken) {
-      setError("roleCode", {
-        type: "manual",
-        message: "Role code already exists.",
-      });
-      return;
-    }
-
-    // Conditional: "Selected Departments" me kam se kam 1 department chahiye
-    if (
-      data.departmentRestriction === "selected" &&
-      !data.departmentIds?.length
-    ) {
-      setError("departmentIds", {
-        type: "manual",
-        message: "Select at least one department.",
-      });
-      return;
-    }
 
     onSave({
       ...data,
-      roleCode: data.roleCode.trim(),
       roleName: data.roleName.trim(),
       // "All Departments" ho to purani selection clear
-      departmentIds:
-        data.departmentRestriction === "selected" ? data.departmentIds : [],
       id: role?.id || "",
     });
     handleClose();
@@ -167,16 +118,12 @@ export function RoleDrawer({
             className="flex grow flex-col overflow-hidden"
           >
             <div className="hide-scrollbar grow space-y-4 overflow-y-auto px-4 py-4 sm:px-5">
-              {/* Role Code (unique) */}
               <Input
-                {...register("roleCode", {
-                  required: "Role code is required",
-                  onChange: () => clearErrors("roleCode"),
-                })}
-                label="Role Code"
-                placeholder="e.g. SUPPORT_AGENT"
-                disabled={isView}
-                error={errors.roleCode?.message}
+                label="Role ID"
+                value={displayRoleNo}
+                placeholder={mode === "create" ? "Generating..." : "—"}
+                disabled
+                readOnly
               />
 
               {/* Role Name */}
@@ -189,129 +136,6 @@ export function RoleDrawer({
                 disabled={isView}
                 error={errors.roleName?.message}
               />
-
-              {/* Role Category (dynamic) */}
-              <Controller
-                control={control}
-                name="roleCategoryId"
-                rules={{ required: "Role category is required" }}
-                render={({ field: { value, onChange } }) => (
-                  <Combobox
-                    data={categories}
-                    value={categories.find((c) => c.id === value) || null}
-                    onChange={(item: any) => onChange(item?.id || "")}
-                    label="Role Category"
-                    placeholder="Select category"
-                    displayField="label"
-                    searchFields={["label"]}
-                    error={errors.roleCategoryId?.message}
-                    inputProps={{ disabled: isView }}
-                  />
-                )}
-              />
-
-              {/* Description */}
-              <Textarea
-                {...register("description")}
-                label="Description"
-                placeholder="Short description (optional)"
-                rows={3}
-                disabled={isView}
-              />
-
-              {/* Default Data Scope */}
-              <Controller
-                control={control}
-                name="defaultDataScope"
-                rules={{ required: "Data scope is required" }}
-                render={({ field: { value, onChange } }) => (
-                  <Combobox
-                    data={dataScopeOptions}
-                    value={dataScopeOptions.find((o) => o.id === value) || null}
-                    onChange={(item: any) => onChange(item?.id || "")}
-                    label="Default Data Scope"
-                    placeholder="Select data scope"
-                    displayField="label"
-                    searchFields={["label"]}
-                    error={errors.defaultDataScope?.message}
-                    inputProps={{ disabled: isView }}
-                  />
-                )}
-              />
-
-              {/* Department Restriction */}
-              <Controller
-                control={control}
-                name="departmentRestriction"
-                rules={{ required: "Department restriction is required" }}
-                render={({ field: { value, onChange } }) => (
-                  <Combobox
-                    data={departmentRestrictionOptions}
-                    value={
-                      departmentRestrictionOptions.find(
-                        (o) => o.id === value,
-                      ) || departmentRestrictionOptions[0]
-                    }
-                    onChange={(item: any) => {
-                      onChange(item?.id || "all");
-                      clearErrors("departmentIds");
-                    }}
-                    label="Department Restriction"
-                    placeholder="Select restriction"
-                    displayField="label"
-                    searchFields={["label"]}
-                    error={errors.departmentRestriction?.message}
-                    inputProps={{ disabled: isView }}
-                  />
-                )}
-              />
-
-              {/* Department(s): sirf "Selected Departments" par */}
-              {restriction === "selected" && (
-                <Controller
-                  control={control}
-                  name="departmentIds"
-                  render={({ field: { value, onChange } }) => {
-                    const ids = value ?? [];
-                    const selectedOptions = departmentSelectOptions.filter(
-                      (o) => ids.includes(o.id),
-                    );
-
-                    return (
-                      <div>
-                        <label className="dark:text-dark-100 mb-1 block text-sm font-medium text-gray-700">
-                          Department(s)
-                        </label>
-
-                        {/* View mode me select band */}
-                        <div
-                          className={
-                            isView ? "pointer-events-none opacity-60" : ""
-                          }
-                        >
-                          <MultiSelect
-                            data={departmentSelectOptions}
-                            displayField="name"
-                            searchFields={["name"]}
-                            value={selectedOptions}
-                            onChange={(selected) => {
-                              onChange(selected.map((s) => s.id));
-                              clearErrors("departmentIds");
-                            }}
-                            placeholder="Select departments..."
-                          />
-                        </div>
-
-                        {errors.departmentIds?.message && (
-                          <p className="text-error mt-1 text-xs">
-                            {errors.departmentIds.message as string}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  }}
-                />
-              )}
 
               {/* Status */}
               <Controller

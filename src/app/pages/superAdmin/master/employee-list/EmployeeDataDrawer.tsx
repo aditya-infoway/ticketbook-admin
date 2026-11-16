@@ -20,7 +20,6 @@ import { Get, Post, Put } from "@/ApiHelper";
 import { Button, Input, Textarea, Upload, Avatar } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
-import { DatePicker } from "@/components/shared/form/Datepicker";
 import type { Employee } from "./shared/types";
 
 interface EmployeeDrawerProps {
@@ -33,7 +32,6 @@ interface EmployeeDrawerProps {
 interface Opt {
   id: string;
   label: string;
-  categoryId?: string; // roles only: which role category they belong to
 }
 
 // Active records, plus whatever this employee already has selected
@@ -91,14 +89,12 @@ function getInitialForm(editEmployee: Employee | null) {
       city: (editEmployee as any).city || "",
       address: (editEmployee as any).address || "",
       pinCode: (editEmployee as any).pinCode || "",
-      employeeTypeId: editEmployee.employeeTypeId || "",
       employmentStatus: editEmployee.employmentStatus || "Active",
       remarks: editEmployee.remarks || "",
       additionalDepartments: (editEmployee.additionalDepartments || []).map(
         String,
       ) as string[],
       branchId: String((editEmployee as any).branchId ?? ""),
-      roleCategoryId: editEmployee.roleCategoryId || "",
       roleId: editEmployee.roleId || "",
       password: "",
       confirmPassword: "",
@@ -121,12 +117,10 @@ function getInitialForm(editEmployee: Employee | null) {
     city: "",
     address: "",
     pinCode: "",
-    employeeTypeId: "",
     employmentStatus: "Active",
     remarks: "",
     additionalDepartments: [] as string[],
     branchId: "",
-    roleCategoryId: "",
     roleId: "",
     password: "",
     confirmPassword: "",
@@ -134,14 +128,6 @@ function getInitialForm(editEmployee: Employee | null) {
 }
 
 type FormValues = ReturnType<typeof getInitialForm>;
-
-const toYmd = (picked?: Date) => {
-  if (!picked) return "";
-  const yyyy = picked.getFullYear();
-  const mm = String(picked.getMonth() + 1).padStart(2, "0");
-  const dd = String(picked.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-};
 
 export function EmployeeDataDrawer({
   isOpen,
@@ -170,14 +156,11 @@ export function EmployeeDataDrawer({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [nextNo, setNextNo] = useState("");
-  const [employeeTypes, setEmployeeTypes] = useState<Opt[]>([]);
-  const [roleCategories, setRoleCategories] = useState<Opt[]>([]);
   const [roles, setRoles] = useState<Opt[]>([]);
   const [departments, setDepartments] = useState<Opt[]>([]);
   const [branches, setBranches] = useState<Opt[]>([]);
 
   const profilePhoto = watch("profilePhoto");
-  const roleCategoryId = watch("roleCategoryId");
 
   // Dropdown data from the DB
   useEffect(() => {
@@ -185,38 +168,13 @@ export function EmployeeDataDrawer({
 
     (async () => {
       try {
-        const [typeRes, catRes, roleRes, deptRes, branchRes]: any[] =
-          await Promise.all([
-            Get("superadmin/employee-type/list", {}, false),
-            Get("superadmin/role-category/list", {}, false),
-            Get("superadmin/role/list", {}, false),
-            Get("superadmin/department/list", {}, false),
-            Get("superadmin/branch/list", {}, false),
-          ]);
+        const [roleRes, deptRes, branchRes]: any[] = await Promise.all([
+          Get("superadmin/role/list", {}, false),
+          Get("superadmin/department/list", {}, false),
+          Get("superadmin/branch/list", {}, false),
+        ]);
 
         const rows = (res: any): any[] => res?.data?.data ?? [];
-
-        setEmployeeTypes(
-          rows(typeRes)
-            .filter((r) =>
-              keepActive(r.status, String(r.employeeTypeId), [
-                initial.employeeTypeId,
-              ]),
-            )
-            .map((r) => ({ id: String(r.employeeTypeId), label: r.typeName })),
-        );
-        setRoleCategories(
-          rows(catRes)
-            .filter((r) =>
-              keepActive(r.status, String(r.roleCategoryId), [
-                initial.roleCategoryId,
-              ]),
-            )
-            .map((r) => ({
-              id: String(r.roleCategoryId),
-              label: r.roleCategoryName,
-            })),
-        );
         setRoles(
           rows(roleRes)
             .filter((r) =>
@@ -225,7 +183,6 @@ export function EmployeeDataDrawer({
             .map((r) => ({
               id: String(r.roleId),
               label: r.roleName,
-              categoryId: String(r.roleCategoryId),
             })),
         );
         setDepartments(
@@ -279,12 +236,6 @@ export function EmployeeDataDrawer({
     })();
   }, [isOpen, editEmployee]);
 
-  // Roles shown depend on the selected category
-  const roleOptions = useMemo(
-    () => roles.filter((r) => r.categoryId === roleCategoryId),
-    [roles, roleCategoryId],
-  );
-
   const handleClose = () => {
     reset();
     clearErrors();
@@ -303,21 +254,13 @@ export function EmployeeDataDrawer({
         alternateCountryCode: values.alternateCountryCode,
         alternateContact: values.alternateContact.trim(),
         country: values.country,
-  state: values.state,
-  district: values.district,
-  city: values.city,
-  address: values.address,
-  pinCode: values.pinCode,
-        employeeTypeId: values.employeeTypeId
-          ? Number(values.employeeTypeId)
-          : null,
-        // Designation has no backend yet: keep whatever was saved, never clear it
-
+        state: values.state,
+        district: values.district,
+        city: values.city,
+        address: values.address,
+        pinCode: values.pinCode,
         employmentStatus: values.employmentStatus,
         remarks: values.remarks.trim(),
-        roleCategoryId: values.roleCategoryId
-          ? Number(values.roleCategoryId)
-          : null,
         roleId: values.roleId ? Number(values.roleId) : null,
         branchId: values.branchId ? Number(values.branchId) : null,
         additionalDepartments: values.additionalDepartments.map(Number),
@@ -665,6 +608,7 @@ export function EmployeeDataDrawer({
                       <Controller
                         control={control}
                         name="country"
+                        rules={{ required: "Country is required" }}
                         render={({ field }) => (
                           <Combobox
                             data={countryOptions}
@@ -682,6 +626,7 @@ export function EmployeeDataDrawer({
                             }}
                             placeholder="Select Country"
                             searchFields={["label"]}
+                            error={errors.country?.message as any}
                           />
                         )}
                       />
@@ -693,6 +638,7 @@ export function EmployeeDataDrawer({
                       <Controller
                         control={control}
                         name="state"
+                        rules={{ required: "State is required" }}
                         render={({ field }) => (
                           <Combobox
                             data={stateOptions}
@@ -709,31 +655,7 @@ export function EmployeeDataDrawer({
                             }}
                             placeholder="Select State"
                             searchFields={["label"]}
-                          />
-                        )}
-                      />
-                    </div>
-
-                    {/* City */}
-                    <div>
-                      <FieldLabel>City</FieldLabel>
-                      <Controller
-                        control={control}
-                        name="city"
-                        render={({ field }) => (
-                          <Combobox
-                            data={cityOptions}
-                            displayField="label"
-                            value={
-                              cityOptions.find(
-                                (c) => c.label === field.value,
-                              ) || null
-                            }
-                            onChange={(v: any) =>
-                              field.onChange(v?.label || "")
-                            }
-                            placeholder="Select City"
-                            searchFields={["label"]}
+                            error={errors.state?.message as any}
                           />
                         )}
                       />
@@ -745,6 +667,7 @@ export function EmployeeDataDrawer({
                       <Controller
                         control={control}
                         name="district"
+                        rules={{ required: "District is required" }}
                         render={({ field }) => (
                           <Combobox
                             data={cityOptions}
@@ -759,6 +682,34 @@ export function EmployeeDataDrawer({
                             }
                             placeholder="Select District"
                             searchFields={["label"]}
+                            error={errors.district?.message as any}
+                          />
+                        )}
+                      />
+                    </div>
+
+                    {/* City */}
+                    <div>
+                      <FieldLabel>City</FieldLabel>
+                      <Controller
+                        control={control}
+                        name="city"
+                        rules={{ required: "City is required" }}
+                        render={({ field }) => (
+                          <Combobox
+                            data={cityOptions}
+                            displayField="label"
+                            value={
+                              cityOptions.find(
+                                (c) => c.label === field.value,
+                              ) || null
+                            }
+                            onChange={(v: any) =>
+                              field.onChange(v?.label || "")
+                            }
+                            placeholder="Select City"
+                            searchFields={["label"]}
+                            error={errors.city?.message as any}
                           />
                         )}
                       />
@@ -776,7 +727,7 @@ export function EmployeeDataDrawer({
                             /^\d{6}$/.test(v) ||
                             "PIN Code must be exactly 6 digits",
                         })}
-                        error={errors.pinCode?.message}
+                        error={errors.pinCode?.message as any}
                       />
                     </div>
 
@@ -787,48 +738,25 @@ export function EmployeeDataDrawer({
                         rows={2}
                         placeholder="Full address..."
                         {...register("address", {
+                          required: "Address is required",
                           maxLength: {
                             value: 500,
                             message: "Max 500 characters",
                           },
                         })}
-                        error={errors.address?.message}
+                        error={errors.address?.message as any}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* B. Employment Details */}
+                {/* c. Employment Details */}
                 <div className="space-y-4 pt-4">
                   <h4 className="text-primary-600 dark:text-primary-400 dark:border-dark-600 border-b border-gray-200 pb-1 text-sm font-semibold">
                     C. Employment Details
                   </h4>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    {/* Employee Type */}
-                    <div>
-                      <FieldLabel required>Employee Type</FieldLabel>
-                      <Controller
-                        control={control}
-                        name="employeeTypeId"
-                        rules={{ required: "Employee type is required" }}
-                        render={({ field }) => (
-                          <Combobox
-                            data={employeeTypes}
-                            displayField="label"
-                            value={
-                              employeeTypes.find((t) => t.id === field.value) ||
-                              null
-                            }
-                            onChange={(v: any) => field.onChange(v?.id || "")}
-                            placeholder="Select Type"
-                            searchFields={["label"]}
-                            error={errors.employeeTypeId?.message}
-                          />
-                        )}
-                      />
-                    </div>
-
                     {/* Employment Status */}
                     <div>
                       <FieldLabel required>Employment Status</FieldLabel>
@@ -855,35 +783,6 @@ export function EmployeeDataDrawer({
                       />
                     </div>
 
-                    {/* Role Category */}
-                    <div>
-                      <FieldLabel required>Role Category</FieldLabel>
-                      <Controller
-                        control={control}
-                        name="roleCategoryId"
-                        rules={{ required: "Role category is required" }}
-                        render={({ field }) => (
-                          <Combobox
-                            data={roleCategories}
-                            displayField="label"
-                            value={
-                              roleCategories.find(
-                                (t) => t.id === field.value,
-                              ) || null
-                            }
-                            onChange={(v: any) => {
-                              field.onChange(v?.id || "");
-                              // category change => old role is no longer valid
-                              setValue("roleId", "");
-                            }}
-                            placeholder="Select Category"
-                            searchFields={["label"]}
-                            error={errors.roleCategoryId?.message}
-                          />
-                        )}
-                      />
-                    </div>
-
                     {/* Role */}
                     <div>
                       <FieldLabel required>Role</FieldLabel>
@@ -893,18 +792,13 @@ export function EmployeeDataDrawer({
                         rules={{ required: "Role is required" }}
                         render={({ field }) => (
                           <Combobox
-                            data={roleOptions}
+                            data={roles}
                             displayField="label"
                             value={
-                              roleOptions.find((t) => t.id === field.value) ||
-                              null
+                              roles.find((t) => t.id === field.value) || null
                             }
                             onChange={(v: any) => field.onChange(v?.id || "")}
-                            placeholder={
-                              roleCategoryId
-                                ? "Select Role"
-                                : "Select a role category first"
-                            }
+                            placeholder="Select Role"
                             searchFields={["label"]}
                             error={errors.roleId?.message}
                           />
@@ -1018,7 +912,6 @@ export function EmployeeDataDrawer({
                 {/* C. Organization Mapping */}
                 <div className="space-y-4 pt-4">
                   <h4 className="text-primary-600 dark:text-primary-400 dark:border-dark-600 border-b border-gray-200 pb-1 text-sm font-semibold">
-                    
                     D. Organization Mapping
                   </h4>
 

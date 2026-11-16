@@ -36,6 +36,7 @@ const prefixForOptions = [
   { id: "BRANCH_MANAGER", label: "Branch Manager" },
   { id: "TICKET", label: "Create/Raise Ticket" },
   { id: "TICKET_ASSIGN", label: "Assign Ticket" },
+  { id: "ROLE", label: "Role"},
 ];
 
 const schema = yup.object({
