@@ -34,6 +34,12 @@ interface Opt {
   label: string;
 }
 
+interface BranchOpt {
+  id: string;
+  label: string;
+  region: string; // Zone name
+}
+
 // Active records, plus whatever this employee already has selected
 const keepActive = (status: string, id: string, selected: string[]) =>
   status === "Active" || selected.includes(id);
@@ -158,7 +164,7 @@ export function EmployeeDataDrawer({
   const [nextNo, setNextNo] = useState("");
   const [roles, setRoles] = useState<Opt[]>([]);
   const [departments, setDepartments] = useState<Opt[]>([]);
-  const [branches, setBranches] = useState<Opt[]>([]);
+  const [branches, setBranches] = useState<BranchOpt[]>([]);
 
   const profilePhoto = watch("profilePhoto");
 
@@ -207,6 +213,7 @@ export function EmployeeDataDrawer({
             .map((r) => ({
               id: String(r.branchId),
               label: r.branchName,
+              region: r.region || "", // ← Zone name from backend
             })),
         );
       } catch (error) {
@@ -336,6 +343,13 @@ export function EmployeeDataDrawer({
       label: c.name,
     }));
   }, [selectedCountry, selectedState, countryOptions]);
+
+  const selectedBranchId = watch("branchId");
+
+  const selectedZone = useMemo(() => {
+    const branch = branches.find((b) => b.id === selectedBranchId);
+    return branch?.region || "";
+  }, [selectedBranchId, branches]);
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -730,7 +744,7 @@ export function EmployeeDataDrawer({
                         error={errors.pinCode?.message as any}
                       />
                     </div>
-
+  
                     {/* Address */}
                     <div className="sm:col-span-3">
                       <FieldLabel>Address</FieldLabel>
@@ -938,6 +952,17 @@ export function EmployeeDataDrawer({
                             error={errors.branchId?.message}
                           />
                         )}
+                      />
+                    </div>
+
+                    {/* Zone (read-only) */}
+                    <div>
+                      <FieldLabel>Zone</FieldLabel>
+                      <Input
+                        value={selectedZone || "—"}
+                        readOnly
+                        disabled
+                        className="dark:bg-dark-800 bg-gray-50 text-gray-500"
                       />
                     </div>
 
