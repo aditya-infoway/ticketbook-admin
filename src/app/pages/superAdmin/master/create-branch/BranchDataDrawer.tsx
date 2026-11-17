@@ -5,7 +5,12 @@ import {
   Transition,
   TransitionChild,
 } from "@headlessui/react";
-import { XMarkIcon } from "@heroicons/react/24/solid";
+import {
+  XMarkIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  LockClosedIcon,
+} from "@heroicons/react/24/solid";
 import { HiPencil } from "react-icons/hi";
 import { Country, State, City } from "country-state-city";
 import { toast } from "sonner";
@@ -27,7 +32,6 @@ interface Opt {
   id: string;
   label: string;
 }
-
 
 const STATUS_OPTIONS = [
   { id: "Active", label: "Active" },
@@ -151,6 +155,8 @@ export function BranchDataDrawer({
   const [nextNo, setNextNo] = useState("");
   const [branchManagers, setBranchManagers] = useState<Opt[]>([]);
   const [areaManagers, setAreaManagers] = useState<Opt[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -361,10 +367,10 @@ export function BranchDataDrawer({
         confirmPassword: form.confirmPassword,
         branchManagerId: form.branchManager ? Number(form.branchManager) : null,
         areaManagerId: form.areaManager ? Number(form.areaManager) : null,
-    
+
         status: form.status,
       };
-  
+
       // multipart: sab fields FormData me, photo alag se
       const fd = new FormData();
       Object.entries(payload).forEach(([k, v]) => {
@@ -655,7 +661,7 @@ export function BranchDataDrawer({
               {/* Password */}
               <Input
                 label={editBranch ? "Password" : req("Password")}
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder={
                   editBranch ? "Leave blank to keep current" : "Enter password"
@@ -663,6 +669,20 @@ export function BranchDataDrawer({
                 value={form.password}
                 onChange={(e: any) => sf("password", e.target.value)}
                 error={errors.password}
+                prefix={<LockClosedIcon className="size-5 text-gray-400" />}
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="size-5" />
+                    ) : (
+                      <EyeIcon className="size-5" />
+                    )}
+                  </button>
+                }
               />
 
               {/* Confirm Password */}
@@ -670,12 +690,26 @@ export function BranchDataDrawer({
                 label={
                   editBranch ? "Confirm Password" : req("Confirm Password")
                 }
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Re-enter password"
                 value={form.confirmPassword}
                 onChange={(e: any) => sf("confirmPassword", e.target.value)}
                 error={errors.confirmPassword}
+                prefix={<LockClosedIcon className="size-5 text-gray-400" />}
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeSlashIcon className="size-5" />
+                    ) : (
+                      <EyeIcon className="size-5" />
+                    )}
+                  </button>
+                }
               />
 
               {/* Area Manager */}
@@ -692,8 +726,6 @@ export function BranchDataDrawer({
                   searchFields={["label"]}
                 />
               </div>
-
-            
 
               {/* Status */}
               <div>

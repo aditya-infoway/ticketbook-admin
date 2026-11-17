@@ -14,7 +14,7 @@ import { Page } from "@/components/shared/Page";
 import { exportToExcel, exportToPdf } from "./shared/export";
 import { MasterTable } from "./shared/MasterTable";
 import { MasterToolbar } from "./shared/MasterToolbar";
-import { columns, exportColumns } from "./columns";
+import { columns, exportColumns } from "./Columns";
 import type { CreateTicket } from "./shared/types";
 import { Get } from "@/ApiHelper";
 import { Button } from "@/components/ui";

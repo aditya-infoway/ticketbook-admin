@@ -32,20 +32,23 @@ function mapApiEmployee(item: any): Employee {
     mobileNumber: item.mobileNumber ?? "",
     alternateCountryCode: item.alternateCountryCode ?? "",
     alternateContact: item.alternateContact ?? "",
-    employeeTypeId: item.employeeTypeId ? String(item.employeeTypeId) : "",
-    employeeTypeName: item.employeeTypeName ?? "",
-    designationId: item.designationId ? String(item.designationId) : "",
-    designationName: item.designationName ?? "",
-    dateOfJoining: item.dateOfJoining ?? "",
+    country: item.country ?? "",
+    state: item.state ?? "",
+    district: item.district ?? "",
+    city: item.city ?? "",
+    address: item.address ?? "",
+    pinCode: item.pinCode ?? "",
+
     employmentStatus: item.employmentStatus ?? "Active",
-    employmentEndDate: item.employmentEndDate ?? "",
+
     remarks: item.remarks ?? "",
     roleCategoryId: item.roleCategoryId ? String(item.roleCategoryId) : "",
     roleCategoryName: item.roleCategoryName ?? "",
     roleId: item.roleId ? String(item.roleId) : "",
     branchId: item.branchId ? String(item.branchId) : "",
     roleName: item.roleName ?? "",
-    roleDataScope: item.roleDataScope ?? "",
+
+    additionalDepartmentNames: item.additionalDepartmentNames || [],
     additionalDepartments: (item.additionalDepartments ?? []).map(String),
     passwordResetRequired: false,
     createdBy: item.createdBy ?? "",
@@ -141,19 +144,14 @@ export default function BranchEmployeePage() {
               mobileNumber: employee.mobileNumber,
               alternateCountryCode: employee.alternateCountryCode,
               alternateContact: employee.alternateContact,
-              employeeTypeId: employee.employeeTypeId
-                ? Number(employee.employeeTypeId)
-                : null,
-              designationId: employee.designationId
-                ? Number(employee.designationId)
-                : null,
-              dateOfJoining: employee.dateOfJoining,
+              country: employee.country,
+              state: employee.state,
+              district: employee.district,
+              city: employee.city,
+              address: employee.address,
+              pinCode: employee.pinCode,
               employmentStatus: newStatus,
-              employmentEndDate: employee.employmentEndDate,
               remarks: employee.remarks,
-              roleCategoryId: employee.roleCategoryId
-                ? Number(employee.roleCategoryId)
-                : null,
               roleId: employee.roleId ? Number(employee.roleId) : null,
               branchId: employee.branchId ? Number(employee.branchId) : null,
               additionalDepartments: (employee.additionalDepartments || []).map(
@@ -222,7 +220,7 @@ export default function BranchEmployeePage() {
         close={() => setDrawerOpen(false)}
         onSaved={fetchAll}
         editEmployee={editEmployee}
-        isBranchUser={true} 
+        isBranchUser={true}
       />
     </Page>
   );

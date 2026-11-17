@@ -19,6 +19,13 @@ export const columns: ColumnDef<Region>[] = [
   },
 
   {
+    id: "regionNo",
+    accessorKey: "regionNo",
+    header: "Zone Id",
+    cell: TextCell,
+  },
+
+  {
     id: "regionName",
     accessorKey: "regionName",
     header: "Zone Name",

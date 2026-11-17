@@ -1,12 +1,11 @@
-// src/app/pages/branch-master/employee/columns.tsx
 import { ColumnDef } from "@tanstack/react-table";
 import {
   SelectCell,
   SelectHeader,
 } from "@/components/shared/table/SelectCheckbox";
-import { createRowActions } from "../shared/createRowActions";
-import { TextCell } from "../shared/tableCells";
-import { ExportColumn } from "../shared/export";
+import { createRowActions } from "./shared/createRowActions";
+import { TextCell } from "./shared/tableCells";
+import { ExportColumn } from "./shared/export";
 import type { Employee } from "./shared/types";
 
 const RowActions = createRowActions<Employee>("employee");
@@ -48,6 +47,7 @@ export const columns: ColumnDef<Employee>[] = [
       </div>
     ),
   },
+
   {
     id: "employeeNo",
     accessorKey: "employeeNo",
@@ -55,21 +55,16 @@ export const columns: ColumnDef<Employee>[] = [
     cell: TextCell,
   },
   {
-    id: "designationName",
-    accessorKey: "designationName",
-    header: "Designation",
-    cell: TextCell,
-  },
-  {
-    id: "employeeTypeName",
-    accessorKey: "employeeTypeName",
-    header: "Type",
-    cell: TextCell,
-  },
-  {
     id: "roleName",
     accessorKey: "roleName",
     header: "Role",
+    cell: TextCell,
+  },
+  {
+    id: "department",
+    accessorFn: (row: any) =>
+      (row.additionalDepartmentNames || []).filter(Boolean).join(", "),
+    header: "Department",
     cell: TextCell,
   },
   {
@@ -91,12 +86,16 @@ export const columns: ColumnDef<Employee>[] = [
     header: "Email",
     cell: TextCell,
   },
+  { id: "country", accessorKey: "country", header: "Country", cell: TextCell },
+  { id: "state", accessorKey: "state", header: "State", cell: TextCell },
   {
-    id: "dateOfJoining",
-    accessorKey: "dateOfJoining",
-    header: "DOJ",
+    id: "district",
+    accessorKey: "district",
+    header: "District",
     cell: TextCell,
   },
+  { id: "city", accessorKey: "city", header: "City", cell: TextCell },
+
   {
     id: "status",
     accessorKey: "employmentStatus",
@@ -127,6 +126,7 @@ export const columns: ColumnDef<Employee>[] = [
     },
     enableSorting: false,
   },
+
   {
     id: "actions",
     header: "Action",
@@ -140,10 +140,13 @@ export const exportColumns: ExportColumn<Employee>[] = [
   { key: "employeeCode", header: "Employee Code" },
   { key: "employeeName", header: "Employee Name" },
   { key: "roleName", header: "Role" },
-  { key: "designationName", header: "Designation" },
-  { key: "employeeTypeName", header: "Employee Type" },
   { key: "officialEmail", header: "Email" },
   { key: "mobileNumber", header: "Mobile" },
-  { key: "dateOfJoining", header: "Date of Joining" },
+  { key: "country", header: "Country" },
+  { key: "state", header: "State" },
+  { key: "district", header: "District" },
+  { key: "city", header: "City" },
+  { key: "address", header: "Address" },
+  { key: "pinCode", header: "PIN Code" },
   { key: "employmentStatus", header: "Status" },
 ];

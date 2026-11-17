@@ -23,8 +23,6 @@ const EMPTY = {
   city: "",
   branchManager: "",
   areaManager: "",
-  openingDate: "",
-  workingHours: "",
   contactNumber: "",
   phoneNumber: "",
   fullAddress: "",
@@ -249,20 +247,6 @@ export default function General() {
             disabled
           />
           <Input
-            label="Region / Area"
-            className={ro}
-            value={form.region}
-            readOnly
-            disabled
-          />
-          <Input
-            label="Working Hours"
-            className={ro}
-            value={form.workingHours}
-            readOnly
-            disabled
-          />
-          <Input
             label="Branch Manager"
             className={ro}
             value={form.branchManager}
@@ -276,13 +260,7 @@ export default function General() {
             readOnly
             disabled
           />
-          <Input
-            label="Opening Date"
-            className={ro}
-            value={form.openingDate}
-            readOnly
-            disabled
-          />
+       
         </div>
 
         <Divider />
@@ -322,10 +300,11 @@ export default function General() {
             value={form.pinCode}
             onChange={(e: any) => sf("pinCode", e.target.value)}
           />
+         
           <Input
-            label="City"
+            label="Country"
             className={ro}
-            value={form.city}
+            value={form.country}
             readOnly
             disabled
           />
@@ -336,10 +315,10 @@ export default function General() {
             readOnly
             disabled
           />
-          <Input
-            label="Country"
+           <Input
+            label="City"
             className={ro}
-            value={form.country}
+            value={form.city}
             readOnly
             disabled
           />

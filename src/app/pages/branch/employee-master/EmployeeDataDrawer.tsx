@@ -17,17 +17,10 @@ import { Controller, useForm } from "react-hook-form";
 import { PreviewImg } from "@/components/shared/PreviewImg";
 import { toast } from "sonner";
 import { Get, Post, Put } from "@/ApiHelper";
-import {
-  Button,
-  Input,
-  Textarea,
-  Upload,
-  Avatar,
-} from "@/components/ui";
+import { Button, Input, Textarea, Upload, Avatar } from "@/components/ui";
 import { Combobox } from "@/components/shared/form/StyledCombobox";
 import { Listbox } from "@/components/shared/form/StyledListbox";
-import { DatePicker } from "@/components/shared/form/Datepicker";
-import { Country } from "country-state-city";
+import { Country, State, City } from "country-state-city";
 import type { Employee } from "./shared/types";
 
 interface EmployeeDrawerProps {
@@ -41,17 +34,10 @@ interface EmployeeDrawerProps {
 interface Opt {
   id: string;
   label: string;
-  categoryId?: string;
 }
 
 const keepActive = (status: string, id: string, selected: string[]) =>
   status === "Active" || selected.includes(id);
-
-const DESIGNATIONS = [
-  { id: "d1", label: "Software Engineer" },
-  { id: "d2", label: "Sales Executive" },
-  { id: "d3", label: "HR Manager" },
-];
 
 const EMPLOYMENT_STATUSES = [
   { id: "Active", label: "Active" },
@@ -98,17 +84,19 @@ function getInitialForm(editEmployee: Employee | null) {
       mobileNumber: editEmployee.mobileNumber || "",
       alternateCountryCode: editEmployee.alternateCountryCode || "91",
       alternateContact: editEmployee.alternateContact || "",
-      employeeTypeId: editEmployee.employeeTypeId || "",
-      designationId: editEmployee.designationId || "",
-      dateOfJoining: editEmployee.dateOfJoining || "",
+      country: (editEmployee as any).country || "India",
+      state: (editEmployee as any).state || "",
+      district: (editEmployee as any).district || "",
+      city: (editEmployee as any).city || "",
+      address: (editEmployee as any).address || "",
+      pinCode: (editEmployee as any).pinCode || "",
       employmentStatus: editEmployee.employmentStatus || "Active",
-      employmentEndDate: editEmployee.employmentEndDate || "",
       remarks: editEmployee.remarks || "",
       additionalDepartments: (editEmployee.additionalDepartments || []).map(
         String,
       ) as string[],
       branchId: String((editEmployee as any).branchId ?? ""),
-      roleCategoryId: editEmployee.roleCategoryId || "",
+
       roleId: editEmployee.roleId || "",
       password: "",
       confirmPassword: "",
@@ -125,15 +113,17 @@ function getInitialForm(editEmployee: Employee | null) {
     mobileNumber: "",
     alternateCountryCode: "91",
     alternateContact: "",
-    employeeTypeId: "",
-    designationId: "",
-    dateOfJoining: "",
+    country: "India",
+    state: "",
+    district: "",
+    city: "",
+    address: "",
+    pinCode: "",
     employmentStatus: "Active",
     employmentEndDate: "",
     remarks: "",
     additionalDepartments: [] as string[],
     branchId: "",
-    roleCategoryId: "",
     roleId: "",
     password: "",
     confirmPassword: "",
@@ -141,14 +131,6 @@ function getInitialForm(editEmployee: Employee | null) {
 }
 
 type FormValues = ReturnType<typeof getInitialForm>;
-
-const toYmd = (picked?: Date) => {
-  if (!picked) return "";
-  const yyyy = picked.getFullYear();
-  const mm = String(picked.getMonth() + 1).padStart(2, "0");
-  const dd = String(picked.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-};
 
 export function EmployeeDataDrawer({
   isOpen,
@@ -177,14 +159,11 @@ export function EmployeeDataDrawer({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [nextNo, setNextNo] = useState("");
-  const [employeeTypes, setEmployeeTypes] = useState<Opt[]>([]);
-  const [roleCategories, setRoleCategories] = useState<Opt[]>([]);
   const [roles, setRoles] = useState<Opt[]>([]);
   const [departments, setDepartments] = useState<Opt[]>([]);
   const [branches, setBranches] = useState<Opt[]>([]);
 
   const profilePhoto = watch("profilePhoto");
-  const roleCategoryId = watch("roleCategoryId");
 
   // Dropdown data from the DB
   useEffect(() => {
@@ -192,39 +171,15 @@ export function EmployeeDataDrawer({
 
     (async () => {
       try {
-        const [typeRes, catRes, roleRes, deptRes, branchRes]: any[] =
-          await Promise.all([
-            Get("superadmin/employee-type/list", {}, false),
-            Get("superadmin/role-category/list", {}, false),
-            Get("superadmin/role/list", {}, false),
-            Get("superadmin/department/list", {}, false),
-            // Fetch branches only if Super Admin
-            !isBranchUser ? Get("superadmin/branch/list", {}, false) : null,
-          ]);
+        const [roleRes, deptRes, branchRes]: any[] = await Promise.all([
+          Get("superadmin/role/list", {}, false),
+          Get("superadmin/department/list", {}, false),
+          // Fetch branches only if Super Admin
+          !isBranchUser ? Get("superadmin/branch/list", {}, false) : null,
+        ]);
 
         const rows = (res: any): any[] => res?.data?.data ?? [];
 
-        setEmployeeTypes(
-          rows(typeRes)
-            .filter((r) =>
-              keepActive(r.status, String(r.employeeTypeId), [
-                initial.employeeTypeId,
-              ]),
-            )
-            .map((r) => ({ id: String(r.employeeTypeId), label: r.typeName })),
-        );
-        setRoleCategories(
-          rows(catRes)
-            .filter((r) =>
-              keepActive(r.status, String(r.roleCategoryId), [
-                initial.roleCategoryId,
-              ]),
-            )
-            .map((r) => ({
-              id: String(r.roleCategoryId),
-              label: r.roleCategoryName,
-            })),
-        );
         setRoles(
           rows(roleRes)
             .filter((r) =>
@@ -233,7 +188,6 @@ export function EmployeeDataDrawer({
             .map((r) => ({
               id: String(r.roleId),
               label: r.roleName,
-              categoryId: String(r.roleCategoryId),
             })),
         );
         setDepartments(
@@ -248,9 +202,9 @@ export function EmployeeDataDrawer({
             .map((r) => ({
               id: String(r.departmentId),
               label: r.departmentName,
-            })),      
+            })),
         );
-  
+
         // Only set branches if not branch user
         if (branchRes) {
           setBranches(
@@ -292,11 +246,6 @@ export function EmployeeDataDrawer({
     })();
   }, [isOpen, editEmployee]);
 
-  const roleOptions = useMemo(
-    () => roles.filter((r) => r.categoryId === roleCategoryId),
-    [roles, roleCategoryId],
-  );
-
   const handleClose = () => {
     reset();
     clearErrors();
@@ -314,19 +263,15 @@ export function EmployeeDataDrawer({
         mobileNumber: values.mobileNumber.trim(),
         alternateCountryCode: values.alternateCountryCode,
         alternateContact: values.alternateContact.trim(),
-        employeeTypeId: values.employeeTypeId
-          ? Number(values.employeeTypeId)
-          : null,
-        designationId: editEmployee?.designationId
-          ? Number(editEmployee.designationId)
-          : null,
-        dateOfJoining: values.dateOfJoining,
+        country: values.country,
+        state: values.state,
+        district: values.district,
+        city: values.city,
+        address: values.address,
+        pinCode: values.pinCode,
         employmentStatus: values.employmentStatus,
-        employmentEndDate: values.employmentEndDate,
         remarks: values.remarks.trim(),
-        roleCategoryId: values.roleCategoryId
-          ? Number(values.roleCategoryId)
-          : null,
+
         roleId: values.roleId ? Number(values.roleId) : null,
         // Only send branchId if Super Admin
         branchId:
@@ -373,6 +318,40 @@ export function EmployeeDataDrawer({
       setSubmitting(false);
     }
   };
+
+  const countryOptions = useMemo(
+    () =>
+      Country.getAllCountries().map((c) => ({
+        id: c.isoCode,
+        label: c.name,
+      })),
+    [],
+  );
+
+  const selectedCountry = watch("country");
+  const selectedState = watch("state");
+
+  const stateOptions = useMemo(() => {
+    const country = countryOptions.find((c) => c.label === selectedCountry);
+    if (!country) return [];
+    return State.getStatesOfCountry(country.id).map((s) => ({
+      id: s.name,
+      label: s.name,
+    }));
+  }, [selectedCountry, countryOptions]);
+
+  const cityOptions = useMemo(() => {
+    const country = countryOptions.find((c) => c.label === selectedCountry);
+    if (!country || !selectedState) return [];
+    const state = State.getStatesOfCountry(country.id).find(
+      (s) => s.name === selectedState,
+    );
+    if (!state) return [];
+    return City.getCitiesOfState(country.id, state.isoCode).map((c) => ({
+      id: c.name,
+      label: c.name,
+    }));
+  }, [selectedCountry, selectedState, countryOptions]);
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -623,157 +602,168 @@ export function EmployeeDataDrawer({
                   </div>
                 </div>
 
-                {/* B. Employment Details */}
+                {/* B. Address / Location */}
                 <div className="space-y-4 pt-4">
                   <h4 className="text-primary-600 dark:text-primary-400 dark:border-dark-600 border-b border-gray-200 pb-1 text-sm font-semibold">
-                    B. Employment Details
+                    B. Address / Location
                   </h4>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {/* Country */}
                     <div>
-                      <FieldLabel required>Employee Type</FieldLabel>
+                      <FieldLabel required>Country</FieldLabel>
                       <Controller
                         control={control}
-                        name="employeeTypeId"
-                        rules={{ required: "Employee type is required" }}
+                        name="country"
+                        rules={{ required: "Country is required" }}
                         render={({ field }) => (
                           <Combobox
-                            data={employeeTypes}
+                            data={countryOptions}
                             displayField="label"
                             value={
-                              employeeTypes.find((t) => t.id === field.value) ||
-                              null
+                              countryOptions.find(
+                                (c) => c.label === field.value,
+                              ) || null
                             }
-                            onChange={(v: any) => field.onChange(v?.id || "")}
-                            placeholder="Select Type"
+                            onChange={(v: any) => {
+                              field.onChange(v?.label || "");
+                              setValue("state", "");
+                              setValue("city", "");
+                              setValue("district", "");
+                            }}
+                            placeholder="Select Country"
                             searchFields={["label"]}
-                            error={errors.employeeTypeId?.message}
+                            error={errors.country?.message as any}
                           />
                         )}
                       />
                     </div>
 
+                    {/* State */}
                     <div>
-                      <FieldLabel>Designation</FieldLabel>
+                      <FieldLabel required>State</FieldLabel>
                       <Controller
                         control={control}
-                        name="designationId"
+                        name="state"
+                        rules={{ required: "State is required" }}
                         render={({ field }) => (
                           <Combobox
-                            data={DESIGNATIONS}
+                            data={stateOptions}
                             displayField="label"
                             value={
-                              DESIGNATIONS.find((t) => t.id === field.value) ||
-                              null
+                              stateOptions.find(
+                                (s) => s.label === field.value,
+                              ) || null
                             }
-                            onChange={(v: any) => field.onChange(v?.id || "")}
-                            placeholder="Select Designation"
+                            onChange={(v: any) => {
+                              field.onChange(v?.label || "");
+                              setValue("city", "");
+                              setValue("district", "");
+                            }}
+                            placeholder="Select State"
                             searchFields={["label"]}
+                            error={errors.state?.message as any}
                           />
                         )}
                       />
                     </div>
 
+                    {/* District */}
                     <div>
-                      <FieldLabel required>Date of Joining</FieldLabel>
+                      <FieldLabel required>District</FieldLabel>
                       <Controller
                         control={control}
-                        name="dateOfJoining"
-                        rules={{ required: "Date of joining is required" }}
+                        name="district"
+                        rules={{ required: "District is required" }}
                         render={({ field }) => (
-                          <DatePicker
-                            placeholder="Choose date..."
+                          <Combobox
+                            data={cityOptions}
+                            displayField="label"
                             value={
-                              field.value ? [new Date(field.value)] : []
-                            }
-                            onChange={(dates: Date[]) =>
-                              field.onChange(toYmd(dates?.[0]))
-                            }
-                            error={errors.dateOfJoining?.message}
-                          />
-                        )}
-                      />
-                    </div>
-
-                    <div>
-                      <FieldLabel required>Employment Status</FieldLabel>
-                      <Controller
-                        control={control}
-                        name="employmentStatus"
-                        rules={{ required: "Status is required" }}
-                        render={({ field }) => (
-                          <Listbox
-                            data={EMPLOYMENT_STATUSES}
-                            value={
-                              EMPLOYMENT_STATUSES.find(
-                                (s) => s.id === field.value,
+                              cityOptions.find(
+                                (c) => c.label === field.value,
                               ) || null
                             }
                             onChange={(v: any) =>
-                              field.onChange(v?.id || "Active")
+                              field.onChange(v?.label || "")
                             }
-                            displayField="label"
-                            placeholder="Select Status"
-                            error={errors.employmentStatus?.message}
+                            placeholder="Select District"
+                            searchFields={["label"]}
+                            error={errors.district?.message as any}
                           />
                         )}
                       />
                     </div>
 
+                    {/* City */}
                     <div>
-                      <FieldLabel>Employment End Date</FieldLabel>
+                      <FieldLabel required>City</FieldLabel>
                       <Controller
                         control={control}
-                        name="employmentEndDate"
-                        rules={{
-                          validate: (v) => {
-                            const joining = getValues("dateOfJoining");
-                            if (v && joining && v < joining)
-                              return "End date cannot be before the joining date";
-                            return true;
-                          },
-                        }}
-                        render={({ field }) => (
-                          <DatePicker
-                            placeholder="Choose date..."
-                            value={
-                              field.value ? [new Date(field.value)] : []
-                            }
-                            onChange={(dates: Date[]) =>
-                              field.onChange(toYmd(dates?.[0]))
-                            }
-                            error={errors.employmentEndDate?.message}
-                          />
-                        )}
-                      />
-                    </div>
-
-                    <div>
-                      <FieldLabel required>Role Category</FieldLabel>
-                      <Controller
-                        control={control}
-                        name="roleCategoryId"
-                        rules={{ required: "Role category is required" }}
+                        name="city"
+                        rules={{ required: "City is required" }}
                         render={({ field }) => (
                           <Combobox
-                            data={roleCategories}
+                            data={cityOptions}
                             displayField="label"
                             value={
-                              roleCategories.find((t) => t.id === field.value) ||
-                              null
+                              cityOptions.find(
+                                (c) => c.label === field.value,
+                              ) || null
                             }
-                            onChange={(v: any) => {
-                              field.onChange(v?.id || "");
-                              setValue("roleId", "");
-                            }}
-                            placeholder="Select Category"
+                            onChange={(v: any) =>
+                              field.onChange(v?.label || "")
+                            }
+                            placeholder="Select City"
                             searchFields={["label"]}
-                            error={errors.roleCategoryId?.message}
+                            error={errors.city?.message as any}
                           />
                         )}
                       />
                     </div>
 
+                    {/* PIN Code */}
+                    <div>
+                      <FieldLabel>PIN Code</FieldLabel>
+                      <Input
+                        placeholder="400001"
+                        maxLength={6}
+                        {...register("pinCode", {
+                          validate: (v) =>
+                            !v ||
+                            /^\d{6}$/.test(v) ||
+                            "PIN Code must be exactly 6 digits",
+                        })}
+                        error={errors.pinCode?.message as any}
+                      />
+                    </div>
+
+                    {/* Address */}
+                    <div className="sm:col-span-3">
+                      <FieldLabel required>Address</FieldLabel>
+                      <Textarea
+                        rows={2}
+                        placeholder="Full address..."
+                        {...register("address", {
+                          required: "Address is required",
+                          maxLength: {
+                            value: 500,
+                            message: "Max 500 characters",
+                          },
+                        })}
+                        error={errors.address?.message as any}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* C. Employment Details */}
+                <div className="space-y-4 pt-4">
+                  <h4 className="text-primary-600 dark:text-primary-400 dark:border-dark-600 border-b border-gray-200 pb-1 text-sm font-semibold">
+                    C. Employment Details
+                  </h4>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>
                       <FieldLabel required>Role</FieldLabel>
                       <Controller
@@ -782,18 +772,13 @@ export function EmployeeDataDrawer({
                         rules={{ required: "Role is required" }}
                         render={({ field }) => (
                           <Combobox
-                            data={roleOptions}
+                            data={roles}
                             displayField="label"
                             value={
-                              roleOptions.find((t) => t.id === field.value) ||
-                              null
+                              roles.find((t) => t.id === field.value) || null
                             }
                             onChange={(v: any) => field.onChange(v?.id || "")}
-                            placeholder={
-                              roleCategoryId
-                                ? "Select Role"
-                                : "Select a role category first"
-                            }
+                            placeholder="Select Role"
                             searchFields={["label"]}
                             error={errors.roleId?.message}
                           />
@@ -881,6 +866,31 @@ export function EmployeeDataDrawer({
                         error={errors.confirmPassword?.message}
                       />
                     </div>
+
+                    <div>
+                      <FieldLabel required>Employment Status</FieldLabel>
+                      <Controller
+                        control={control}
+                        name="employmentStatus"
+                        rules={{ required: "Status is required" }}
+                        render={({ field }) => (
+                          <Listbox
+                            data={EMPLOYMENT_STATUSES}
+                            value={
+                              EMPLOYMENT_STATUSES.find(
+                                (s) => s.id === field.value,
+                              ) || null
+                            }
+                            onChange={(v: any) =>
+                              field.onChange(v?.id || "Active")
+                            }
+                            displayField="label"
+                            placeholder="Select Status"
+                            error={errors.employmentStatus?.message}
+                          />
+                        )}
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4">
@@ -901,10 +911,10 @@ export function EmployeeDataDrawer({
                   </div>
                 </div>
 
-                {/* C. Organization Mapping */}
+                {/* D. Organization Mapping */}
                 <div className="space-y-4 pt-4">
                   <h4 className="text-primary-600 dark:text-primary-400 dark:border-dark-600 border-b border-gray-200 pb-1 text-sm font-semibold">
-                    C. Organization Mapping
+                    D. Organization Mapping
                   </h4>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

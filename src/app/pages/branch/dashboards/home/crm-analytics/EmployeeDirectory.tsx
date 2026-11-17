@@ -1,5 +1,5 @@
 // src/app/(protected)/dashboards/home/TicketDirectory.tsx
-import { getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
+import { getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, SortingState, useReactTable } from "@tanstack/react-table";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { Input } from "@/components/ui";
@@ -11,7 +11,7 @@ import { Ticket, initialTickets } from "./data"; // Ensure data.ts mein Ticket i
 export function TicketDirectory() {
   const [data, setData] = useState<Ticket[]>(initialTickets);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
     data,
