@@ -8,6 +8,7 @@ import { SplashScreen } from "@/components/template/SplashScreen";
 import { Loadable } from "@/components/shared/Loadable";
 import { Progress } from "@/components/template/Progress";
 import { UnsavedChangesProvider } from "@/app/contexts/unsavedChanges/provider";
+import { GlobalLoader } from "@/components/template/GlobalLoader";
 
 const Toaster = Loadable(lazy(() => import("@/components/template/Toaster")));
 // const Customizer = Loadable(
@@ -27,12 +28,13 @@ function Root() {
   return (
     <>
       <UnsavedChangesProvider>
-      <Progress />
-      <ScrollRestoration />
-      <Outlet />
-      <Tooltip />
-      <Toaster />
-      {/* <Customizer /> */}
+        <Progress />
+        <GlobalLoader />
+        <ScrollRestoration />
+        <Outlet />
+        <Tooltip />
+        <Toaster />
+        {/* <Customizer /> */}
       </UnsavedChangesProvider>
     </>
   );
