@@ -13,11 +13,10 @@ export interface EmployeeType {
 export interface Employee {
   id: string;
   employeeNo?: string;
-  roleCategoryId?: string;
-  roleCategoryName?: string;
   roleId?: string;
   branchId?: string;
   roleName?: string;
+  branchName?: string;
   employeeCode: string;
   employeeName: string;
   profilePhoto: string;
@@ -32,12 +31,10 @@ export interface Employee {
   city?: string;
   address?: string;
   pinCode?: string;
-  employeeTypeId: string;
-  employeeTypeName: string;
   employmentStatus: "Active" | "Inactive";
   remarks: string;
   additionalDepartments: string[];
-  roleDataScope: string;
+  additionalDepartmentNames?: string[];
   passwordResetRequired: boolean;
   createdBy: string;
   createdAt: string;

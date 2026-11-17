@@ -2,30 +2,16 @@
 // Code | Name | Category | Data Scope | Dept Restriction | Departments | Status | Created
 export interface Role {
   id: string; // internal UUID (UI me show nahi hota)
-  roleCode: string;
+  roleNo?: string;
   roleName: string;
-  roleCategoryId: string;
-  roleCategoryName: string; // list display ke liye
-  description: string;
-  defaultDataScope: string; // own | team | department | region | branch | all
-  departmentRestriction: string; // "all" | "selected"
-  departmentIds: string[];
-  departmentNames: string[]; // list display ke liye
   status: string; // "Active" | "Inactive"
   createdAt: string; // system
 }
 
 export const emptyRole = (): Role => ({
   id: "",
-  roleCode: "",
+  roleNo: "",
   roleName: "",
-  roleCategoryId: "",
-  roleCategoryName: "",
-  description: "",
-  defaultDataScope: "",
-  departmentRestriction: "all",
-  departmentIds: [],
-  departmentNames: [],
   status: "Active",
   createdAt: "",
 });
@@ -34,15 +20,8 @@ export const emptyRole = (): Role => ({
 export function mapApiRole(api: any): Role {
   return {
     id: String(api.roleId ?? api.id ?? ""),
-    roleCode: api.roleCode ?? "",
+    roleNo: api.roleNo || "",
     roleName: api.roleName ?? "",
-    roleCategoryId: String(api.roleCategoryId ?? ""),
-    roleCategoryName: api.roleCategoryName ?? "",
-    description: api.description ?? "",
-    defaultDataScope: api.defaultDataScope ?? "",
-    departmentRestriction: api.departmentRestriction ?? "all",
-    departmentIds: (api.departmentIds ?? []).map((d: any) => String(d)),
-    departmentNames: api.departmentNames ?? [],
     status: api.status ?? "Active",
     createdAt: api.createdAt ?? api.created ?? "",
   };

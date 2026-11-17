@@ -55,15 +55,22 @@ export const columns: ColumnDef<Employee>[] = [
     cell: TextCell,
   },
   {
-    id: "employeeTypeName",
-    accessorKey: "employeeTypeName",
-    header: "Type",
-    cell: TextCell,
-  },
-  {
     id: "roleName",
     accessorKey: "roleName",
     header: "Role",
+    cell: TextCell,
+  },
+  {
+    id: "branch",
+    accessorKey: "branchName",
+    header: "Branch",
+    cell: TextCell,
+  },
+  {
+    id: "department",
+    accessorFn: (row: any) =>
+      (row.additionalDepartmentNames || []).filter(Boolean).join(", "),
+    header: "Department",
     cell: TextCell,
   },
   {
@@ -125,6 +132,7 @@ export const columns: ColumnDef<Employee>[] = [
     },
     enableSorting: false,
   },
+
   {
     id: "actions",
     header: "Action",
@@ -138,8 +146,14 @@ export const exportColumns: ExportColumn<Employee>[] = [
   { key: "employeeCode", header: "Employee Code" },
   { key: "employeeName", header: "Employee Name" },
   { key: "roleName", header: "Role" },
-  { key: "employeeTypeName", header: "Employee Type" },
+  { key: "branchName", header: "Branch" },
   { key: "officialEmail", header: "Email" },
   { key: "mobileNumber", header: "Mobile" },
+  { key: "country", header: "Country" },
+  { key: "state", header: "State" },
+  { key: "district", header: "District" },
+  { key: "city", header: "City" },
+  { key: "address", header: "Address" },
+  { key: "pinCode", header: "PIN Code" },
   { key: "employmentStatus", header: "Status" },
 ];

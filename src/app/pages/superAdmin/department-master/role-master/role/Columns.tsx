@@ -8,14 +8,10 @@ import {
 import { createRowActions } from "@/app/pages/dashboards/home/crm-analytics/shared/createRowActions";
 import { TextCell } from "@/app/pages/dashboards/home/crm-analytics/shared/tableCells";
 import { Role, formatDate } from "./data";
-import { getRestrictionLabel, getScopeLabel } from "./Options";
 
 const RowActions = createRowActions<Role>("role");
 
-const departmentsText = (row: Role) =>
-  row.departmentRestriction === "all"
-    ? "All Departments"
-    : row.departmentNames.join(", ") || "—";
+
 
 export const columns: ColumnDef<Role>[] = [
   {
@@ -24,30 +20,16 @@ export const columns: ColumnDef<Role>[] = [
     cell: SelectCell,
     enableSorting: false,
   },
-  { id: "roleCode", accessorKey: "roleCode", header: "Role Code", cell: TextCell },
-  { id: "roleName", accessorKey: "roleName", header: "Role Name", cell: TextCell },
   {
-    id: "category",
-    accessorFn: (row) => row.roleCategoryName || "—",
-    header: "Category",
+    id: "roleNo",
+    accessorKey: "roleNo",
+    header: "Role ID",
     cell: TextCell,
   },
   {
-    id: "dataScope",
-    accessorFn: (row) => getScopeLabel(row.defaultDataScope),
-    header: "Data Scope",
-    cell: TextCell,
-  },
-  {
-    id: "restriction",
-    accessorFn: (row) => getRestrictionLabel(row.departmentRestriction),
-    header: "Dept Restriction",
-    cell: TextCell,
-  },
-  {
-    id: "departments",
-    accessorFn: (row) => departmentsText(row),
-    header: "Department(s)",
+    id: "roleName",
+    accessorKey: "roleName",
+    header: "Role Name",
     cell: TextCell,
   },
   {
@@ -94,12 +76,7 @@ export const columns: ColumnDef<Role>[] = [
 ];
 
 export const exportColumns = [
-  { key: "roleCode" as const, header: "Role Code" },
   { key: "roleName" as const, header: "Role Name" },
-  { key: "roleCategoryName" as const, header: "Category" },
-  { key: "scopeName" as const, header: "Data Scope" },
-  { key: "restrictionName" as const, header: "Dept Restriction" },
-  { key: "departmentsText" as const, header: "Department(s)" },
   { key: "status" as const, header: "Status" },
   { key: "createdAtText" as const, header: "Created Date" },
 ];

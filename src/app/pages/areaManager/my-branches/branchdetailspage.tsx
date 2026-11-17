@@ -189,14 +189,7 @@ export default function BranchDetailsPage() {
                   <MapPinIcon className="size-4" />
                   {branch.city}, {branch.state}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <ClockIcon className="size-4" />
-                  {branch.workingHours}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CalendarDaysIcon className="size-4" />
-                  Opened {formatDate(branch.openingDate)}
-                </span>
+              
               </div>
             </div>
           </div>
@@ -263,11 +256,11 @@ export default function BranchDetailsPage() {
                   label="Region / Area"
                   value={branch.region}
                 />
-                <InfoItem
+                {/* <InfoItem
                   icon={<ClockIcon className="size-4" />}
                   label="Working Hours"
                   value={branch.workingHours}
-                />
+                /> */}
               </div>
             </div>
 
@@ -312,11 +305,11 @@ export default function BranchDetailsPage() {
                   label="City"
                   value={branch.city}
                 />
-                <SidebarItem
+                {/* <SidebarItem
                   icon={<CalendarDaysIcon className="size-5" />}
                   label="Opening Date"
                   value={formatDate(branch.openingDate)}
-                />
+                /> */}
               </div>
             </div>
 

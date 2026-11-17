@@ -56,7 +56,7 @@ const chartConfig: ApexOptions = {
             fontWeight: 700,
             color: "#6366F1", // Primary Indigo color
             offsetY: 6,
-            formatter: function (val) {
+            formatter: function (val: any) {
               return val; // Center mein Total dikhayega
             },
           },
@@ -65,7 +65,7 @@ const chartConfig: ApexOptions = {
             label: "Total Tickets",
             fontSize: "12px",
             color: "#94A3B8",
-            formatter: () => totalTickets,
+            formatter: () => String(totalTickets),
           },
         },
       },

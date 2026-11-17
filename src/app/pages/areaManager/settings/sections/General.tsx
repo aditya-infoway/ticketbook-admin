@@ -10,7 +10,7 @@ import { Get, Post, toastsuccessmsg, toasterrormsg } from "@/ApiHelper";
 const EMPTY = {
   areaManagerNo: "", name: "", email: "",
   mobileNumber: "", alternateMobile: "",
-  gender: "", address: "", city: "", state: "", pinCode: "",
+  gender: "", address: "", city: "", state: "", country: "",  pinCode: "",
   areaName: "", joiningDate: "",
   currentPassword: "", newPassword: "", confirmPassword: "",
 };
@@ -197,8 +197,8 @@ export default function General() {
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input label="Area Manager ID" className={`rounded-xl ${readOnly}`} value={form.areaManagerNo} readOnly disabled />
           <Input label="Area" className={`rounded-xl ${readOnly}`} value={form.areaName} readOnly disabled />
-          <Input label="Date of Joining" className={`rounded-xl ${readOnly}`} value={form.joiningDate} readOnly disabled />
           <Input label="Gender" className={`rounded-xl ${readOnly}`} value={form.gender} readOnly disabled />
+          <Input label="Country" className={`rounded-xl ${readOnly}`} value={form.country} readOnly disabled />
           <Input label="State" className={`rounded-xl ${readOnly}`} value={form.state} readOnly disabled />
           <Input label="City" className={`rounded-xl ${readOnly}`} value={form.city} readOnly disabled />
           <Input label="PIN Code" className={`rounded-xl ${readOnly}`} value={form.pinCode} readOnly disabled />

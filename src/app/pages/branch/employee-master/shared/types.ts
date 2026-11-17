@@ -10,26 +10,25 @@ export interface Employee {
   mobileNumber: string;
   alternateCountryCode: string;
   alternateContact: string;
-  employeeTypeId: string;
-  employeeTypeName: string;
-  designationId: string;
-  designationName: string;
-  dateOfJoining: string;
+  country?: string;
+  state?: string;
+  district?: string;
+  city?: string;
+  address?: string;
+  pinCode?: string;
+
   employmentStatus: "Active" | "Inactive";
-  employmentEndDate: string;
   remarks: string;
-  
+
   // Lookup fields
-  roleCategoryId?: string;
-  roleCategoryName?: string;
   roleId?: string;
   roleName?: string;
-  
+
   branchId?: string;
   additionalDepartments: string[];
-  
+
   // Meta
-  roleDataScope?: string;
+  additionalDepartmentNames?: string[];
   passwordResetRequired?: boolean;
   createdBy?: string;
   createdAt?: string;
