@@ -386,6 +386,7 @@ export function ContractorDrawer({
                     type="email"
                     placeholder="Enter email address"
                     {...register("email", {
+                      required: "Email is required",
                       pattern: {
                         value: EMAIL_REGEX,
                         message: "Enter a valid email",
@@ -425,11 +426,11 @@ export function ContractorDrawer({
                 </div>
 
                 <div>
-                  <FieldLabel required>Area</FieldLabel>
+                  <FieldLabel required>Zone</FieldLabel>
                   <Controller
                     control={control}
                     name="areaId"
-                    rules={{ required: "Area is required" }}
+                    rules={{ required: "Zone is required" }}
                     render={({ field }) => (
                       <Combobox
                         data={areas}
@@ -439,7 +440,7 @@ export function ContractorDrawer({
                           field.onChange(v?.id || "");
                           setValue("branchIds", []);
                         }}
-                        placeholder="Select area"
+                        placeholder="Select Zone"
                         searchFields={["label"]}
                         error={errors.areaId?.message}
                       />
@@ -473,7 +474,7 @@ export function ContractorDrawer({
                     )}
                   />
                   {errors.branchIds && (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-orange-400">
                       {errors.branchIds.message}
                     </p>
                   )}
