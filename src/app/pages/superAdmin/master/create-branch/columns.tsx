@@ -60,7 +60,7 @@ export const columns: ColumnDef<Branch>[] = [
   {
     id: "region",
     accessorKey: "region",
-    header: "Region",
+    header: "Zone",
     cell: TextCell,
   },
   {
@@ -148,7 +148,7 @@ export const exportColumns: ExportColumn<Branch>[] = [
   { key: "branchNo", header: "Branch ID" },
   { key: "branchCode", header: "Branch Code" },
   { key: "branchName", header: "Branch Name" },
-  { key: "region", header: "Region" },
+  { key: "region", header: "Zone" },
   { key: "country", header: "Country" },
   { key: "state", header: "State" },
   { key: "district", header: "District" },

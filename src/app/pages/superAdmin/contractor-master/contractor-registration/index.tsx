@@ -74,7 +74,7 @@ export default function ContractorRegistrationPage() {
     getPaginationRowModel: getPaginationRowModel(),
     meta: {
       openEditDrawer: (contractor: Contractor) => openDrawer(contractor),
-      
+
       deleteRow: async (row: any) => {
         const contractor = row.original;
         try {
@@ -84,7 +84,9 @@ export default function ContractorRegistrationPage() {
             false,
           );
           if (res?.data?.success) {
-            toast.success(res.data.message || "Contractor deleted successfully");
+            toast.success(
+              res.data.message || "Contractor deleted successfully",
+            );
             fetchAll();
           } else {
             toast.error(res?.data?.message || "Delete failed");
@@ -95,7 +97,8 @@ export default function ContractorRegistrationPage() {
       },
 
       toggleStatus: async (contractor: Contractor) => {
-        const newStatus = contractor.status === "Active" ? "Inactive" : "Active";
+        const newStatus =
+          contractor.status === "Active" ? "Inactive" : "Active";
         try {
           const res: any = await Put(
             "superadmin/contractor/update",
@@ -109,13 +112,17 @@ export default function ContractorRegistrationPage() {
               address: contractor.address,
               areaId: contractor.areaId,
               branchId: contractor.branchId,
-              contractorDepartmentId: contractor.contractorDepartmentId, 
+              contractorDepartmentId: contractor.contractorDepartmentId,
               status: newStatus,
             },
             false,
           );
           if (res?.data?.success) {
-            toast.success(`Contractor marked as ${newStatus}`);
+            toast.success(
+              newStatus === "Active"
+                ? "Contractor activated. Any other contractor in this zone has been set to Inactive."
+                : `Contractor marked as ${newStatus}`,
+            );
             fetchAll();
           } else {
             toast.error(res?.data?.message || "Status update failed");
@@ -138,8 +145,12 @@ export default function ContractorRegistrationPage() {
           showFilters={false}
           onToggleFilters={() => {}}
           onCreate={() => openDrawer(null)}
-          onExportExcel={() => exportToExcel(data, exportColumns, "contractors")}
-          onExportPdf={() => exportToPdf(data, exportColumns, "Contractor List", "contractors")}
+          onExportExcel={() =>
+            exportToExcel(data, exportColumns, "contractors")
+          }
+          onExportPdf={() =>
+            exportToPdf(data, exportColumns, "Contractor List", "contractors")
+          }
         />
 
         <MasterTable

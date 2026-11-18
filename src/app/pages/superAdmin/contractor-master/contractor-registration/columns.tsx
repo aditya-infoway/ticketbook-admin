@@ -45,7 +45,7 @@ export const columns: ColumnDef<Contractor>[] = [
   {
     id: "areaName",
     accessorKey: "areaName",
-    header: "Area",
+    header: "Zone",
     cell: TextCell,
   },
   {
@@ -117,7 +117,7 @@ export const exportColumns: ExportColumn<Contractor>[] = [
   { key: "contractorName", header: "Contractor Name" },
   { key: "companyName", header: "Company" },
   { key: "mobileNumber", header: "Mobile" },
-  { key: "areaName", header: "Area" },
+  { key: "areaName", header: "Zone" },
   { key: "branchName", header: "Branch" },
   { key: "departmentName", header: "Department" },
   { key: "status", header: "Status" },
