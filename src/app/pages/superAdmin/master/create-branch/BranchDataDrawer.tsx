@@ -335,6 +335,7 @@ export function BranchDataDrawer({
     if (!form.state) next.state = "State is required";
     if (!form.district) next.district = "District is required";
     if (!form.city) next.city = "City is required";
+    if (!form.regionId) next.regionId = "Zone is required";
     if (!fullAddress) next.fullAddress = "Full address is required";
     if (!contactNumber) next.contactNumber = "Contact number is required";
     else if (!/^[0-9]{10}$/.test(contactNumber))
@@ -612,6 +613,7 @@ export function BranchDataDrawer({
                 onChange={(v: any) => sf("district", v || null)}
                 placeholder="Search district..."
                 searchFields={["label"]}
+                error={errors.district}
               />
 
               {/* City */}
@@ -636,16 +638,19 @@ export function BranchDataDrawer({
                 value={form.pinCode}
                 onChange={(e: any) => sf("pinCode", e.target.value)}
               />
+
               {/* Region */}
-              <Listbox
-                label="Select Zone"
+              <Combobox
+                label={req("Select Zone")}
                 data={regionOptions}
+                displayField="label"
                 value={
                   regionOptions.find((r) => r.id === form.regionId) || null
                 }
                 onChange={(r: any) => sf("regionId", r?.id || "")}
-                displayField="label"
-                placeholder="Select region"
+                placeholder="Search zone..."
+                searchFields={["label"]}
+                error={errors.regionId}
               />
 
               {/* Email */}
