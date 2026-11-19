@@ -2,6 +2,8 @@
 // Code | Name | Category | Data Scope | Dept Restriction | Departments | Status | Created
 export interface Role {
   id: string; // internal UUID (UI me show nahi hota)
+    departmentId: string;
+  departmentName: string;
   roleNo?: string;
   roleName: string;
   status: string; // "Active" | "Inactive"
@@ -10,6 +12,8 @@ export interface Role {
 
 export const emptyRole = (): Role => ({
   id: "",
+  departmentId:"",
+  departmentName:"",
   roleNo: "",
   roleName: "",
   status: "Active",
@@ -20,6 +24,8 @@ export const emptyRole = (): Role => ({
 export function mapApiRole(api: any): Role {
   return {
     id: String(api.roleId ?? api.id ?? ""),
+    departmentId:api.departmentid || "",
+    departmentName:api.departmentName || "",
     roleNo: api.roleNo || "",
     roleName: api.roleName ?? "",
     status: api.status ?? "Active",

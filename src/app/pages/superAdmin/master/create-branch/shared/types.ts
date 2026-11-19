@@ -18,7 +18,6 @@ export interface Branch {
   branchEmail: string;
   branchManager: string;
   areaManager: string;
-  branchManagerId?: number | null;
   areaManagerId?: number | null;
   status: "Active" | "Inactive";
   createdBy: string;

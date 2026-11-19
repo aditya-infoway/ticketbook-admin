@@ -102,9 +102,7 @@ function getInitialForm(editBranch: Branch | null) {
       contactNumber: String(editBranch.contactNumber || ""),
       phoneNumber: String(editBranch.phoneNumber || ""),
       branchEmail: editBranch.branchEmail,
-      branchManager: editBranch.branchManagerId
-        ? String(editBranch.branchManagerId)
-        : "",
+      branchManager: editBranch?.branchManager || "",
       areaManager: editBranch.areaManagerId
         ? String(editBranch.areaManagerId)
         : "",
@@ -153,55 +151,9 @@ export function BranchDataDrawer({
 
   const [regionOptions, setRegionOptions] = useState<Opt[]>([]);
   const [nextNo, setNextNo] = useState("");
-  const [branchManagers, setBranchManagers] = useState<Opt[]>([]);
   const [areaManagers, setAreaManagers] = useState<Opt[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const fetchBranchManagers = async () => {
-      try {
-        const res: any = await Get("superadmin/branch-manager/list", {}, false);
-
-        const rows = res?.data?.data ?? [];
-
-        setBranchManagers(
-          rows
-            // 1. Filter out managers who already have a branch assigned
-            // 2. Allow them IF they are the currently assigned manager for the branch being edited
-            .filter((item: any) => {
-              const isAssigned = item.branchId || item.assignedBranchId; // Check your API's actual field name
-              const currentEditBranchId = editBranch?.id;
-
-              // Keep if not assigned to any branch
-              if (!isAssigned) return true;
-
-              // Keep if assigned to the branch we are currently editing
-              if (
-                currentEditBranchId &&
-                String(isAssigned) === String(currentEditBranchId)
-              ) {
-                return true;
-              }
-
-              // Hide if assigned to a different branch
-              return false;
-            })
-            .map((item: any) => ({
-              id: String(item.branchManagerId ?? ""),
-              label: item.branchManagerName ?? item.name ?? "",
-            })),
-        );
-      } catch (error: any) {
-        console.error("Branch Manager API ERROR:", error);
-        toast.error("Failed to load branch managers");
-      }
-    };
-
-    fetchBranchManagers();
-  }, [isOpen, editBranch]); // <-- Added editBranch to dependency array so it updates when editing
 
   useEffect(() => {
     if (!isOpen) return;
@@ -366,9 +318,8 @@ export function BranchDataDrawer({
         branchEmail: form.branchEmail.trim(),
         password: form.password,
         confirmPassword: form.confirmPassword,
-        branchManagerId: form.branchManager ? Number(form.branchManager) : null,
+        branchManagerName: form.branchManager.trim() || null,
         areaManagerId: form.areaManager ? Number(form.areaManager) : null,
-
         status: form.status,
       };
 
@@ -555,20 +506,12 @@ export function BranchDataDrawer({
               />
 
               {/* Branch Manager */}
-              <div>
-                <FieldLabel>Branch Manager</FieldLabel>
-                <Combobox
-                  data={branchManagers}
-                  displayField="label"
-                  value={
-                    branchManagers.find((e) => e.id === form.branchManager) ||
-                    null
-                  }
-                  onChange={(v: any) => sf("branchManager", v?.id || "")}
-                  placeholder="Search manager..."
-                  searchFields={["label"]}
-                />
-              </div>
+              <Input
+                label="Branch Manager"
+                placeholder="Enter manager name"
+                value={form.branchManager}
+                onChange={(e: any) => sf("branchManager", e.target.value)}
+              />
 
               {/* Country */}
               <Combobox
