@@ -1,5 +1,5 @@
 import { dashboards } from "./segments/dashboards";
-import { branchMaster } from "./segments/branchMaster";
+import { branchMaster } from "./segments/userMaster";
 import { departmentMaster } from "./segments/departmentMaster";
 import { employeeMaster } from "./segments/employeeMaster";
 // import { rolePermissionMaster } from "./segments/rolePermissionMaster";

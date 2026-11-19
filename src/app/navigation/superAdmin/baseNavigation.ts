@@ -25,8 +25,8 @@ export const baseNavigationObj: Record<string, NavigationTree> = {
   branchMaster: {
     id: "branchMaster",
     type: "collapse",
-    path: "/branch-master",
-    title: "Branch Master",
+    path: "/user-master",
+    title: "User Master",
     icon: "branchMaster",
   },
 

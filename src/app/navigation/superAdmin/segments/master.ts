@@ -32,6 +32,13 @@ export const master: NavigationTree = {
       icon: "departmentMaster.createDepartment",
     },
     {
+      id: "master.createDepartment",
+      type: "item",
+      path: "/master/role",
+      title: "Role",
+      icon: "departmentMaster.Role",
+    },
+    {
       id: "master.employeelist",
       type: "item",
       path: "/master/employee-list",

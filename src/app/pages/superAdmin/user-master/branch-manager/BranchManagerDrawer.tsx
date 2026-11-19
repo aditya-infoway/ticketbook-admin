@@ -41,10 +41,14 @@ const STATE_OPTIONS = State.getStatesOfCountry("IN").map((s) => ({
   label: s.name,
 }));
 
-
-
 // --- Helpers ---
-function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+function FieldLabel({
+  children,
+  required,
+}: {
+  children: React.ReactNode;
+  required?: boolean;
+}) {
   return (
     <label className="mb-1 block text-sm font-bold text-gray-700 dark:text-gray-300">
       {children}
@@ -66,7 +70,7 @@ function getInitialForm(manager: BranchManager | null) {
     return {
       id: manager.id,
       name: manager.name || "",
-    profilePhoto: manager.profilePhotoUrl || "",
+      profilePhoto: manager.profilePhotoUrl || "",
       gender: manager.gender || "",
       status: manager.status || "Active",
       mobileNumber: manager.mobileNumber || "",
@@ -76,7 +80,7 @@ function getInitialForm(manager: BranchManager | null) {
       city: manager.city || "",
       state: manager.state || "",
       pinCode: manager.pinCode || "",
-       branchManagerId: manager.branchManagerNo || "",
+      branchManagerId: manager.branchManagerNo || "",
       areaId: manager.areaId || "",
       branchId: manager.branchId || "",
       reportingTo: manager.reportingTo || "",
@@ -84,7 +88,6 @@ function getInitialForm(manager: BranchManager | null) {
       description: manager.description || "",
       password: "",
       confirmPassword: "",
-   
     };
   }
   return {
@@ -108,7 +111,6 @@ function getInitialForm(manager: BranchManager | null) {
     description: "",
     password: "",
     confirmPassword: "",
-
   };
 }
 
@@ -121,10 +123,25 @@ interface BranchManagerDrawerProps {
   manager: BranchManager | null;
 }
 
-export function BranchManagerDrawer({ isOpen, close, onSaved, manager }: BranchManagerDrawerProps) {
+export function BranchManagerDrawer({
+  isOpen,
+  close,
+  onSaved,
+  manager,
+}: BranchManagerDrawerProps) {
   const isEdit = !!manager;
-  
-const { register, handleSubmit, control, reset, watch, setValue, getValues, clearErrors, formState: { errors } } = useForm<FormValues>({
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    setValue,
+    getValues,
+    clearErrors,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: getInitialForm(manager),
   });
 
@@ -135,12 +152,14 @@ const { register, handleSubmit, control, reset, watch, setValue, getValues, clea
 
   // Dependent dropdown state
   const [areas, setAreas] = useState<{ id: string; label: string }[]>([]);
-  const [areaManagers, setAreaManagers] = useState<{ id: string; label: string; areaId: string }[]>([]);
+  const [areaManagers, setAreaManagers] = useState<
+    { id: string; label: string; areaId: string }[]
+  >([]);
 
   const profilePhoto = watch("profilePhoto");
   const selectedAreaId = watch("areaId");
 
-   const [nextNo, setNextNo] = useState("");
+  const [nextNo, setNextNo] = useState("");
 
   // Add a state to track if it's the initial load to avoid breaking edit mode
   const [allBranches, setAllBranches] = useState<
@@ -161,7 +180,8 @@ const { register, handleSubmit, control, reset, watch, setValue, getValues, clea
         setAreas(
           rows(areaRes)
             .filter(
-              (r) => r.status === "Active" || String(r.regionId) === manager?.areaId,
+              (r) =>
+                r.status === "Active" || String(r.regionId) === manager?.areaId,
             )
             .map((r) => ({ id: String(r.regionId), label: r.regionName })),
         );
@@ -172,7 +192,8 @@ const { register, handleSubmit, control, reset, watch, setValue, getValues, clea
             .filter((r) => {
               // 1. Must be active OR currently assigned to the manager being edited
               const isActiveOrCurrent =
-                r.status === "Active" || String(r.branchId) === manager?.branchId;
+                r.status === "Active" ||
+                String(r.branchId) === manager?.branchId;
               if (!isActiveOrCurrent) return false;
 
               // 2. Check if it already has a manager assigned
@@ -233,10 +254,12 @@ const { register, handleSubmit, control, reset, watch, setValue, getValues, clea
   }, [isOpen, isEdit]);
 
   // Filter Branches and Reporting Managers based on selected Area
-const availableBranches = allBranches.filter(
+  const availableBranches = allBranches.filter(
     (b) => !b.areaId || b.areaId === selectedAreaId,
   );
-  const availableManagers = areaManagers.filter((m) => m.areaId === selectedAreaId);
+  const availableManagers = areaManagers.filter(
+    (m) => m.areaId === selectedAreaId,
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -249,7 +272,10 @@ const availableBranches = allBranches.filter(
   }, [isOpen, manager, reset, clearErrors]);
 
   // Reset Branch and ReportingTo if Area changes
-  const handleAreaChange = (areaId: string, onChange: (val: string) => void) => {
+  const handleAreaChange = (
+    areaId: string,
+    onChange: (val: string) => void,
+  ) => {
     onChange(areaId);
     setValue("branchId", "");
     setValue("reportingTo", "");
@@ -263,7 +289,7 @@ const availableBranches = allBranches.filter(
 
   const onSubmit = async (values: FormValues) => {
     try {
-          setSubmitting(true);
+      setSubmitting(true);
 
       const fd = new FormData();
       const fields: Record<string, unknown> = {
@@ -295,7 +321,10 @@ const availableBranches = allBranches.filter(
         fd.append("branchManagerId", String(manager!.id));
         res = await Put("superadmin/branch-manager/update", fd, true);
       } else {
-        fd.append("financialYearId", localStorage.getItem("financialYearId") || "");
+        fd.append(
+          "financialYearId",
+          localStorage.getItem("financialYearId") || "",
+        );
         res = await Post("superadmin/branch-manager/create", fd, true);
       }
 
@@ -346,23 +375,34 @@ const availableBranches = allBranches.filter(
             <h3 className="text-base font-bold">
               {isEdit ? "Edit Branch Manager" : "Add Branch Manager"}
             </h3>
-            <button type="button" onClick={handleClose} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-white">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-white"
+            >
               <XMarkIcon className="size-4.5" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex min-h-0 flex-1 flex-col">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            className="flex min-h-0 flex-1 flex-col"
+          >
             <div className="flex-1 overflow-y-auto p-5">
               <div className="space-y-6">
-                
                 {/* Profile Photo */}
                 <div className="mb-6 flex flex-col space-y-1.5">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile Photo</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Profile Photo
+                  </span>
                   <Avatar
                     size={20}
                     imgComponent={PreviewImg}
                     imgProps={{ file: photo } as any}
-                    src={profilePhoto || "/images/logos/company-placeholder.svg"}
+                    src={
+                      profilePhoto || "/images/logos/company-placeholder.svg"
+                    }
                     classNames={{
                       root: "ring-primary-600 dark:ring-primary-500 dark:ring-offset-dark-700 rounded-xl ring-offset-[3px] ring-offset-white transition-all hover:ring-3",
                       display: "rounded-xl",
@@ -370,15 +410,26 @@ const availableBranches = allBranches.filter(
                     indicator={
                       <div className="dark:bg-dark-700 absolute right-0 bottom-0 -m-1 flex items-center justify-center rounded-full bg-white">
                         {photo ? (
-                          <Button type="button" onClick={() => setPhoto(null)} isIcon className="size-6 rounded-full">
+                          <Button
+                            type="button"
+                            onClick={() => setPhoto(null)}
+                            isIcon
+                            className="size-6 rounded-full"
+                          >
                             <XMarkIcon className="size-4" />
                           </Button>
                         ) : (
                           <label className="flex cursor-pointer items-center justify-center">
                             <HiPencil className="size-3.5" />
-                            <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                              if (e.target.files?.[0]) setPhoto(e.target.files[0]);
-                            }} />
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files?.[0])
+                                  setPhoto(e.target.files[0]);
+                              }}
+                            />
                           </label>
                         )}
                       </div>
@@ -396,7 +447,11 @@ const availableBranches = allBranches.filter(
                     <div>
                       <FieldLabel>Branch Manager ID</FieldLabel>
                       <Input
-                        value={isEdit ? getValues("branchManagerId") : nextNo || "Generating..."}
+                        value={
+                          isEdit
+                            ? getValues("branchManagerId")
+                            : nextNo || "Generating..."
+                        }
                         readOnly
                         disabled
                         className="bg-gray-50 text-gray-500"
@@ -410,7 +465,10 @@ const availableBranches = allBranches.filter(
                         {...register("name", {
                           required: "Name is required",
                           minLength: { value: 2, message: "Min 2 characters" },
-                          maxLength: { value: 50, message: "Max 50 characters" },
+                          maxLength: {
+                            value: 50,
+                            message: "Max 50 characters",
+                          },
                         })}
                         error={errors.name?.message}
                       />
@@ -425,7 +483,11 @@ const availableBranches = allBranches.filter(
                           <Combobox
                             data={GENDER_OPTIONS}
                             displayField="label"
-                            value={GENDER_OPTIONS.find((g) => g.id === field.value) || null}
+                            value={
+                              GENDER_OPTIONS.find(
+                                (g) => g.id === field.value,
+                              ) || null
+                            }
                             onChange={(v: any) => field.onChange(v?.id || "")}
                             placeholder="Select Gender"
                             searchFields={["label"]}
@@ -442,8 +504,14 @@ const availableBranches = allBranches.filter(
                         render={({ field }) => (
                           <Listbox
                             data={STATUS_OPTIONS}
-                            value={STATUS_OPTIONS.find((s) => s.id === field.value) || null}
-                            onChange={(v: any) => field.onChange(v?.id || "Active")}
+                            value={
+                              STATUS_OPTIONS.find(
+                                (s) => s.id === field.value,
+                              ) || null
+                            }
+                            onChange={(v: any) =>
+                              field.onChange(v?.id || "Active")
+                            }
                             displayField="label"
                             placeholder="Select Status"
                           />
@@ -467,7 +535,10 @@ const availableBranches = allBranches.filter(
                         placeholder="9876543210"
                         {...register("mobileNumber", {
                           required: "Mobile number is required",
-                          pattern: { value: /^[6-9]\d{9}$/, message: "Invalid 10-digit number" },
+                          pattern: {
+                            value: /^[6-9]\d{9}$/,
+                            message: "Invalid 10-digit number",
+                          },
                         })}
                         error={errors.mobileNumber?.message}
                       />
@@ -478,7 +549,10 @@ const availableBranches = allBranches.filter(
                         type="tel"
                         placeholder="9876543210"
                         {...register("alternateMobile", {
-                          validate: (v) => !v || /^[6-9]\d{9}$/.test(v) || "Invalid 10-digit number",
+                          validate: (v) =>
+                            !v ||
+                            /^[6-9]\d{9}$/.test(v) ||
+                            "Invalid 10-digit number",
                         })}
                         error={errors.alternateMobile?.message}
                       />
@@ -490,7 +564,10 @@ const availableBranches = allBranches.filter(
                         placeholder="name@example.com"
                         {...register("email", {
                           required: "Email is required",
-                          pattern: { value: /^\S+@\S+\.\S+$/, message: "Invalid email format" },
+                          pattern: {
+                            value: /^\S+@\S+\.\S+$/,
+                            message: "Invalid email format",
+                          },
                         })}
                         error={errors.email?.message}
                       />
@@ -500,7 +577,10 @@ const availableBranches = allBranches.filter(
                       <Input
                         placeholder="Enter full address"
                         {...register("address", {
-                          maxLength: { value: 250, message: "Max 250 characters" },
+                          maxLength: {
+                            value: 250,
+                            message: "Max 250 characters",
+                          },
                         })}
                         error={errors.address?.message}
                       />
@@ -510,7 +590,10 @@ const availableBranches = allBranches.filter(
                       <Input
                         placeholder="Enter city"
                         {...register("city", {
-                          maxLength: { value: 50, message: "Max 50 characters" },
+                          maxLength: {
+                            value: 50,
+                            message: "Max 50 characters",
+                          },
                         })}
                         error={errors.city?.message}
                       />
@@ -522,9 +605,12 @@ const availableBranches = allBranches.filter(
                         name="state"
                         render={({ field }) => (
                           <Combobox
-                          data={STATE_OPTIONS}
+                            data={STATE_OPTIONS}
                             displayField="label"
-                            value={STATE_OPTIONS.find((s) => s.id === field.value) || null}
+                            value={
+                              STATE_OPTIONS.find((s) => s.id === field.value) ||
+                              null
+                            }
                             onChange={(v: any) => field.onChange(v?.id || "")}
                             placeholder="Select State"
                             searchFields={["label"]}
@@ -538,7 +624,10 @@ const availableBranches = allBranches.filter(
                         placeholder="400001"
                         maxLength={6}
                         {...register("pinCode", {
-                          validate: (v) => !v || /^\d{6}$/.test(v) || "PIN Code must be exactly 6 digits",
+                          validate: (v) =>
+                            !v ||
+                            /^\d{6}$/.test(v) ||
+                            "PIN Code must be exactly 6 digits",
                         })}
                         error={errors.pinCode?.message}
                       />
@@ -563,8 +652,12 @@ const availableBranches = allBranches.filter(
                           <Combobox
                             data={areas}
                             displayField="label"
-                            value={areas.find((a) => a.id === field.value) || null}
-                            onChange={(v: any) => handleAreaChange(v?.id || "", field.onChange)}
+                            value={
+                              areas.find((a) => a.id === field.value) || null
+                            }
+                            onChange={(v: any) =>
+                              handleAreaChange(v?.id || "", field.onChange)
+                            }
                             placeholder="Select Area"
                             searchFields={["label"]}
                             error={errors.areaId?.message}
@@ -583,9 +676,17 @@ const availableBranches = allBranches.filter(
                           <Combobox
                             data={availableBranches}
                             displayField="label"
-                            value={availableBranches.find((b) => b.id === field.value) || null}
+                            value={
+                              availableBranches.find(
+                                (b) => b.id === field.value,
+                              ) || null
+                            }
                             onChange={(v: any) => field.onChange(v?.id || "")}
-                            placeholder={selectedAreaId ? "Select Branch" : "Select Area first"}
+                            placeholder={
+                              selectedAreaId
+                                ? "Select Branch"
+                                : "Select Area first"
+                            }
                             searchFields={["label"]}
                             error={errors.branchId?.message}
                           />
@@ -594,7 +695,9 @@ const availableBranches = allBranches.filter(
                     </div>
 
                     <div>
-                      <FieldLabel required>Reporting To (Area Manager)</FieldLabel>
+                      <FieldLabel required>
+                        Reporting To (Area Manager)
+                      </FieldLabel>
                       <Controller
                         control={control}
                         name="reportingTo"
@@ -603,9 +706,17 @@ const availableBranches = allBranches.filter(
                           <Combobox
                             data={availableManagers}
                             displayField="label"
-                            value={availableManagers.find((m) => m.id === field.value) || null}
+                            value={
+                              availableManagers.find(
+                                (m) => m.id === field.value,
+                              ) || null
+                            }
                             onChange={(v: any) => field.onChange(v?.id || "")}
-                            placeholder={selectedAreaId ? "Select Manager" : "Select Area first"}
+                            placeholder={
+                              selectedAreaId
+                                ? "Select Manager"
+                                : "Select Area first"
+                            }
                             searchFields={["label"]}
                             error={errors.reportingTo?.message}
                           />
@@ -618,16 +729,20 @@ const availableBranches = allBranches.filter(
                       <Controller
                         control={control}
                         name="joiningDate"
-                       rules={{
+                        rules={{
                           required: "Joining Date is required",
                           validate: (v) =>
-                            !v || v <= toYmd(new Date()) || "Joining date cannot be in the future",
+                            !v ||
+                            v <= toYmd(new Date()) ||
+                            "Joining date cannot be in the future",
                         }}
                         render={({ field }) => (
                           <DatePicker
                             placeholder="Choose date..."
                             value={field.value ? [new Date(field.value)] : []}
-                            onChange={(dates: Date[]) => field.onChange(toYmd(dates?.[0]))}
+                            onChange={(dates: Date[]) =>
+                              field.onChange(toYmd(dates?.[0]))
+                            }
                             error={errors.joiningDate?.message}
                           />
                         )}
@@ -640,7 +755,10 @@ const availableBranches = allBranches.filter(
                         rows={2}
                         placeholder="Optional description..."
                         {...register("description", {
-                          maxLength: { value: 500, message: "Max 500 characters" },
+                          maxLength: {
+                            value: 500,
+                            message: "Max 500 characters",
+                          },
                         })}
                         error={errors.description?.message}
                       />
@@ -655,7 +773,6 @@ const availableBranches = allBranches.filter(
                   </h4>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    
                     <div>
                       <FieldLabel required>Password</FieldLabel>
                       <Input
@@ -668,10 +785,20 @@ const availableBranches = allBranches.filter(
                             return true;
                           },
                         })}
-                        prefix={<LockClosedIcon className="size-5 text-gray-400" />}
+                        prefix={
+                          <LockClosedIcon className="size-5 text-gray-400" />
+                        }
                         suffix={
-                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="cursor-pointer text-gray-400 hover:text-gray-600">
-                            {showPassword ? <EyeSlashIcon className="size-5" /> : <EyeIcon className="size-5" />}
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="cursor-pointer text-gray-400 hover:text-gray-600"
+                          >
+                            {showPassword ? (
+                              <EyeSlashIcon className="size-5" />
+                            ) : (
+                              <EyeIcon className="size-5" />
+                            )}
                           </button>
                         }
                         error={errors.password?.message}
@@ -683,28 +810,44 @@ const availableBranches = allBranches.filter(
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm password"
                         {...register("confirmPassword", {
-                          validate: (v) => v === getValues("password") || "Passwords do not match",
+                          validate: (v) =>
+                            v === getValues("password") ||
+                            "Passwords do not match",
                         })}
-                        prefix={<LockClosedIcon className="size-5 text-gray-400" />}
+                        prefix={
+                          <LockClosedIcon className="size-5 text-gray-400" />
+                        }
                         suffix={
-                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="cursor-pointer text-gray-400 hover:text-gray-600">
-                            {showConfirmPassword ? <EyeSlashIcon className="size-5" /> : <EyeIcon className="size-5" />}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
+                            className="cursor-pointer text-gray-400 hover:text-gray-600"
+                          >
+                            {showConfirmPassword ? (
+                              <EyeSlashIcon className="size-5" />
+                            ) : (
+                              <EyeIcon className="size-5" />
+                            )}
                           </button>
                         }
                         error={errors.confirmPassword?.message}
                       />
                     </div>
-                    
-                 
                   </div>
                 </div>
-
               </div>
             </div>
 
             {/* Footer */}
             <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
-              <Button variant="outlined" color="secondary" type="button" onClick={handleClose}>
+              <Button
+                variant="outlined"
+                color="secondary"
+                type="button"
+                onClick={handleClose}
+              >
                 Cancel
               </Button>
               <Button color="primary" type="submit" disabled={submitting}>

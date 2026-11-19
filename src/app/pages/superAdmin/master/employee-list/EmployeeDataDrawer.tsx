@@ -29,10 +29,10 @@ interface EmployeeDrawerProps {
   editEmployee: Employee | null;
 }
 
-interface Opt {
-  id: string;
-  label: string;
-}
+// interface Opt {
+//   id: string;
+//   label: string;
+// }
 
 interface BranchOpt {
   id: string;
@@ -162,9 +162,18 @@ export function EmployeeDataDrawer({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [nextNo, setNextNo] = useState("");
-  const [roles, setRoles] = useState<Opt[]>([]);
-  const [departments, setDepartments] = useState<Opt[]>([]);
+  // const [roles, setRoles] = useState<Opt[]>([]);
+  // const [departments, setDepartments] = useState<Opt[]>([]);
   const [branches, setBranches] = useState<BranchOpt[]>([]);
+  const [roleDepartmentOptions, setRoleDepartmentOptions] = useState<
+    {
+      id: string; // This will be the roleId
+      label: string;
+      departmentName: string;
+      departmentId: string;
+      branchId: string; // If you need to filter by branch later
+    }[]
+  >([]);
 
   const profilePhoto = watch("profilePhoto");
 
@@ -180,40 +189,48 @@ export function EmployeeDataDrawer({
           Get("superadmin/branch/list", {}, false),
         ]);
 
-        const rows = (res: any): any[] => res?.data?.data ?? [];
-        setRoles(
-          rows(roleRes)
-            .filter((r) =>
-              keepActive(r.status, String(r.roleId), [initial.roleId]),
-            )
-            .map((r) => ({
+        const roleRows = roleRes?.data?.data ?? [];
+        const deptRows = deptRes?.data?.data ?? [];
+        const branchRows = branchRes?.data?.data ?? [];
+
+        // Map departments to easily find their names
+        const deptMap: Record<string, string> = {};
+        deptRows.forEach((d: any) => {
+          deptMap[String(d.departmentId)] = d.departmentName;
+        });
+
+        // Combine roles with their department names
+        const combinedOptions = roleRows
+          .filter((r: any) =>
+            keepActive(r.status, String(r.roleId), [initial.roleId]),
+          )
+          .map((r: any) => {
+            const deptName = r.departmentId
+              ? deptMap[String(r.departmentId)] || "No Dept"
+              : "No Dept";
+
+            return {
               id: String(r.roleId),
-              label: r.roleName,
-            })),
-        );
-        setDepartments(
-          rows(deptRes)
-            .filter((r) =>
-              keepActive(
-                r.status,
-                String(r.departmentId),
-                initial.additionalDepartments,
-              ),
-            )
-            .map((r) => ({
-              id: String(r.departmentId),
-              label: r.departmentName,
-            })),
-        );
+              // 👇 Combine them into a single string for the label
+              label: `${r.roleName} | ${deptName}`,
+              departmentName: deptName,
+              departmentId: r.departmentId ? String(r.departmentId) : "",
+              branchId: r.branchId ? String(r.branchId) : "",
+            };
+          });
+
+        setRoleDepartmentOptions(combinedOptions);
+
+        // Set branches as before
         setBranches(
-          rows(branchRes)
-            .filter((r) =>
+          branchRows
+            .filter((r: any) =>
               keepActive(r.status, String(r.branchId), [initial.branchId]),
             )
-            .map((r) => ({
+            .map((r: any) => ({
               id: String(r.branchId),
               label: r.branchName,
-              region: r.region || "", // ← Zone name from backend
+              region: r.region || "",
             })),
         );
       } catch (error) {
@@ -252,6 +269,15 @@ export function EmployeeDataDrawer({
   const onSubmit = async (values: FormValues) => {
     try {
       setSubmitting(true);
+
+      const selectedRole = roleDepartmentOptions.find(
+        (r) => r.id === values.roleId,
+      );
+
+      const departmentId = selectedRole?.departmentId
+        ? Number(selectedRole.departmentId)
+        : null;
+
       const payload = {
         employeeCode: values.employeeCode.trim(),
         employeeName: values.employeeName.trim(),
@@ -270,7 +296,7 @@ export function EmployeeDataDrawer({
         remarks: values.remarks.trim(),
         roleId: values.roleId ? Number(values.roleId) : null,
         branchId: values.branchId ? Number(values.branchId) : null,
-        additionalDepartments: values.additionalDepartments.map(Number),
+        additionalDepartments: departmentId ? [departmentId] : [],
         password: values.password,
         confirmPassword: values.confirmPassword,
       };
@@ -744,7 +770,7 @@ export function EmployeeDataDrawer({
                         error={errors.pinCode?.message as any}
                       />
                     </div>
-  
+
                     {/* Address */}
                     <div className="sm:col-span-3">
                       <FieldLabel>Address</FieldLabel>
@@ -792,29 +818,6 @@ export function EmployeeDataDrawer({
                             displayField="label"
                             placeholder="Select Status"
                             error={errors.employmentStatus?.message}
-                          />
-                        )}
-                      />
-                    </div>
-
-                    {/* Role */}
-                    <div>
-                      <FieldLabel required>Role</FieldLabel>
-                      <Controller
-                        control={control}
-                        name="roleId"
-                        rules={{ required: "Role is required" }}
-                        render={({ field }) => (
-                          <Combobox
-                            data={roles}
-                            displayField="label"
-                            value={
-                              roles.find((t) => t.id === field.value) || null
-                            }
-                            onChange={(v: any) => field.onChange(v?.id || "")}
-                            placeholder="Select Role"
-                            searchFields={["label"]}
-                            error={errors.roleId?.message}
                           />
                         )}
                       />
@@ -966,31 +969,48 @@ export function EmployeeDataDrawer({
                       />
                     </div>
 
-                    {/* Department */}
-                    <div>
-                      <FieldLabel required>Department</FieldLabel>
+                    {/* Role */}
+                    {/* <div>
+                      <FieldLabel required>Role</FieldLabel>
                       <Controller
                         control={control}
-                        name="additionalDepartments"
-                        rules={{
-                          validate: (v) =>
-                            (v && v.length > 0) || "Department is required",
-                        }}
+                        name="roleId"
+                        rules={{ required: "Role is required" }}
                         render={({ field }) => (
                           <Combobox
-                            data={departments}
+                            data={roles}
                             displayField="label"
                             value={
-                              departments.find((d) =>
-                                (field.value || []).includes(d.id),
+                              roles.find((t) => t.id === field.value) || null
+                            }
+                            onChange={(v: any) => field.onChange(v?.id || "")}
+                            placeholder="Select Role"
+                            searchFields={["label"]}
+                            error={errors.roleId?.message}
+                          />
+                        )}
+                      />
+                    </div> */}
+
+                    {/* Combined Role & Department */}
+                    <div>
+                      <FieldLabel required>Role</FieldLabel>
+                      <Controller
+                        control={control}
+                        name="roleId"
+                        rules={{ required: "Role is required" }}
+                        render={({ field }) => (
+                          <Combobox
+                            data={roleDepartmentOptions}
+                            value={
+                              roleDepartmentOptions.find(
+                                (t) => t.id === field.value,
                               ) || null
                             }
-                            onChange={(v: any) =>
-                              field.onChange(v ? [v.id] : [])
-                            }
-                            placeholder="Search departments..."
-                            searchFields={["label"]}
-                            error={errors.additionalDepartments?.message as any}
+                            onChange={(v: any) => field.onChange(v?.id || "")}
+                            placeholder="Select Role"
+                            searchFields={["label", "departmentName"]}
+                            error={errors.roleId?.message}
                           />
                         )}
                       />
