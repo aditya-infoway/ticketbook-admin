@@ -127,7 +127,7 @@ export default function BranchPage() {
               contactNumber: String(branch.contactNumber || ""),
               phoneNumber: String(branch.phoneNumber || ""),
               branchEmail: branch.branchEmail,
-              branchManagerId: (branch as any).branchManagerId || null,
+              branchManagerName: branch.branchManager || null,
               areaManagerId: (branch as any).areaManagerId || null,
               status: newStatus,
             },

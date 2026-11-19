@@ -10,44 +10,39 @@ import PlaceholderPage from "../PlaceholderPage";
 //   { path: "...", lazy: async () => ({ Component: (await import("@/app/pages/superAdmin/...")).default }) }
 
 export const superAdminRoutes: RouteObject[] = [
-
-
-   {
+  {
     path: "/master/area-master",
     lazy: async () => ({
-      Component: (await import("@/app/pages/superAdmin/master/area-master")).default,
+      Component: (await import("@/app/pages/superAdmin/master/area-master"))
+        .default,
     }),
   },
 
-   {
+  {
     path: "/master/create-branch",
     lazy: async () => ({
-      Component: (
-        await import("@/app/pages/superAdmin/master/create-branch")
-      ).default,
+      Component: (await import("@/app/pages/superAdmin/master/create-branch"))
+        .default,
     }),
   },
 
   {
     path: "/master/area-manager",
     lazy: async () => ({
-      Component: (
-        await import("@/app/pages/superAdmin/master/area-manager")
-      ).default,
+      Component: (await import("@/app/pages/superAdmin/master/area-manager"))
+        .default,
     }),
   },
 
   {
     path: "/master/employee-list",
     lazy: async () => ({
-      Component: (
-        await import("@/app/pages/superAdmin/master/employee-list")
-      ).default,
+      Component: (await import("@/app/pages/superAdmin/master/employee-list"))
+        .default,
     }),
   },
 
-
-   {
+  {
     path: "/master/create-department",
     lazy: async () => ({
       Component: (
@@ -57,10 +52,35 @@ export const superAdminRoutes: RouteObject[] = [
   },
 
   {
+    path: "/master/role",
+    lazy: async () => ({
+      Component: (await import("@/app/pages/superAdmin/master/role")).default,
+    }),
+  },
+
+  {
     path: "/branch-master/branch-manager",
     lazy: async () => ({
       Component: (
-        await import("@/app/pages/superAdmin/branch-master/branch-manager")
+        await import("@/app/pages/superAdmin/user-master/branch-manager")
+      ).default,
+    }),
+  },
+
+  {
+    path: "/user-master/account-master",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/user-master/account-master")
+      ).default,
+    }),
+  },
+
+  {
+    path: "/user-master/account-master/create",
+    lazy: async () => ({
+      Component: (
+        await import("@/app/pages/superAdmin/user-master/account-master/CreateAccountPage")
       ).default,
     }),
   },
@@ -87,8 +107,7 @@ export const superAdminRoutes: RouteObject[] = [
       Component: (await import("@/app/pages/superAdmin/region-type")).default,
     }),
   },
- 
- 
+
   {
     path: "/department-master/create-type",
     lazy: async () => ({
@@ -113,14 +132,6 @@ export const superAdminRoutes: RouteObject[] = [
       ).default,
     }),
   },
-  {
-    path: "/department-master/role-master/role",
-    lazy: async () => ({
-      Component: (
-        await import("@/app/pages/superAdmin/department-master/role-master/role")
-      ).default,
-    }),
-  },
 
   {
     path: "/region-master/group-branches",
@@ -142,7 +153,7 @@ export const superAdminRoutes: RouteObject[] = [
       ).default,
     }),
   },
-  
+
   {
     path: "/contractor-master/contractor-registration",
     lazy: async () => ({
